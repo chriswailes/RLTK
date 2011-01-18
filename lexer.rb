@@ -68,7 +68,7 @@ module RLTK
 					line_number = 1
 					
 					#Empty token list.
-					tokens = Array.new()
+					@tokens = Array.new()
 					
 					#The scanner.
 					scanner = StringScanner.new(string)
@@ -93,7 +93,9 @@ module RLTK
 							txt = scanner.scan(rule.pattern)
 							type, value = env.instance_exec(txt, &rule.action)
 							
-							tokens << Token.new(type, value, file_offset, line_number, line_offset, line_offset + txt.length())
+							if type
+								@tokens << Token.new(type, value, file_offset, line_number, line_offset, line_offset + txt.length())
+							end
 							
 							#Advance our stat counters.
 							file_offset += match.length()
@@ -110,13 +112,17 @@ module RLTK
 						end
 					end
 					
-					return tokens << Token.new(:EOF, nil, file_offset, line_number, nil, nil)
+					return @tokens << Token.new(:EOF, nil, file_offset, line_number, nil, nil)
 				end
 				
 				def lex_file(file_name)
 					file = File.open(file_name, 'r')
 					
 					lex_string(file.read())
+				end
+				
+				def next_token()
+					@tokens.shift()
 				end
 			end
 		end
