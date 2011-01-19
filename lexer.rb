@@ -11,7 +11,7 @@
 require 'strscan'
 
 # Ruby Language Toolkit
-require 'token'
+require File.join(File.dirname(__FILE__), 'token')
 
 #######################
 # Classes and Modules #
@@ -139,7 +139,7 @@ module RLTK
 				def lex_file(file_name)
 					file = File.open(file_name, 'r')
 					
-					lex_string(file.read())
+					lex(file.read())
 				end
 				
 				def next_token()
@@ -160,14 +160,20 @@ module RLTK
 			
 			def add_state(state)
 				@state << state
+				
+				nil
 			end
 			
 			def pop_state()
 				@state.pop()
+				
+				nil
 			end
 			
 			def set_state(state)
 				@state[-1] = state
+				
+				nil
 			end
 			
 			def state()
@@ -178,14 +184,20 @@ module RLTK
 				if not @flags.include?(flag)
 					@flags << flag
 				end
+				
+				nil
 			end
 			
 			def unset_flag(flag)
 				@flags.delete(flag)
+				
+				nil
 			end
 			
 			def clear_flags()
 				@flags = Array.new()
+				
+				nil
 			end
 		end
 		

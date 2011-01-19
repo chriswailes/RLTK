@@ -27,7 +27,11 @@ module RLTK
 		end
 		
 		def to_s()
-			"Token(#{self.type}, #{self.value})"
+			if value
+				"#{self.type}(#{self.value})"
+			else
+				self.type.to_s
+			end
 		end
 	end
 end
