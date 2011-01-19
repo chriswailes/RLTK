@@ -13,17 +13,21 @@ module RLTK
 		attr_reader :line_offset_start
 		attr_reader :line_offset_end
 		
-		alias :token_line_start :start
-		alias :token_line_end :end
+		alias :start :line_offset_start
+		alias :end :line_offset_end
 		
 		def initialize(type, value, file_offset, line_number, line_offset_start, line_offset_end)
-			@type	= nil
-			@value	= nil
+			@type	= type
+			@value	= value
 			
 			@file_offset		= file_offset
 			@line_number		= line_number
 			@line_offset_start	= line_offset_start
 			@line_offset_end	= line_offset_end
+		end
+		
+		def to_s()
+			"Token(#{self.type}, #{self.value})"
 		end
 	end
 end
