@@ -34,8 +34,8 @@ module RLTK
 	class Lexer
 		attr_accessor :start_state
 		
-		def Lexer.inherited(mod)
-			mod.class_exec do
+		def Lexer.inherited(klass)
+			klass.class_exec do
 				@rules		= Hash.new()
 				@start_state	= :default
 				
