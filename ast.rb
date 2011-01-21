@@ -17,7 +17,7 @@ module RLTK
 		end
 	end
 	
-	class Node
+	class ASTNode
 		attr_accessor :parent
 		
 		alias :'key?' :'has_key?'

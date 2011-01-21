@@ -19,8 +19,8 @@ require File.join(File.dirname(__FILE__), 'token')
 
 module RLTK
 	class LexingError < Exception
-		def initialize(file_offset, line_number, line_offset, remainder)
-			@file_offset	= file_offset
+		def initialize(streamstream_offset, line_number, line_offset, remainder)
+			@stream_offset	= stream_offset
 			@line_number	= line_number
 			@line_offset	= line_offset
 			@remainder	= remainder
@@ -36,7 +36,7 @@ module RLTK
 		
 		def Lexer.inherited(klass)
 			klass.class_exec do
-				@rules		= Hash.new()
+				@rules		= Hash.new {|h,k| h[k] = Array.new}
 				@start_state	= :default
 				
 				#################
@@ -50,15 +50,7 @@ module RLTK
 					
 					r = Rule.new(pattern, action, state, flags)
 					
-					if state == :ALL
-						@rules.each_key do |k|
-							@rules[k] << r
-						end
-					elsif @rules.key?(state)
-						@rules[state] << r
-					else
-						@rules[state] = [r]
-					end
+					if state == :ALL then @rules.each_key { |k| @rules[k] << r } else @rules[state] << r end
 				end
 				
 				def self.rules()
@@ -81,8 +73,8 @@ module RLTK
 					#Set up the environment for this lexing pass.
 					env = Environment.new(self.class.start_state())
 					
-					#Offset from start of file.
-					file_offset = 0
+					#Offset from start of stream.
+					stream_offset = 0
 				
 					#Offset from the start of the line.
 					line_offset = 0
@@ -101,9 +93,11 @@ module RLTK
 						#All rules for the currrent state need to be scanned so
 						#that we find the longest match possible.
 						self.class.rules()[env.state()].each do |rule|
-							if txt = scanner.check(rule.pattern)
-								if not match or match[0].length() < txt.length()
-									match = [txt, rule]
+							if (rule.flags - env.flags).empty?
+								if txt = scanner.check(rule.pattern)
+									if not match or match[0].length() < txt.length()
+										match = [txt, rule]
+									end
 								end
 							end
 						end
@@ -115,11 +109,11 @@ module RLTK
 							type, value = env.instance_exec(txt, &rule.action)
 							
 							if type
-								@tokens << Token.new(type, value, file_offset, line_number, line_offset, line_offset + txt.length()) 
+								@tokens << Token.new(type, value, stream_offset, line_number, line_offset, line_offset + txt.length()) 
 							end
 							
 							#Advance our stat counters.
-							file_offset += txt.length()
+							stream_offset += txt.length()
 							
 							if (newlines = txt.count("\n")) > 0
 								line_number += newlines
@@ -128,12 +122,12 @@ module RLTK
 								line_offset += txt.length()
 							end
 						else
-							error = LexingError.new(file_offset, line_number, line_offset, scanner.post_match())
+							error = LexingError.new(stream_offset, line_number, line_offset, scanner.post_match())
 							raise(error, 'Unable to match string with any of the given rules')
 						end
 					end
 					
-					return @tokens << Token.new(:EOS, nil, file_offset, line_number, nil, nil)
+					return @tokens << Token.new(:EOS, nil, stream_offset, line_number, nil, nil)
 				end
 				
 				def lex_file(file_name)
@@ -153,6 +147,8 @@ module RLTK
 		#################
 		
 		class Environment
+			attr_reader :flags
+			
 			def initialize(start_state)
 				@state	= [start_state]
 				@flags	= Array.new()
@@ -204,6 +200,7 @@ module RLTK
 		class Rule
 			attr_reader :action
 			attr_reader :pattern
+			attr_reader :flags
 			
 			def initialize(pattern, action, state, flags)
 				@pattern	= pattern
