@@ -22,12 +22,24 @@ module RLTK
 			klass.class_exec do
 				@lexer		= EBNFLexer.new
 				@productions	= Hash.new
+				@start_state	= nil
 				
 				#################
 				# Class Methods #
 				#################
 				
+				def self.finalize
+					items	= Array.new
+					sets		= Hash.new
+					
+					#FIXME
+				end
+				
 				def self.rule(symbol, expression = nil, &action)
+					#Set the start symbol if this is the first production
+					#defined.
+					@start_state ||= symbol
+					
 					#Grab the existing production or create a new one.
 					production = (@productions[symbol] ||= Production.new(symbol))
 					
@@ -38,14 +50,25 @@ module RLTK
 					end
 				end
 				
+				def self.start(state)
+					@start_state = state
+				end
+				
 				####################
 				# Instance Methods #
 				####################
 				
 				def parse(tokens)
+					stacks = Array.new
 					#FIXME
 				end
 			end
+		end
+		
+		class Item
+		end
+		
+		class ItemSet
 		end
 		
 		class Production
