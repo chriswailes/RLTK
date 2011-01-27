@@ -20,7 +20,7 @@ module RLTK
 		alias :start :line_offset_start
 		alias :end   :line_offset_end
 		
-		def initialize(type, value, stream_offset, line_number, line_offset_start, line_offset_end)
+		def initialize(type, value = nil, stream_offset = nil, line_number = nil, line_offset_start = nil, line_offset_end = nil)
 			@type	= type
 			@value	= value
 			
