@@ -31,11 +31,9 @@ module RLTK
 				#################
 				
 				def self.close_set(set)
-					index = 0
-					while index < set.items.length
-						item = set.items[index]
-						
+					set.items.each do |item|
 						next_token = nil
+						
 						item.tokens.each_index do |i|
 							if item.tokens[i].type == :DOT
 								next_token = item.tokens[i + 1]
@@ -46,11 +44,9 @@ module RLTK
 						if next_token and next_token.type == :NONTERM
 							set.append(@items[next_token.value])
 						end
-						
-						index += 1
 					end
 					
-					return set
+					set
 				end
 				
 				def self.finalize
@@ -61,21 +57,18 @@ module RLTK
 					#Create our Transition Table
 					@table = Table.new
 					
-					set = Set.new({nil => [Item.new([Token.new(:DOT), Token.new(:NONTERM, @start)])]})
+					set = Set.new([Item.new([Token.new(:DOT), Token.new(:NONTERM, @start_state)])])
+					@table.add_set(self.close_set(set))
 					
-					pp self.close_set(set)
+					@table.rows.each do |row|
+						#Transition Sets
+						tsets = Hash.new
+						
+						row.set.items.each do |item|
+						
+						end
 					
-					#@table.add_set(self.close_set(set))
-					#
-					#index = 0
-					#while index < @table.rows.length
-						#set = @table.rows[index].set
-						#
-						Transition sets
-						#tsets = Hash.new
-						#
-						#index += 1
-					#end
+					end
 				end
 				
 				def self.get_question(token)
@@ -145,7 +138,11 @@ module RLTK
 					
 					symbol = symbol.to_sym if not symbol.is_a?(Symbol)
 					
-					@items[symbol] += if expression then @proxy.clause(expression, &action) else @proxy.wrapper(&action) end
+					if expression
+						@items[symbol] << @proxy.clause(expression, &action)
+					else
+						@items[symbol] += @proxy.wrapper(&action)
+					end
 				end
 				
 				def self.start(state)
@@ -164,16 +161,16 @@ module RLTK
 		end
 		
 		class Item
-			attr_reader :symbols
+			attr_reader :tokens
 			attr_reader :action
 			
-			def initialize(symbols, &action)
-				@symbols	= symbols
+			def initialize(tokens, &action)
+				@tokens	= tokens
 				@action	= action
 			end
 			
 			def ==(other)
-				self.action == other.action and self.symbols == other.symbols
+				self.action == other.action and self.tokens == other.tokens
 			end
 		end
 		
@@ -219,10 +216,10 @@ module RLTK
 				end
 				
 				#Add the item to the current list.
-				@items << new_tokens
+				@items << (item = Item.new(new_tokens))
 				
 				#Return the item from this clause.
-				return new_tokens
+				return item
 			end
 			
 			def wrapper(&block)
@@ -247,7 +244,7 @@ module RLTK
 			end
 			
 			def <<(item)
-				if not @items.include(item) then @items << item end
+				if not @items.include?(item) then @items << item end
 			end
 			
 			def append(items)

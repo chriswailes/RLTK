@@ -43,4 +43,3 @@ module RLTK
 		end
 	end
 end
-

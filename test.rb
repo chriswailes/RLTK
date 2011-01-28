@@ -5,8 +5,8 @@ require 'parser'
 class Tester < RLTK::Parser
 	
 	rule(:e) do
-		clause('e * b') {}
-		clause('e + b') {}
+		clause('e MUL b') {}
+		clause('e PLUS b') {}
 		
 		clause('b') {}
 	end
