@@ -67,7 +67,6 @@ module RLTK
 						row.set.items.each do |item|
 						
 						end
-					
 					end
 				end
 				
