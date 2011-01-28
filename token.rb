@@ -30,6 +30,10 @@ module RLTK
 			@line_offset_end	= line_offset_end
 		end
 		
+		def ==(other)
+			self.type == other.type and self.value == other.value
+		end
+		
 		def to_s()
 			if value
 				"#{self.type}(#{self.value})"
