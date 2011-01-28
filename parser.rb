@@ -32,21 +32,14 @@ module RLTK
 				
 				def self.close_set(set)
 					set.items.each do |item|
-						next_token = nil
-						
-						item.tokens.each_index do |i|
-							if item.tokens[i].type == :DOT
-								next_token = item.tokens[i + 1]
-								break
-							end
-						end
+						next_token = item.next_token
 						
 						if next_token and next_token.type == :NONTERM
 							set.append(@items[next_token.value])
 						end
 					end
 					
-					set
+					return set
 				end
 				
 				def self.finalize
@@ -57,15 +50,38 @@ module RLTK
 					#Create our Transition Table
 					@table = Table.new
 					
+					#Add our starting state to the transition table.
 					set = Set.new([Item.new([Token.new(:DOT), Token.new(:NONTERM, @start_state)])])
 					@table.add_set(self.close_set(set))
 					
+					#Build the rest of the transition table.
 					@table.rows.each do |row|
+						cur_set = row.set
+						
 						#Transition Sets
-						tsets = Hash.new
+						tsets = Hash.new {|h,k| h[k] = Set.new}
 						
-						row.set.items.each do |item|
+						#Bin each item in this set into reachable
+						#transition sets.
+						cur_set.items.each do |item|
+							if (next_token = item.next_token)
+								tsets[next_token.value] << item.copy
+							end
+						end
 						
+						#For each transition set:
+						# 1) Get transition token
+						# 2) Advance dot
+						# 3) Close it
+						# 4) Get state id, and add transition
+						tsets.each do |ttoken, tset|
+							tset.items.each {|item| item.advance}
+							
+							tset = close_set(tset)
+							
+							id = @table.get_set_id(tset)
+							
+							row.on(ttoken, id)
 						end
 					end
 				end
@@ -165,11 +181,36 @@ module RLTK
 			
 			def initialize(tokens, &action)
 				@tokens	= tokens
-				@action	= action
+				@action	= action || Proc.new {}
 			end
 			
 			def ==(other)
 				self.action == other.action and self.tokens == other.tokens
+			end
+			
+			def advance
+				index = @tokens.index {|t| t.type == :DOT}
+				
+				if index < @tokens.length - 1
+					@tokens[index], @tokens[index + 1] = @tokens[index + 1], @tokens[index]
+				end
+			end
+			
+			def copy
+				return Item.new(@tokens.clone, &@action.clone)
+			end
+			
+			def next_token
+				next_token = nil
+				
+				@tokens.each_index do |i|
+					if @tokens[i].type == :DOT
+						next_token = @tokens[i + 1]
+						break
+					end
+				end
+				
+				return next_token
 			end
 		end
 		
