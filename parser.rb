@@ -51,21 +51,19 @@ module RLTK
 					@table = Table.new
 					
 					#Add our starting state to the transition table.
-					set = Set.new([Item.new([Token.new(:DOT), Token.new(:NONTERM, @start_state)])])
+					set = Set.new([Item.new(0, [Token.new(:DOT), Token.new(:NONTERM, @start_state), Token.new(:TERM, :EOF)])])
 					@table.add_set(self.close_set(set))
 					
 					#Build the rest of the transition table.
 					@table.rows.each do |row|
-						cur_set = row.set
-						
 						#Transition Sets
 						tsets = Hash.new {|h,k| h[k] = Set.new}
 						
 						#Bin each item in this set into reachable
 						#transition sets.
-						cur_set.items.each do |item|
+						row.items.each do |item|
 							if (next_token = item.next_token)
-								tsets[next_token.value] << item.copy
+								tsets[[next_token.type, next_token.value]] << item.copy
 							end
 						end
 						
@@ -75,15 +73,33 @@ module RLTK
 						# 3) Close it
 						# 4) Get state id, and add transition
 						tsets.each do |ttoken, tset|
+							ttype, tsym = ttoken
+							
 							tset.items.each {|item| item.advance}
 							
 							tset = close_set(tset)
 							
 							id = @table.get_set_id(tset)
 							
-							row.on(ttoken, id)
+							#Add Goto, Accept, and Shift actions.
+							if ttype == :NONTERM
+								row.on(ttoken, Table::Goto.new(id))
+							elsif tsym == :EOF
+								row.on(ttoken, Table::Accept.new)
+							else
+								row.on(ttoken, Table::Shift.new(id))
+							end
+						end
+						
+						#Find the Reduce actions for this set.
+						row.items.each do |item|
+							if item.tokens[-1].type == :DOT
+								row.on(nil, Table::Reduce.new(item.id))
+							end
 						end
 					end
+					
+					pp @table
 				end
 				
 				def self.get_question(token)
@@ -95,11 +111,10 @@ module RLTK
 						#token_question: | token
 						
 						#1st (empty) production.
-						@items[new_token.value] << Item.new([Token.new(:DOT)]) { nil }
+						@items[new_token.value] << Item.new(@proxy.next_id, [Token.new(:DOT)]) { nil }
 						
 						#2nd production
-						@items[new_token.value] << Item.new([Token.new(:DOT), token]) {|v| v[0]}
-						@items[new_token.value] << Item.new([token, Token.new(:DOT)]) {|v| v[0]}
+						@items[new_token.value] << Item.new(@proxy.next_id, [Token.new(:DOT), token]) {|v| v[0]}
 					end
 					
 					return new_token
@@ -114,13 +129,10 @@ module RLTK
 						#token_plus: token | token token_plus
 						
 						#1st production
-						@items[new_token.value] << Item.new([Token.new(:DOT), token]) {|v| [v[0]]}
-						@items[new_token.value] << Item.new([token, Token.new(:DOT)]) {|v| [v[0]]}
+						@items[new_token.value] << Item.new(@proxy.next_id, [Token.new(:DOT), token]) {|v| [v[0]]}
 						
 						#2nd production
-						@items[new_token.value] << Item.new([Token.new(:DOT), token, new_token]) {|v| [v[0]] + v[1]}
-						@items[new_token.value] << Item.new([token, Token.new(:DOT), new_token]) {|v| [v[0]] + v[1]}
-						@items[new_token.value] << Item.new([token, new_token, Token.new(:DOT)]) {|v| [v[0]] + v[1]}
+						@items[new_token.value] << Item.new(@proxy.next_id, [Token.new(:DOT), token, new_token]) {|v| [v[0]] + v[1]}
 					end
 					
 					return new_token
@@ -135,12 +147,10 @@ module RLTK
 						#token_star: | token token_star
 						
 						#1st (empty) production
-						@items[new_token.value] << Item.new([Token.new(:DOT)]) { [] }
+						@items[new_token.value] << Item.new(@proxy.next_id, [Token.new(:DOT)]) { [] }
 						
 						#2nd production
-						@items[new_token.value] << Item.new([Token.new(:DOT), token, new_token]) {|v| [v[0]] + v[1]}
-						@items[new_token.value] << Item.new([token, Token.new(:DOT), new_token]) {|v| [v[0]] + v[1]}
-						@items[new_token.value] << Item.new([token, new_token, Token.new(:DOT)]) {|v| [v[0]] + v[1]}
+						@items[new_token.value] << Item.new(@proxy.next_id, [Token.new(:DOT), token, new_token]) {|v| [v[0]] + v[1]}
 					end
 					
 					return new_token
@@ -176,10 +186,12 @@ module RLTK
 		end
 		
 		class Item
+			attr_reader :id
 			attr_reader :tokens
 			attr_reader :action
 			
-			def initialize(tokens, &action)
+			def initialize(id, tokens, &action)
+				@id		= id
 				@tokens	= tokens
 				@action	= action || Proc.new {}
 			end
@@ -197,7 +209,7 @@ module RLTK
 			end
 			
 			def copy
-				return Item.new(@tokens.clone, &@action.clone)
+				return Item.new(@id, @tokens.clone, &@action.clone)
 			end
 			
 			def next_token
@@ -220,6 +232,8 @@ module RLTK
 				
 				@lexer = EBNFLexer.new
 				@items = Array.new
+				
+				@rule_counter = 0
 			end
 			
 			def clause(expression, &action)
@@ -256,10 +270,14 @@ module RLTK
 				end
 				
 				#Add the item to the current list.
-				@items << (item = Item.new(new_tokens))
+				@items << (item = Item.new(self.next_id, new_tokens))
 				
 				#Return the item from this clause.
 				return item
+			end
+			
+			def next_id
+				@rule_counter += 1
 			end
 			
 			def wrapper(&block)
@@ -321,11 +339,46 @@ module RLTK
 				def initialize(id, set)
 					@id			= id
 					@set			= set
-					@transitions	= Hash.new
+					@actions	= Hash.new {|h,k| h[k] = Array.new}
 				end
 				
-				def on(symbol, id)
-					@transitions[symbol] = id
+				def items
+					set.items
+				end
+				
+				def on(symbol, action)
+					@actions[symbol] << action
+				end
+				
+				def on?(symbol)
+					@actions[nil] | @actions[symbol]
+				end
+			end
+			
+			class Accept
+			end
+			
+			class Goto
+				attr_reader :id
+				
+				def initialize(id)
+					@id = id
+				end
+			end
+			
+			class Reduce
+				attr_reader :id
+				
+				def initialize(id)
+					@id = id
+				end
+			end
+			
+			class Shift
+				attr_reader :id
+				
+				def initialize(id)
+					@id = id
 				end
 			end
 		end
