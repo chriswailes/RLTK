@@ -189,11 +189,14 @@ module RLTK
 			attr_reader :id
 			attr_reader :tokens
 			attr_reader :action
+			attr_reader :next_token
 			
 			def initialize(id, tokens, &action)
 				@id		= id
 				@tokens	= tokens
 				@action	= action || Proc.new {}
+				
+				@next_token = @tokens[self.dot_index + 1]
 			end
 			
 			def ==(other)
@@ -201,10 +204,9 @@ module RLTK
 			end
 			
 			def advance
-				index = @tokens.index {|t| t.type == :DOT}
-				
-				if index < @tokens.length - 1
+				if (index = self.dot_index) < @tokens.length - 1
 					@tokens[index], @tokens[index + 1] = @tokens[index + 1], @tokens[index]
+					@next_token = @tokens[index + 1]
 				end
 			end
 			
@@ -212,17 +214,8 @@ module RLTK
 				return Item.new(@id, @tokens.clone, &@action.clone)
 			end
 			
-			def next_token
-				next_token = nil
-				
-				@tokens.each_index do |i|
-					if @tokens[i].type == :DOT
-						next_token = @tokens[i + 1]
-						break
-					end
-				end
-				
-				return next_token
+			def dot_index
+				@tokens.index {|t| t.type == :DOT}
 			end
 		end
 		
@@ -305,8 +298,12 @@ module RLTK
 				if not @items.include?(item) then @items << item end
 			end
 			
-			def append(items)
-				items.each { |item| self << item }
+			def append(new_items)
+				new_items.each { |item| self << item }
+			end
+			
+			def each
+				@items.each {|i| yield i }
 			end
 		end
 		
