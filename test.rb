@@ -1,5 +1,7 @@
 #!/usr/bin/ruby
 
+require 'pp'
+
 require 'parser'
 
 class Tester < RLTK::Parser
@@ -14,5 +16,7 @@ class Tester < RLTK::Parser
 	rule(:b, 'ZERO') {}
 	rule(:b, 'ONE' ) {}
 	
-	finalize
+	finalize('tester.table')
 end
+
+pp Tester.inspect
