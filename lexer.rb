@@ -127,7 +127,7 @@ module RLTK
 						end
 					end
 					
-					return @tokens << Token.new(:EOS, nil, stream_offset, line_number)
+					return @tokens
 				end
 				
 				def lex_file(file_name)
@@ -160,7 +160,7 @@ module RLTK
 				nil
 			end
 			
-			def pop_state()
+			def pop_state
 				@state.pop()
 				
 				nil
@@ -172,7 +172,7 @@ module RLTK
 				nil
 			end
 			
-			def state()
+			def state
 				return @state.last()
 			end
 			

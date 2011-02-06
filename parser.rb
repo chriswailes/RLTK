@@ -42,31 +42,55 @@ module RLTK
 					return set
 				end
 				
-				def self.dump(table_file)
-					if @rules
-						File.open(table_file, 'w') do |f|
-							f.puts("Start symbol: #{@start_symbol}")
+				def self.explain(explain_file)
+					if @rules and @table
+						File.open(explain_file, 'w') do |f|
+							f.puts("##############" + '#' * self.name.length)
+							f.puts("# Rules for #{self.name} #")
+							f.puts("##############" + '#' * self.name.length)
 							f.puts
-							
-							f.puts("Rules for #{self.class.name}:")
 							
 							#Print the rules.
 							@rules.each_key do |sym|
 								@rules[sym].each do |rule|
-									f.puts("\t" + rule.to_s)
+									f.puts("\t#{rule.to_s}")
 								end
 								
 								f.puts
 							end
 							
+							f.puts("Start symbol: #{@start_symbol}")
+							f.puts
+							
 							#Print the parse table.
-							f.puts("Parse Table:")
+							f.puts("###############")
+							f.puts("# Parse Table #")
+							f.puts("###############")
+							f.puts
+							
 							@table.rows.each do |row|
-								f.puts("Row #{row.id}:")
+								f.puts("State #{row.id}:")
+								
+								max = row.set.rules.inject(0) do |max, item|
+									if item.symbol.to_s.length > max then item.symbol.to_s.length else max end
+								end
 								
 								row.set.each do |item|
-									
+									f.puts("\t#{item.to_s(max, true)}")
 								end
+								
+								f.puts
+								f.puts("\t# ACTIONS #")
+								
+								row.actions.each do |token, actions|
+									sym = if token then token[1] else nil end
+									
+									actions.each do |action|
+										f.puts("\tOn #{if sym then sym else 'any' end} #{action}")
+									end
+								end
+								
+								f.puts
 							end
 						end
 					else
@@ -74,7 +98,7 @@ module RLTK
 					end
 				end
 				
-				def self.finalize(table_file = nil)
+				def self.finalize(explain_file = nil)
 					#Create our Transition Table
 					@table	= Table.new
 					
@@ -83,7 +107,7 @@ module RLTK
 					@actions	= @rules.values.flatten.inject([]) {|a, r| a[r.id] = r.action; a}
 					
 					#Add our starting set to the transition table.
-					start_rule = Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol), Token.new(:TERM, :EOF)])
+					start_rule = Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol)])
 					start_set = self.close_set(Set.new([start_rule]))
 					@table.add_set(start_set)
 					
@@ -91,6 +115,8 @@ module RLTK
 					@table.rows.each do |row|
 						#Transition Sets
 						tsets = Hash.new {|h,k| h[k] = Set.new}
+						
+						puts("Looking at row #{row.id}")
 						
 						#Bin each item in this set into reachable
 						#transition sets.
@@ -114,26 +140,28 @@ module RLTK
 							
 							id = @table.get_set_id(tset)
 							
-							#Add Goto, Accept, and Shift actions.
+							#Add Goto and Shift actions.
 							if ttype == :NONTERM
 								row.on(ttoken, Table::GoTo.new(id))
-							elsif tsym == :EOF
-								row.on(ttoken, Table::Accept.new)
 							else
 								row.on(ttoken, Table::Shift.new(id))
 							end
 						end
 						
-						#Find the Reduce actions for this set.
+						#Find the Accept and Reduce actions for this set.
 						row.rules.each do |rule|
 							if rule.tokens[-1].type == :DOT
-								row.on(nil, Table::Reduce.new(rule.id))
+								if rule.symbol == :'!start'
+									row.on([:TERM, :EOS], Table::Accept.new)
+								else
+									row.on(nil, Table::Reduce.new(rule.id))
+								end
 							end
 						end
 					end
 					
 					#Print the table if requested.
-					self.dump(table_file) if table_file
+					self.explain(explain_file) if explain_file
 					
 					#Remove references to the RuleProxy and Item list.
 					@proxy = @rules = nil
@@ -266,13 +294,18 @@ module RLTK
 			end
 		end
 		
+		class ParseStack
+			def initalize
+				@output_stack	= nil
+				@state_stack	= nil
+			end
+		end
+		
 		class Rule
 			attr_reader :id
 			attr_reader :symbol
 			attr_reader :tokens
 			attr_reader :action
-			
-			attr_reader :next_token
 			
 			def initialize(id, symbol, tokens, &action)
 				@id		= id
@@ -280,7 +313,7 @@ module RLTK
 				@tokens	= tokens
 				@action	= action || Proc.new {}
 				
-				@next_token = @tokens[self.dot_index + 1]
+				@dot_index = @tokens.index {|t| t.type == :DOT}
 			end
 			
 			def ==(other)
@@ -288,9 +321,9 @@ module RLTK
 			end
 			
 			def advance
-				if (index = self.dot_index) < @tokens.length - 1
+				if (index = @dot_index) < @tokens.length - 1
 					@tokens[index], @tokens[index + 1] = @tokens[index + 1], @tokens[index]
-					@next_token = @tokens[index + 1]
+					@dot_index += 1
 				end
 			end
 			
@@ -298,12 +331,12 @@ module RLTK
 				Rule.new(@id, @symbol, @tokens.clone, &@action)
 			end
 			
-			def dot_index
-				@tokens.index {|t| t.type == :DOT}
+			def next_token
+				@tokens[@dot_index + 1]
 			end
 			
-			def to_s
-				"#{@symbol} -> #{@tokens.map{|t| t.value}.join(' ')}"
+			def to_s(padding = 0, item_mode = false)
+				"#{format("%-#{padding}s", @symbol)} -> #{@tokens.map{|t| if t.type == :DOT and item_mode then '·' else t.value end}.join(' ')}"
 			end
 		end
 		
@@ -429,7 +462,8 @@ module RLTK
 			
 			class Row
 				attr_reader :id
-				attr_accessor :set
+				attr_reader :set
+				attr_reader :actions
 				
 				def initialize(id, set)
 					@id		= id
@@ -459,6 +493,10 @@ module RLTK
 				
 				def initialize(id = nil)
 					@id = id
+				end
+				
+				def to_s
+					"#{self.class.name.split('::').last}" + if @id then " #{@id}" else '' end
 				end
 			end
 			

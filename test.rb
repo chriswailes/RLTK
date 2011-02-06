@@ -18,5 +18,3 @@ class Tester < RLTK::Parser
 	
 	finalize('tester.table')
 end
-
-pp Tester.inspect
