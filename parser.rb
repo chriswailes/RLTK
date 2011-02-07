@@ -31,10 +31,8 @@ module RLTK
 				#################
 				
 				def self.close_set(set)
-					set.rules.each do |rule|
-						next_token = rule.next_token
-						
-						if next_token and next_token.type == :NONTERM
+					set.each do |rule|
+						if (next_token = rule.next_token) and next_token.type == :NONTERM
 							set.append(@rules[next_token.value])
 						end
 					end
@@ -68,7 +66,7 @@ module RLTK
 							f.puts("###############")
 							f.puts
 							
-							@table.rows.each do |row|
+							@table.each do |row|
 								f.puts("State #{row.id}:")
 								
 								max = row.set.rules.inject(0) do |max, item|
@@ -109,14 +107,12 @@ module RLTK
 					#Add our starting set to the transition table.
 					start_rule = Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol)])
 					start_set = self.close_set(Set.new([start_rule]))
-					@table.add_set(start_set)
+					@table.add_state(start_set)
 					
 					#Build the rest of the transition table.
-					@table.rows.each do |row|
+					@table.each do |row|
 						#Transition Sets
 						tsets = Hash.new {|h,k| h[k] = Set.new}
-						
-						puts("Looking at row #{row.id}")
 						
 						#Bin each item in this set into reachable
 						#transition sets.
@@ -138,7 +134,7 @@ module RLTK
 							
 							tset = close_set(tset)
 							
-							id = @table.get_set_id(tset)
+							id = @table.get_state_id(tset)
 							
 							#Add Goto and Shift actions.
 							if ttype == :NONTERM
@@ -255,13 +251,13 @@ module RLTK
 				
 				def parse(tokens)
 					#Start out with one stack in state zero.
-					stacks = [[0]]
+					stacks = [ParseStack.new]
 					
 					tokens.each do |token|
 						new_stacks = []
 						
 						stacks.each do |stack|
-							actions = @table[stack.last].on?(token)
+							actions = @table[stack.state].on?([token.type, toke.value])
 							
 							if actions.length == 0
 								stacks.delete(stack)
@@ -290,14 +286,50 @@ module RLTK
 						
 						stacks = new_stacks
 					end
+					
+					#Check to see if any of the stacks are in an accept
+					#state.  If multiple stacks are in accept states throw
+					#an error.  Otherwise reutrn the result of the user
+					#actions.
+					stacks.inject(nil) do |result, stack|
+						if @table[stack.state].on?(:EOS)
+							if result
+								raise ParsingError, 'Multiple derivations possible.'
+							else
+								stack.output_stack
+							end
+						else
+							result
+						end
+					end
 				end
 			end
 		end
 		
 		class ParseStack
-			def initalize
-				@output_stack	= nil
-				@state_stack	= nil
+			attr_reader :output_stack
+			attr_reader :state_stack
+			
+			def initalize(other)
+				if other
+					@output_stack	= other.output_stack.copy
+					@state_stack	= other.state_stack.copy
+				else
+					@output_stack	= [ ]
+					@state_stack	= [0]
+				end
+			end
+			
+			def push_state(state)
+				@state_stack << state
+			end
+			
+			def pop_state(n = 1)
+				@state_stack.pop(n)
+			end
+			
+			def state
+				@state_stack.last
 			end
 		end
 		
@@ -356,9 +388,9 @@ module RLTK
 			def clause(expression, &action)
 				tokens = @lexer.lex(expression)
 				
-				#Remove EBNF tokens and replace them with new productions.
 				new_tokens = [Token.new(:DOT)]
 				
+				#Remove EBNF tokens and replace them with new productions.
 				tokens.each_index do |i|
 					ttype0 = tokens[i].type
 					
@@ -434,30 +466,30 @@ module RLTK
 			attr_reader :rows
 			
 			def initialize
-				@id_counter	= -1
-				@rows		= Array.new
+				@row_counter = -1
+				@rows = Array.new
 			end
 			
 			def [](index)
 				@rows[index]
 			end
 			
-			def add_set(set)
-				@rows << Row.new((@id_counter += 1), set)
+			def add_state(set)
+				@rows << Row.new(@rows.length, set)
 				
-				return @id_counter
+				return @rows.length - 1
 			end
 			
 			def drop_sets
 				@rows.each {|row| row.drop_set}
 			end
 			
-			def get_set_id(set)
-				id = nil
-				
-				@rows.each {|row| if row.set == set then id = row.id; break end}
-				
-				if id then id else self.add_set(set) end
+			def each
+				@rows.each {|r| yield r}
+			end
+			
+			def get_state_id(set)
+				if (id = @rows.index {|row| row.set == set}) then id else self.add_state(set) end
 			end
 			
 			class Row
