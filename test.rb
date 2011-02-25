@@ -16,5 +16,5 @@ class Tester < RLTK::Parser
 	rule(:b, 'ZERO') {}
 	rule(:b, 'ONE' ) {}
 	
-	finalize('tester.table')
+	finalize('tester-table.txt')
 end

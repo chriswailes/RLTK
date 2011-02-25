@@ -18,38 +18,30 @@ require 'lexers/ebnf'
 #######################
 
 module RLTK
-	class ParsingError < Exception; end
+	class ParserError < Exception; end
 	
 	class Parser
 		def Parser.inherited(klass)
 			klass.class_exec do
-				@rules = Hash.new {|h, k| h[k] = Array.new}
-				@proxy = RuleProxy.new(self)
+				@proxy		= RuleProxy.new(self)
+				@rules		= Hash.new {|h, k| h[k] = Array.new}
+				@start_symbol	= nil
+				@table		= nil
 				
 				#################
 				# Class Methods #
 				#################
 				
-				def self.close_set(set)
-					set.each do |rule|
-						if (next_token = rule.next_token) and next_token.type == :NONTERM
-							set.append(@rules[next_token.value])
-						end
-					end
-					
-					return set
-				end
-				
 				def self.explain(explain_file)
-					if @rules and @table
+					if @proxy and @table
 						File.open(explain_file, 'w') do |f|
 							f.puts("##############" + '#' * self.name.length)
 							f.puts("# Rules for #{self.name} #")
 							f.puts("##############" + '#' * self.name.length)
 							f.puts
 							
-							#Print the rules.
-							@rules.each_key do |sym|
+							# Print the rules.
+							@rules.keys.select {|k| k.is_a?(Symbol)}.each do |sym|
 								@rules[sym].each do |rule|
 									f.puts("\t#{rule.to_s}")
 								end
@@ -60,27 +52,27 @@ module RLTK
 							f.puts("Start symbol: #{@start_symbol}")
 							f.puts
 							
-							#Print the parse table.
+							# Print the parse table.
 							f.puts("###############")
 							f.puts("# Parse Table #")
 							f.puts("###############")
 							f.puts
 							
-							@table.each do |row|
-								f.puts("State #{row.id}:")
+							@table.each do |state|
+								f.puts("State #{state.id}:")
 								
-								max = row.set.rules.inject(0) do |max, item|
+								max = state.items.inject(0) do |max, item|
 									if item.symbol.to_s.length > max then item.symbol.to_s.length else max end
 								end
 								
-								row.set.each do |item|
+								state.each do |item|
 									f.puts("\t#{item.to_s(max, true)}")
 								end
 								
 								f.puts
 								f.puts("\t# ACTIONS #")
 								
-								row.actions.each do |token, actions|
+								state.actions.each do |token, actions|
 									sym = if token then token[1] else nil end
 									
 									actions.each do |action|
@@ -92,78 +84,79 @@ module RLTK
 							end
 						end
 					else
-						File.open(table_file, 'w') {|f| f.puts('Parser.dump called outside of finalize.')}
+						File.open(table_file, 'w') {|f| f.puts('Parser.explaine called outside of finalize.')}
 					end
 				end
 				
 				def self.finalize(explain_file = nil)
-					#Create our Transition Table
-					@table	= Table.new
+					# Create our Transition Table
+					@table = Table.new
 					
-					#pp @rules.values.flatten
+					# Add our starting state to the transition table.
+					start_rule	= Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol)])
+					start_state	= Table::State.new([start_rule])
 					
-					@actions	= @rules.values.flatten.inject([]) {|a, r| a[r.id] = r.action; a}
+					start_state.close(@rules)
 					
-					#Add our starting set to the transition table.
-					start_rule = Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol)])
-					start_set = self.close_set(Set.new([start_rule]))
-					@table.add_state(start_set)
+					@table << start_state
 					
-					#Build the rest of the transition table.
-					@table.each do |row|
-						#Transition Sets
-						tsets = Hash.new {|h,k| h[k] = Set.new}
+					# Build the rest of the transition table.
+					@table.each do |state|
+						#Transition states
+						tstates = Hash.new {|h,k| h[k] = Table::State.new}
 						
 						#Bin each item in this set into reachable
-						#transition sets.
-						row.set.each do |rule|
-							if (next_token = rule.next_token)
-								tsets[[next_token.type, next_token.value]] << rule.copy
+						#transition states.
+						state.each do |item|
+							if (next_token = item.next_token)
+								tstates[next_token.signature] << item.copy
 							end
 						end
 						
-						#For each transition set:
-						# 1) Get transition token
-						# 2) Advance dot
-						# 3) Close it
-						# 4) Get state id, and add transition
-						tsets.each do |ttoken, tset|
-							ttype, tsym = ttoken
+						# For each transition state:
+						#  1) Get transition token
+						#  2) Advance dot
+						#  3) Close it
+						#  4) Get state id, and add transition
+						tstates.each do |ttoken, tstate|
+							tstate.each {|item| item.advance}
 							
-							tset.rules.each {|rule| rule.advance}
+							tstate.close(@rules)
 							
-							tset = close_set(tset)
+							id = @table << tstate
 							
-							id = @table.get_state_id(tset)
-							
-							#Add Goto and Shift actions.
-							if ttype == :NONTERM
-								row.on(ttoken, Table::GoTo.new(id))
+							# Add Goto and Shift actions.
+							if ttoken[0] == :NONTERM
+								state.on(ttoken, Table::GoTo.new(id))
 							else
-								row.on(ttoken, Table::Shift.new(id))
+								state.on(ttoken, Table::Shift.new(id))
 							end
 						end
 						
-						#Find the Accept and Reduce actions for this set.
-						row.rules.each do |rule|
-							if rule.tokens[-1].type == :DOT
-								if rule.symbol == :'!start'
-									row.on([:TERM, :EOS], Table::Accept.new)
+						# Find the Accept and Reduce actions for this state.
+						state.each do |item|
+							if item.tokens[-1].type == :DOT
+								if item.symbol == :'!start'
+									state.on([:TERM, :EOS], Table::Accept.new)
 								else
-									row.on(nil, Table::Reduce.new(rule.id))
+									state.on(nil, Table::Reduce.new(item.id))
 								end
 							end
 						end
 					end
 					
-					#Print the table if requested.
+					# Print the table if requested.
 					self.explain(explain_file) if explain_file
 					
-					#Remove references to the RuleProxy and Item list.
-					@proxy = @rules = nil
+					# Remove references to the RuleProxy.
+					@proxy = nil
 					
-					#Drop the sets from the table.
-					@table.drop_sets
+					# Clean the resources we are keeping.
+					@table.clean
+					
+					pp @rules
+					
+					@rules.values.select {|o| o.is_a?(Rule)}.each {|rule| rule.clean}
 				end
 				
 				def self.get_question(token)
@@ -171,14 +164,14 @@ module RLTK
 					new_token		= Token.new(:NONTERM, new_symbol)
 					
 					if not @items.has_key?(new_token.value)
-						#Add the items for the following productions:
+						# Add the items for the following productions:
 						#
-						#token_question: | token
+						# token_question: | token
 						
-						#1st (empty) production.
+						# 1st (empty) production.
 						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT)]) { nil }
 						
-						#2nd production
+						# 2nd production
 						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token]) {|v| v[0]}
 					end
 					
@@ -190,14 +183,14 @@ module RLTK
 					new_token		= Token.new(:NONTERM, new_symbol)
 					
 					if not @items.has_key?(new_token.value)
-						#Add the items for the following productions:
+						# Add the items for the following productions:
 						#
-						#token_plus: token | token token_plus
+						# token_plus: token | token token_plus
 						
-						#1st production
+						# 1st production
 						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token]) {|v| [v[0]]}
 						
-						#2nd production
+						# 2nd production
 						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token, new_token]) {|v| [v[0]] + v[1]}
 					end
 					
@@ -209,14 +202,14 @@ module RLTK
 					new_token		= Token.new(:NONTERM, new_symbol)
 					
 					if not @items.has_key?(new_token.value)
-						#Add the items for the following productions:
+						# Add the items for the following productions:
 						#
-						#token_star: | token token_star
+						# token_star: | token token_star
 						
-						#1st (empty) production
+						# 1st (empty) production
 						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT)]) { [] }
 						
-						#2nd production
+						# 2nd production
 						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token, new_token]) {|v| [v[0]] + v[1]}
 					end
 					
@@ -224,20 +217,25 @@ module RLTK
 				end
 				
 				def self.rule(symbol, expression = nil, &action)
-					#Convert the 'symbol' to a Symbol if it isn't already.
+					# Convert the 'symbol' to a Symbol if it isn't already.
 					symbol = symbol.to_sym if not symbol.is_a?(Symbol)
 					
-					#Set the start symbol if this is the first production
-					#defined.
+					# Set the start symbol if this is the first production
+					# defined.
 					@start_symbol ||= symbol
 					
-					#Set the symbol in the RuleProxy.
+					# Set the symbol in the RuleProxy.
 					@proxy.symbol = symbol
 					
+					# Collect rules by symbol and by rule id.
 					if expression
-						@rules[symbol] << @proxy.clause(expression, &action)
+						@rules[symbol] << (rule = @proxy.clause(expression, &action))
+						
+						@rules[rule.id] = rule
 					else
-						@rules[symbol] += @proxy.wrapper(&action)
+						@rules[symbol] += (rules = @proxy.wrapper(&action))
+						
+						rules.each {|rule| @rules[rule.id] = rule}
 					end
 				end
 				
@@ -250,21 +248,19 @@ module RLTK
 				####################
 				
 				def parse(tokens)
-					#Start out with one stack in state zero.
+					# Start out with one stack in state zero.
 					stacks = [ParseStack.new]
 					
 					tokens.each do |token|
 						new_stacks = []
 						
 						stacks.each do |stack|
-							actions = @table[stack.state].on?([token.type, toke.value])
+							actions = @table[stack.state].on?(token.signature)
 							
 							if actions.length == 0
-								stacks.delete(stack)
-									
-								#Check to see if we removed the last stack.
+								# Check to see if we removed the last stack.
 								if stacks.length == 0
-									raise ParsingError, 'Out of actions.'
+									raise ParserError, 'Out of actions.'
 								end
 							else
 								actions.each do |action|
@@ -272,13 +268,20 @@ module RLTK
 									
 									case action.class
 										when Accept
-											
+											raise ParserError, 'Accept action encountered on token other then EOS'
+										
+										when GoTo
+											raise ParserError, 'GoTo action encountered when reading a token.'
 										
 										when Reduce
+											proc = @procs[action.id]
 											
+											raise ParserError, "No proc found for state #{action.id}" if not proc
+											
+											new_stack.output_stack << proc.call(*new_stack.pop(proc.arity))
 										
 										when Shift
-											new_stack << action.id
+											new_stack.push_state(action.id)
 									end
 								end
 							end
@@ -287,14 +290,14 @@ module RLTK
 						stacks = new_stacks
 					end
 					
-					#Check to see if any of the stacks are in an accept
-					#state.  If multiple stacks are in accept states throw
-					#an error.  Otherwise reutrn the result of the user
-					#actions.
+					# Check to see if any of the stacks are in an accept
+					# state.  If multiple stacks are in accept states throw
+					# an error.  Otherwise reutrn the result of the user
+					# actions.
 					stacks.inject(nil) do |result, stack|
 						if @table[stack.state].on?(:EOS)
 							if result
-								raise ParsingError, 'Multiple derivations possible.'
+								raise ParserError, 'Multiple derivations possible.'
 							else
 								stack.output_stack
 							end
@@ -307,25 +310,23 @@ module RLTK
 		end
 		
 		class ParseStack
-			attr_reader :output_stack
-			attr_reader :state_stack
-			
 			def initalize(other)
-				if other
-					@output_stack	= other.output_stack.copy
-					@state_stack	= other.state_stack.copy
-				else
-					@output_stack	= [ ]
-					@state_stack	= [0]
-				end
+				@output_stack	= [ ]
+				@state_stack	= [0]
+			end
+			
+			def push_output(o)
+				@output_stack << o
 			end
 			
 			def push_state(state)
 				@state_stack << state
 			end
 			
-			def pop_state(n = 1)
+			def pop(n = 1)
 				@state_stack.pop(n)
+				
+				@output_stack.pop(n)
 			end
 			
 			def state
@@ -359,6 +360,10 @@ module RLTK
 				end
 			end
 			
+			def clean
+				@dot_index = @tokens = nil
+			end
+			
 			def copy
 				Rule.new(@id, @symbol, @tokens.clone, &@action)
 			end
@@ -390,7 +395,7 @@ module RLTK
 				
 				new_tokens = [Token.new(:DOT)]
 				
-				#Remove EBNF tokens and replace them with new productions.
+				# Remove EBNF tokens and replace them with new productions.
 				tokens.each_index do |i|
 					ttype0 = tokens[i].type
 					
@@ -418,10 +423,10 @@ module RLTK
 					end
 				end
 				
-				#Add the item to the current list.
+				# Add the item to the current list.
 				@rules << (rule = Rule.new(self.next_id, @symbol, new_tokens, &action))
 				
-				#Return the item from this clause.
+				# Return the item from this clause.
 				return rule
 			end
 			
@@ -438,73 +443,74 @@ module RLTK
 			end
 		end
 		
-		class Set
-			attr_reader :rules
-			
-			def initialize(rules = [])
-				@rules = rules
-			end
-			
-			def ==(other)
-				self.rules == other.rules
-			end
-			
-			def <<(rule)
-				if not @rules.include?(rule) then @rules << rule end
-			end
-			
-			def append(new_rules)
-				new_rules.each {|rule| self << rule}
-			end
-			
-			def each
-				@rules.each {|r| yield r}
-			end
-		end
-		
 		class Table
 			attr_reader :rows
 			
 			def initialize
-				@row_counter = -1
-				@rows = Array.new
+				@states = Array.new
 			end
 			
 			def [](index)
-				@rows[index]
+				@states[index]
 			end
 			
-			def add_state(set)
-				@rows << Row.new(@rows.length, set)
-				
-				return @rows.length - 1
+			def add_state(state)
+				if (id = @states.index(state))
+					id
+				else
+					state.id = @states.length
+					
+					@states << state
+					
+					@states.length - 1
+				end
 			end
 			
-			def drop_sets
-				@rows.each {|row| row.drop_set}
+			alias :<< :add_state
+			
+			def clean
+				@states.each {|state| state.clean}
 			end
 			
 			def each
-				@rows.each {|r| yield r}
+				@states.each {|r| yield r}
 			end
 			
-			def get_state_id(set)
-				if (id = @rows.index {|row| row.set == set}) then id else self.add_state(set) end
-			end
-			
-			class Row
-				attr_reader :id
-				attr_reader :set
-				attr_reader :actions
+			class State
+				attr_accessor	:id
+				attr_reader	:items
+				attr_reader	:actions
 				
-				def initialize(id, set)
-					@id		= id
-					@set		= set
+				def initialize(items = [])
+					@id		= nil
+					@items	= items
 					@actions	= Hash.new {|h,k| h[k] = Array.new}
 				end
 				
-				def drop_set
-					@set = nil
+				def ==(other)
+					self.items == other.items
+				end
+				
+				def append(item)
+					if not @items.include?(item) then @items << item end
+				end
+				
+				alias :<< :append
+				
+				def clean
+					@items = nil
+				end
+				
+				def close(rules)
+					self.each do |item|
+						if (next_token = item.next_token) and next_token.type == :NONTERM
+							rules[next_token.value].each {|r| self << r}
+						end
+					end
+				end
+				
+				def each
+					@items.each {|item| yield item}
 				end
 				
 				def on(symbol, action)
@@ -513,10 +519,6 @@ module RLTK
 				
 				def on?(symbol)
 					@actions[nil] | @actions[symbol]
-				end
-				
-				def rules
-					@set.rules
 				end
 			end
 			
