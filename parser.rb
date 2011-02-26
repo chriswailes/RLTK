@@ -255,7 +255,7 @@ module RLTK
 						new_stacks = []
 						
 						stacks.each do |stack|
-							actions = @table[stack.state].on?(token.signature)
+							actions = @table[stack.state].on?(token.value)
 							
 							if actions.length == 0
 								# Check to see if we removed the last stack.
@@ -264,23 +264,32 @@ module RLTK
 								end
 							else
 								actions.each do |action|
-									new_stacks << (new_stack = stack.clone)
+									new_stacks << (nstack = stack.clone)
 									
 									case action.class
-										when Accept
+										when Table::Accept
 											raise ParserError, 'Accept action encountered on token other then EOS'
 										
-										when GoTo
+										when Table::GoTo
 											raise ParserError, 'GoTo action encountered when reading a token.'
 										
-										when Reduce
-											proc = @procs[action.id]
+										when Table::Reduce
+											# Get the rule associated with this reduction.
+											if not (rule = @rules[action.id])
+												raise ParserError, "No rule #{action.id} found."
+											end
 											
-											raise ParserError, "No proc found for state #{action.id}" if not proc
+											nstack.push_output(rule.action.call(*nstack.pop(rule.action.arity)))
 											
-											new_stack.output_stack << proc.call(*new_stack.pop(proc.arity))
+											gotos = @table[nstack.state].on?(rule.symbol).select {|a| a.is_a?(Table::GoTo)}
+											
+											if gotos.length == 1
+												nstack.push_state(gotos.first.id)
+											else
+												raise ParserError, 'Multiple GoTos encountered after a Reduce action.'
+											end
 										
-										when Shift
+										when Table::Shift
 											new_stack.push_state(action.id)
 									end
 								end
@@ -295,11 +304,11 @@ module RLTK
 					# an error.  Otherwise reutrn the result of the user
 					# actions.
 					stacks.inject(nil) do |result, stack|
-						if @table[stack.state].on?(:EOS)
+						if @table[stack.state].on?([:TERM, :EOS])
 							if result
 								raise ParserError, 'Multiple derivations possible.'
 							else
-								stack.output_stack
+								stack.output_stack.first
 							end
 						else
 							result
