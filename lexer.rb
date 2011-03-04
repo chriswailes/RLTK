@@ -127,7 +127,7 @@ module RLTK
 						end
 					end
 					
-					return @tokens
+					return @tokens << Token.new(:EOS)
 				end
 				
 				def lex_file(file_name)

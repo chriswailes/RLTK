@@ -7,9 +7,6 @@
 # Requires #
 ############
 
-# Standard Library
-require 'pp'
-
 # Ruby Language Toolkit
 require 'lexers/ebnf'
 
@@ -72,9 +69,7 @@ module RLTK
 								f.puts
 								f.puts("\t# ACTIONS #")
 								
-								state.actions.each do |token, actions|
-									sym = if token then token[1] else nil end
-									
+								state.actions.each do |sym, actions|
 									actions.each do |action|
 										f.puts("\tOn #{if sym then sym else 'any' end} #{action}")
 									end
@@ -84,7 +79,7 @@ module RLTK
 							end
 						end
 					else
-						File.open(table_file, 'w') {|f| f.puts('Parser.explaine called outside of finalize.')}
+						File.open(table_file, 'w') {|f| f.puts('Parser.explain called outside of finalize.')}
 					end
 				end
 				
@@ -127,9 +122,9 @@ module RLTK
 							
 							# Add Goto and Shift actions.
 							if ttoken[0] == :NONTERM
-								state.on(ttoken, Table::GoTo.new(id))
+								state.on(ttoken[1], Table::GoTo.new(id))
 							else
-								state.on(ttoken, Table::Shift.new(id))
+								state.on(ttoken[1], Table::Shift.new(id))
 							end
 						end
 						
@@ -137,7 +132,7 @@ module RLTK
 						state.each do |item|
 							if item.tokens[-1].type == :DOT
 								if item.symbol == :'!start'
-									state.on([:TERM, :EOS], Table::Accept.new)
+									state.on(:EOS, Table::Accept.new)
 								else
 									state.on(nil, Table::Reduce.new(item.id))
 								end
@@ -154,63 +149,67 @@ module RLTK
 					# Clean the resources we are keeping.
 					@table.clean
 					
-					pp @rules
-					
 					@rules.values.select {|o| o.is_a?(Rule)}.each {|rule| rule.clean}
 				end
 				
 				def self.get_question(token)
-					new_symbol	= ('!' + token.value.to_s + '_question').to_sym
+					new_symbol	= ('!' + token.value.to_s.downcase + '_question').to_sym
 					new_token		= Token.new(:NONTERM, new_symbol)
 					
-					if not @items.has_key?(new_token.value)
+					if not @rules.has_key?(new_token.value)
 						# Add the items for the following productions:
 						#
 						# token_question: | token
 						
 						# 1st (empty) production.
-						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT)]) { nil }
+						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT)]) {|| nil }
+						@rules[new_symbol] << (@rules[r.id] = r)
 						
 						# 2nd production
-						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token]) {|v| v[0]}
+						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token]) {|o| o}
+						@rules[new_symbol] << (@rules[r.id] = r)
 					end
 					
 					return new_token
 				end
 				
 				def self.get_plus(token)
-					new_symbol	= ('!' + token.value.to_s + '_plus').to_sym
+					new_symbol	= ('!' + token.value.to_s.downcase + '_plus').to_sym
 					new_token		= Token.new(:NONTERM, new_symbol)
 					
-					if not @items.has_key?(new_token.value)
+					if not @rules.has_key?(new_token.value)
 						# Add the items for the following productions:
 						#
 						# token_plus: token | token token_plus
 						
 						# 1st production
-						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token]) {|v| [v[0]]}
+						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token]) {|t| [t]}
+						@rules[new_symbol] << (@rules[r.id] = r)
 						
 						# 2nd production
-						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token, new_token]) {|v| [v[0]] + v[1]}
+						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token, new_token]) {|t, tp| [t] + tp}
+						@rules[new_symbol] << (@rules[r.id] = r)
 					end
 					
 					return new_token
 				end
 				
 				def self.get_star(token)
-					new_symbol	= ('!' + token.value.to_s + '_star').to_sym
+					new_symbol	= ('!' + token.value.to_s.downcase + '_star').to_sym
 					new_token		= Token.new(:NONTERM, new_symbol)
 					
-					if not @items.has_key?(new_token.value)
+					if not @rules.has_key?(new_token.value)
 						# Add the items for the following productions:
 						#
 						# token_star: | token token_star
 						
 						# 1st (empty) production
-						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT)]) { [] }
+						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT)]) {|| [] }
+						@rules[new_symbol] << (@rules[r.id] = r)
 						
 						# 2nd production
-						@items[new_symbol] << Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token, new_token]) {|v| [v[0]] + v[1]}
+						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token, new_token]) {|t, ts| [t] + ts}
+						@rules[new_symbol] << (@rules[r.id] = r)
 					end
 					
 					return new_token
@@ -239,8 +238,16 @@ module RLTK
 					end
 				end
 				
+				def self.rules
+					@rules
+				end
+				
 				def self.start(symbol)
 					@start_symbol = symbol
+				end
+				
+				def self.table
+					@table
 				end
 				
 				####################
@@ -251,77 +258,85 @@ module RLTK
 					# Start out with one stack in state zero.
 					stacks = [ParseStack.new]
 					
-					tokens.each do |token|
+					while tokens.length
+						token = tokens.first
+						
 						new_stacks = []
 						
+						if stacks.length == 0
+							raise ParserError, 'No more actions available.'
+						end
+						
+						puts
+						puts
+						pp token
+						
 						stacks.each do |stack|
-							actions = @table[stack.state].on?(token.value)
-							
-							if actions.length == 0
-								# Check to see if we removed the last stack.
-								if stacks.length == 0
-									raise ParserError, 'Out of actions.'
-								end
-							else
-								actions.each do |action|
-									new_stacks << (nstack = stack.clone)
-									
-									case action.class
-										when Table::Accept
-											raise ParserError, 'Accept action encountered on token other then EOS'
-										
-										when Table::GoTo
-											raise ParserError, 'GoTo action encountered when reading a token.'
-										
-										when Table::Reduce
-											# Get the rule associated with this reduction.
-											if not (rule = @rules[action.id])
-												raise ParserError, "No rule #{action.id} found."
-											end
-											
-											nstack.push_output(rule.action.call(*nstack.pop(rule.action.arity)))
-											
-											gotos = @table[nstack.state].on?(rule.symbol).select {|a| a.is_a?(Table::GoTo)}
-											
-											if gotos.length == 1
-												nstack.push_state(gotos.first.id)
-											else
-												raise ParserError, 'Multiple GoTos encountered after a Reduce action.'
-											end
-										
-										when Table::Shift
-											new_stack.push_state(action.id)
+							self.class.table[stack.state].on?(token.type).each do |action|
+								new_stacks << (nstack = stack.copy)
+								
+								puts
+								pp nstack
+								pp action
+								
+								if action.class == Table::Accept
+									if nstack.output_stack.length == 1
+										return nstack.output_stack.last
+									else
+										raise ParserError, "The parsing stack should have 1 element on the output stack, not #{nstack.output_stack.length}.  Something is wrong internally."
 									end
+								
+								elsif action.class == Table::GoTo
+									raise ParserError, 'GoTo action encountered when reading a token.'
+								
+								elsif action.class == Table::Reduce
+									# Get the rule associated with this reduction.
+									if not (rule = self.class.rules[action.id])
+										raise ParserError, "No rule #{action.id} found."
+									end
+									
+									nstack.push_output(rule.action.call(*nstack.pop(rule.action.arity)))
+									
+									if (goto = self.class.table[nstack.state].on?(rule.symbol))
+										nstack.push_state(goto.id)
+									else
+										raise ParserError, "No GoTo action found in state #{nstack.state} after reducing by rule #{action.id}"
+									end
+									
+								elsif action.class == Table::Shift
+									tokens.shift
+									nstack.push(action.id, token.value)
 								end
 							end
 						end
 						
 						stacks = new_stacks
 					end
-					
-					# Check to see if any of the stacks are in an accept
-					# state.  If multiple stacks are in accept states throw
-					# an error.  Otherwise reutrn the result of the user
-					# actions.
-					stacks.inject(nil) do |result, stack|
-						if @table[stack.state].on?([:TERM, :EOS])
-							if result
-								raise ParserError, 'Multiple derivations possible.'
-							else
-								stack.output_stack.first
-							end
-						else
-							result
-						end
-					end
 				end
 			end
 		end
 		
 		class ParseStack
-			def initalize(other)
-				@output_stack	= [ ]
-				@state_stack	= [0]
+			attr_reader :output_stack
+			attr_reader :state_stack
+			
+			def initialize(other = nil)
+				if other
+					@output_stack	= Array.new(other.output_stack)
+					@state_stack	= Array.new(other.state_stack)
+				else
+					@output_stack	= [ ]
+					@state_stack	= [0]
+				end
+			end
+			
+			def copy
+				ParseStack.new(self)
+			end
+			
+			def push(state, o)
+				@state_stack << state
+				@output_stack << o
 			end
 			
 			def push_output(o)
@@ -527,7 +542,18 @@ module RLTK
 				end
 				
 				def on?(symbol)
-					@actions[nil] | @actions[symbol]
+					# If we are asking about a non-terminal we are looking
+					# for a GoTo action, and should only return a single
+					# action.
+					if symbol.to_s == symbol.to_s.downcase
+						if @actions[symbol].length > 1
+							raise ParserError, "Multiple GoTo actions present for non-terminal symbol #{symbol} in state #{@id}."
+						else
+							@actions[symbol].first
+						end
+					else
+						@actions[nil] | @actions[symbol]
+					end
 				end
 			end
 			
