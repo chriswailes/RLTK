@@ -7,7 +7,7 @@ require 'parser'
 
 #~require 'lexers/calculator'
 #~require 'parsers/calculator'
-
+#~
 #~lexer = RLTK::Lexers::Calc.new
 #~parser = RLTK::Parsers::Calc.new
 
@@ -20,7 +20,7 @@ end
 
 class ABParser < RLTK::Parser
 	
-	rule(:a, "A? B") {|a, b| "Accepted!" }
+	rule(:a, "A+ B") {|a, b| "Accepted!" }
 	
 	finalize('tester.table')
 end

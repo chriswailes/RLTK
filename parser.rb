@@ -256,14 +256,11 @@ module RLTK
 				
 				def parse(tokens)
 					# Start out with one stack in state zero.
-					stacks = [ParseStack.new]
+					processing	= [ParseStack.new]
+					moving_on		= []
 					
-					while tokens.length
-						token = tokens.first
-						
-						new_stacks = []
-						
-						if stacks.length == 0
+					tokens.each do |token|
+						if processing.length == 0
 							raise ParserError, 'No more actions available.'
 						end
 						
@@ -271,7 +268,11 @@ module RLTK
 						puts
 						pp token
 						
-						stacks.each do |stack|
+						until processing.empty?
+							stack = processing.shift
+							
+							new_stacks = []
+							
 							self.class.table[stack.state].on?(token.type).each do |action|
 								new_stacks << (nstack = stack.copy)
 								
@@ -280,11 +281,7 @@ module RLTK
 								pp action
 								
 								if action.class == Table::Accept
-									if nstack.output_stack.length == 1
-										return nstack.output_stack.last
-									else
-										raise ParserError, "The parsing stack should have 1 element on the output stack, not #{nstack.output_stack.length}.  Something is wrong internally."
-									end
+									return nstack.result
 								
 								elsif action.class == Table::GoTo
 									raise ParserError, 'GoTo action encountered when reading a token.'
@@ -304,34 +301,29 @@ module RLTK
 									end
 									
 								elsif action.class == Table::Shift
-									tokens.shift
 									nstack.push(action.id, token.value)
+									
+									moving_on << new_stacks.delete(nstack)
 								end
 							end
+							
+							processing += new_stacks
 						end
 						
-						stacks = new_stacks
+						processing = moving_on
 					end
 				end
 			end
 		end
 		
 		class ParseStack
-			attr_reader :output_stack
-			attr_reader :state_stack
-			
-			def initialize(other = nil)
-				if other
-					@output_stack	= Array.new(other.output_stack)
-					@state_stack	= Array.new(other.state_stack)
-				else
-					@output_stack	= [ ]
-					@state_stack	= [0]
-				end
+			def initialize(ostack = [], sstack = [0])
+				@output_stack	= ostack
+				@state_stack	= sstack
 			end
 			
 			def copy
-				ParseStack.new(self)
+				ParseStack.new(Array.new(@output_stack), Array.new(@state_stack))
 			end
 			
 			def push(state, o)
@@ -351,6 +343,14 @@ module RLTK
 				@state_stack.pop(n)
 				
 				@output_stack.pop(n)
+			end
+			
+			def result
+				if @output_stack.length == 1
+					return @output_stack.last
+				else
+					raise ParserError, "The parsing stack should have 1 element on the output stack, not #{@utput_stack.length}.  Something is wrong internally."
+				end
 			end
 			
 			def state
