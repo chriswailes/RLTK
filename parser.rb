@@ -15,7 +15,8 @@ require 'lexers/ebnf'
 #######################
 
 module RLTK
-	class ParserError < Exception; end
+	class ParsingError < Exception; end
+	class InternalParserError < Exception; end
 	
 	class Parser
 		def Parser.inherited(klass)
@@ -40,7 +41,7 @@ module RLTK
 							# Print the rules.
 							@rules.keys.select {|k| k.is_a?(Symbol)}.each do |sym|
 								@rules[sym].each do |rule|
-									f.puts("\t#{rule.to_s}")
+									f.puts("\tRule #{rule.id} #{rule.to_s}")
 								end
 								
 								f.puts
@@ -79,7 +80,7 @@ module RLTK
 							end
 						end
 					else
-						File.open(table_file, 'w') {|f| f.puts('Parser.explain called outside of finalize.')}
+						File.open(explain_file, 'w') {|f| f.puts('Parser.explain called outside of finalize.')}
 					end
 				end
 				
@@ -254,19 +255,21 @@ module RLTK
 				# Instance Methods #
 				####################
 				
-				def parse(tokens)
+				def parse(tokens, verbose = false)
+					v = if verbose then (verbose.class == String) ? File.open(verbose, 'a') : $stdout else nil end
+					
 					# Start out with one stack in state zero.
 					processing	= [ParseStack.new]
 					moving_on		= []
 					
 					tokens.each do |token|
 						if processing.length == 0
-							raise ParserError, 'No more actions available.'
+							raise ParsingError, 'String not in language.'
 						end
 						
-						puts
-						puts
-						pp token
+						if verbose
+							v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}")
+						end
 						
 						until processing.empty?
 							stack = processing.shift
@@ -276,20 +279,22 @@ module RLTK
 							self.class.table[stack.state].on?(token.type).each do |action|
 								new_stacks << (nstack = stack.copy)
 								
-								puts
-								pp nstack
-								pp action
+								if verbose
+									v.puts
+									v.puts("Current state stack: #{nstack.state_stack.inspect}")
+									v.puts("Action taken: #{action.to_s}")
+								end
 								
 								if action.class == Table::Accept
 									return nstack.result
 								
 								elsif action.class == Table::GoTo
-									raise ParserError, 'GoTo action encountered when reading a token.'
+									raise InternalParserError, 'GoTo action encountered when reading a token.'
 								
 								elsif action.class == Table::Reduce
 									# Get the rule associated with this reduction.
 									if not (rule = self.class.rules[action.id])
-										raise ParserError, "No rule #{action.id} found."
+										raise InternalParserError, "No rule #{action.id} found."
 									end
 									
 									nstack.push_output(rule.action.call(*nstack.pop(rule.action.arity)))
@@ -297,7 +302,7 @@ module RLTK
 									if (goto = self.class.table[nstack.state].on?(rule.symbol))
 										nstack.push_state(goto.id)
 									else
-										raise ParserError, "No GoTo action found in state #{nstack.state} after reducing by rule #{action.id}"
+										raise InternalParserError, "No GoTo action found in state #{nstack.state} after reducing by rule #{action.id}"
 									end
 									
 								elsif action.class == Table::Shift
@@ -310,6 +315,8 @@ module RLTK
 							processing += new_stacks
 						end
 						
+						if verbose then v.puts("\n\n") end
+						
 						processing = moving_on
 					end
 				end
@@ -317,6 +324,8 @@ module RLTK
 		end
 		
 		class ParseStack
+			attr_reader :state_stack
+			
 			def initialize(ostack = [], sstack = [0])
 				@output_stack	= ostack
 				@state_stack	= sstack
@@ -349,7 +358,7 @@ module RLTK
 				if @output_stack.length == 1
 					return @output_stack.last
 				else
-					raise ParserError, "The parsing stack should have 1 element on the output stack, not #{@utput_stack.length}.  Something is wrong internally."
+					raise InternalParserError, "The parsing stack should have 1 element on the output stack, not #{@utput_stack.length}."
 				end
 			end
 			
@@ -547,7 +556,7 @@ module RLTK
 					# action.
 					if symbol.to_s == symbol.to_s.downcase
 						if @actions[symbol].length > 1
-							raise ParserError, "Multiple GoTo actions present for non-terminal symbol #{symbol} in state #{@id}."
+							raise InternalParserError, "Multiple GoTo actions present for non-terminal symbol #{symbol} in state #{@id}."
 						else
 							@actions[symbol].first
 						end
@@ -563,16 +572,31 @@ module RLTK
 				def initialize(id = nil)
 					@id = id
 				end
-				
+			end
+			
+			class Accept < Action
 				def to_s
-					"#{self.class.name.split('::').last}" + if @id then " #{@id}" else '' end
+					"Accept"
 				end
 			end
 			
-			class Accept	< Action; end
-			class GoTo	< Action; end
-			class Reduce	< Action; end
-			class Shift	< Action; end
+			class GoTo < Action
+				def to_s
+					"GoTo #{self.id}"
+				end
+			end
+			
+			class Reduce < Action
+				def to_s
+					"Reduce by Rule #{self.id}"
+				end
+			end
+			
+			class Shift < Action
+				def to_s
+					"Shift to State #{self.id}"
+				end
+			end
 		end
 	end
 end

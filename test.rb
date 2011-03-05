@@ -20,7 +20,7 @@ end
 
 class ABParser < RLTK::Parser
 	
-	rule(:a, "A+ B") {|a, b| "Accepted!" }
+	rule(:a, "A+ B") {|a, b| "Accepted with #{a.length} A(s)" }
 	
 	finalize('tester.table')
 end
@@ -28,4 +28,4 @@ end
 lexer = ABLexer.new
 parser = ABParser.new
 
-pp parser.parse lexer.lex(ARGV[0])
+pp parser.parse(lexer.lex(ARGV[0]), if ARGV[1] then (ARGV[1] == 'true') ? true : ARGV[1] end)

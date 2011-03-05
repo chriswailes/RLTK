@@ -39,7 +39,9 @@ module RLTK
 		end
 		
 		def children=(children)
-			raise(NotImplementedError.new(self, 'children='))
+			self.set_children(children)
+			
+			children.each { |c| c.parent = self }
 		end
 		
 		def delete(key)
@@ -60,12 +62,24 @@ module RLTK
 			@parent	= nil
 		end
 		
+		def inspect
+			raise(NotImplementedError.new(self, 'inspect'))
+		end
+		
 		def map
 			self.children = self.children.map { |c| yield c }
 		end
 		
 		def root
 			if @parent then @parent.root else self end
+		end
+		
+		def set_children(children)
+			raise(NotImplementedError.new(self, 'set_children'))
+		end
+		
+		def to_src
+			raise(NotImplementedError.new(self, 'to_src'))
 		end
 	end
 end
