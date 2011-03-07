@@ -1,0 +1,8 @@
+Operator priority and associativity.
+Identify Shift/Reduce and Reduce/Reduce conflicts in explain.
+Input checking.  Upercase/lowercase for :TERM and :NONTERM.  Proc arity.
+Parsing errors that can be caught by the user's code.
+Use LALR(1) lookahead sets to optimize parsing.
+Optimize the parsing algorithm (remove unecessary copy operations and branching).
+Saving and loading the parse table.
+Implement some unit testing.

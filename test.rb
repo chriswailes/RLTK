@@ -1,7 +1,5 @@
 #!/usr/bin/ruby
 
-require 'pp'
-
 require 'lexer'
 require 'parser'
 
@@ -28,4 +26,4 @@ end
 lexer = ABLexer.new
 parser = ABParser.new
 
-pp parser.parse(lexer.lex(ARGV[0]), if ARGV[1] then (ARGV[1] == 'true') ? true : ARGV[1] end)
+puts parser.parse(lexer.lex(ARGV[0]), if ARGV[1] then (ARGV[1] == 'true') ? true : ARGV[1] end)

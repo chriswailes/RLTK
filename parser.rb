@@ -21,6 +21,7 @@ module RLTK
 	class Parser
 		def Parser.inherited(klass)
 			klass.class_exec do
+				@precs		= {:'!left' => 0, :'!right' => 0, :'!non' => 0}
 				@proxy		= RuleProxy.new(self)
 				@rules		= Hash.new {|h, k| h[k] = Array.new}
 				@start_symbol	= nil
@@ -216,7 +217,41 @@ module RLTK
 					return new_token
 				end
 				
-				def self.rule(symbol, expression = nil, &action)
+				def self.left(*symbols)
+					symbols.each do |s|
+						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
+							@precs[s] = [:left, @precs[:'!left'] += 1]
+						else
+							raise InternalParserError, 'Incorrect token specification given to the left directive.'
+						end
+					end
+				end
+				
+				def self.nonassoc(*symbols)
+					symbols.each do |s|
+						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
+							@precs[s] = [:non, @precs[:'!non'] += 1]
+						else
+							raise InternalParserError, 'Incorrect token specification given to the nonassoc directive.'
+						end
+					end
+				end
+				
+				def self.precs
+					@precs
+				end
+				
+				def self.right(*symbols)
+					symbols.each do |s|
+						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
+							@precs[s] = [:right, @precs[:'!right'] += 1]
+						else
+							raise InternalParserError, 'Incorrect token specification given to the right directive.'
+						end
+					end
+				end
+				
+				def self.rule(symbol, expression = nil, precedence = nil, &action)
 					# Convert the 'symbol' to a Symbol if it isn't already.
 					symbol = symbol.to_sym if not symbol.is_a?(Symbol)
 					
@@ -229,7 +264,7 @@ module RLTK
 					
 					# Collect rules by symbol and by rule id.
 					if expression
-						@rules[symbol] << (rule = @proxy.clause(expression, &action))
+						@rules[symbol] << (rule = @proxy.clause(expression, precedence, &action))
 						
 						@rules[rule.id] = rule
 					else
@@ -262,7 +297,13 @@ module RLTK
 					processing	= [ParseStack.new]
 					moving_on		= []
 					
+					# Iterate over the tokens.  We don't procede to the
+					# next token until every stack is done with the
+					# current one.
 					tokens.each do |token|
+						
+						# If we don't have any active stacks the string
+						# isn't in the language.
 						if processing.length == 0
 							raise ParsingError, 'String not in language.'
 						end
@@ -271,12 +312,20 @@ module RLTK
 							v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}")
 						end
 						
+						# Iterate over the stacks until each one is done.
 						until processing.empty?
 							stack = processing.shift
 							
 							new_stacks = []
 							
-							self.class.table[stack.state].on?(token.type).each do |action|
+							# Get the available actions for this stack.
+							actions = self.class.table[stack.state].on?(token.type)
+							
+							# Filter the actions based on precedence and
+							# associativity.
+							
+							
+							actions.each do |action|
 								new_stacks << (nstack = stack.copy)
 								
 								if verbose
@@ -373,11 +422,16 @@ module RLTK
 			attr_reader :tokens
 			attr_reader :action
 			
-			def initialize(id, symbol, tokens, &action)
+			def initialize(id, symbol, tokens, precedence = nil, &action)
 				@id		= id
 				@symbol	= symbol
 				@tokens	= tokens
+				@prec	= precedence
 				@action	= action || Proc.new {}
+				
+				if not @prec.is_a?(Symbol)
+					raise InternalParserError, 'Non-Symbol object used to specify precedence.'
+				end
 				
 				@dot_index = @tokens.index {|t| t.type == :DOT}
 			end
@@ -423,7 +477,7 @@ module RLTK
 				@symbol = nil
 			end
 			
-			def clause(expression, &action)
+			def clause(expression, precedence = nil, &action)
 				tokens = @lexer.lex(expression)
 				
 				new_tokens = [Token.new(:DOT)]
@@ -456,8 +510,19 @@ module RLTK
 					end
 				end
 				
+				# If no precedence is specified use the precedence of the
+				# last terminal in the production.
+				if not precedence and new_tokens.length > 1
+					new_tokens.reverse_each do |t|
+						if t.type == :TERM
+							precedence = t.value
+							break
+						end
+					end
+				end
+				
 				# Add the item to the current list.
-				@rules << (rule = Rule.new(self.next_id, @symbol, new_tokens, &action))
+				@rules << (rule = Rule.new(self.next_id, @symbol, new_tokens, precedence, &action))
 				
 				# Return the item from this clause.
 				return rule

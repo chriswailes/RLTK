@@ -58,8 +58,12 @@ module RLTK
 		end
 		
 		def initialize
-			@notes	= Hash.new()
-			@parent	= nil
+			if self.class == RLTK::Node
+				raise Exception, 'Attempting to instantiate the RLTK::Node class.'
+			else
+				@notes	= Hash.new()
+				@parent	= nil
+			end
 		end
 		
 		def inspect
