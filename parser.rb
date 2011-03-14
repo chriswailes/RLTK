@@ -7,6 +7,8 @@
 # Requires #
 ############
 
+require 'pp'
+
 # Ruby Language Toolkit
 require 'lexers/ebnf'
 
@@ -77,7 +79,30 @@ module RLTK
 									end
 								end
 								
+								conflict = false
+								
 								f.puts
+								f.puts("\t# CONFLICTS #")
+								
+								state.actions.keys.each do |sym|
+									if sym.to_s == sym.to_s.upcase
+									
+										sandrs = state.on?(sym).select {|a| a.is_a?(Table::Shift) or a.is_a?(Table::Reduce)}
+										
+										if sandrs.length > 1
+											conflict = true
+											
+											f.puts("\tOn #{if sym then sym else 'any' end}")
+											
+											sandrs.each do |a|
+												f.puts("\t\t#{a}")
+											end
+											f.puts
+										end
+									end
+								end
+								
+								f.puts("\tNone\n\n") if not conflict
 							end
 						end
 					else
@@ -96,6 +121,14 @@ module RLTK
 					start_state.close(@rules)
 					
 					@table << start_state
+					
+					# Translate the precedence of rules from tokens to
+					# (associativity, precedence) pairs.
+					@rules.each_key do |key|
+						if key.is_a?(Integer)
+							@rules[key].prec = @precs[@rules[key].prec]
+						end
+					end
 					
 					# Build the rest of the transition table.
 					@table.each do |state|
@@ -323,7 +356,25 @@ module RLTK
 							
 							# Filter the actions based on precedence and
 							# associativity.
-							
+							if self.class.precs[token.type] and actions.inject(true) {|m, a| if a.is_a?(Table::Reduce) then m and self.class.rules[a.id].prec else m end}
+								max_prec = 0
+								selected_action = nil
+								
+								actions.each do |a|
+									assoc, prec = a.is_a?(Table::Shift) ? self.class.precs[token.type] : self.class.rules[a.id].prec
+									
+									if prec > max_prec or (prec == max_prec and assoc == (a.is_a?(Table::Shift) ? :right : :left))
+										max_prec			= prec
+										selected_action	= a
+										
+									elsif prec == max_prec and assoc == :nonassoc
+										raise ParsingError, "Nonassociative token found during conflict resolution."
+										
+									end
+								end
+								
+								actions = [selected_action]
+							end
 							
 							actions.each do |action|
 								new_stacks << (nstack = stack.copy)
@@ -422,6 +473,8 @@ module RLTK
 			attr_reader :tokens
 			attr_reader :action
 			
+			attr_accessor :prec
+			
 			def initialize(id, symbol, tokens, precedence = nil, &action)
 				@id		= id
 				@symbol	= symbol
@@ -429,7 +482,7 @@ module RLTK
 				@prec	= precedence
 				@action	= action || Proc.new {}
 				
-				if not @prec.is_a?(Symbol)
+				if @prec and not @prec.is_a?(Symbol)
 					raise InternalParserError, 'Non-Symbol object used to specify precedence.'
 				end
 				
@@ -619,7 +672,7 @@ module RLTK
 					# If we are asking about a non-terminal we are looking
 					# for a GoTo action, and should only return a single
 					# action.
-					if symbol.to_s == symbol.to_s.downcase
+					if symbol and symbol.to_s == symbol.to_s.downcase
 						if @actions[symbol].length > 1
 							raise InternalParserError, "Multiple GoTo actions present for non-terminal symbol #{symbol} in state #{@id}."
 						else

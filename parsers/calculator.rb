@@ -17,6 +17,10 @@ require File.join(File.dirname(__FILE__), '..', 'parser')
 module RLTK
 	module Parsers
 		class Calc < Parser
+			
+			left :PLS, :SUB
+			right :MUL, :DIV
+			
 			rule(:e) do
 				clause("NUM") {|n| n}
 				
