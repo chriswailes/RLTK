@@ -18,6 +18,7 @@ require 'lexers/ebnf'
 
 module RLTK
 	class ParsingError < Exception; end
+	class ParserConstructionError < Exception; end
 	class InternalParserError < Exception; end
 	
 	class Parser
@@ -28,6 +29,7 @@ module RLTK
 				@rules		= Hash.new {|h, k| h[k] = Array.new}
 				@start_symbol	= nil
 				@table		= nil
+				@tokens		= nil
 				
 				#################
 				# Class Methods #
@@ -111,8 +113,11 @@ module RLTK
 				end
 				
 				def self.finalize(explain_file = nil)
-					# Create our Transition Table
+					# Create our Transition Table.
 					@table = Table.new
+					
+					# Grab the captured tokens from the proxy.
+					@tokens = @proxy.tokens
 					
 					# Add our starting state to the transition table.
 					start_rule	= Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol)])
@@ -183,6 +188,9 @@ module RLTK
 					
 					# Clean the resources we are keeping.
 					@table.clean
+					
+					# Check the table.
+					@table.check
 					
 					@rules.values.select {|o| o.is_a?(Rule)}.each {|rule| rule.clean}
 				end
@@ -319,6 +327,10 @@ module RLTK
 					@table
 				end
 				
+				def self.tokens
+					@tokens
+				end
+				
 				####################
 				# Instance Methods #
 				####################
@@ -334,6 +346,12 @@ module RLTK
 					# next token until every stack is done with the
 					# current one.
 					tokens.each do |token|
+					
+						# Check to make sure this token as seen in the
+						# grammar definition.
+						if not self.class.tokens[token.type]
+							raise ParsingError, 'Unexpected token.  Token not present in grammar definition.'
+						end
 						
 						# If we don't have any active stacks the string
 						# isn't in the language.
@@ -483,7 +501,7 @@ module RLTK
 				@action	= action || Proc.new {}
 				
 				if @prec and not @prec.is_a?(Symbol)
-					raise InternalParserError, 'Non-Symbol object used to specify precedence.'
+					raise ParserConstructionError, 'Non-Symbol object used to specify precedence.'
 				end
 				
 				@dot_index = @tokens.index {|t| t.type == :DOT}
@@ -518,6 +536,7 @@ module RLTK
 		end
 		
 		class RuleProxy
+			attr_reader :tokens
 			attr_writer :symbol
 			
 			def initialize(parser)
@@ -528,6 +547,8 @@ module RLTK
 				
 				@rule_counter = 0
 				@symbol = nil
+				
+				@tokens = Hash.new(false)
 			end
 			
 			def clause(expression, precedence = nil, &action)
@@ -540,6 +561,12 @@ module RLTK
 					ttype0 = tokens[i].type
 					
 					if ttype0 == :TERM or ttype0 == :NONTERM
+						
+						# Add this token to the @tokens hash.
+						if ttype0 == :TERM
+							@tokens[tokens[i].value] = true
+						end
+						
 						if i + 1 < tokens.length
 							ttype1 = tokens[i + 1].type
 							
@@ -561,6 +588,13 @@ module RLTK
 							new_tokens << tokens[i]
 						end
 					end
+				end
+				
+				# Check to make sure the action's arity matches the number
+				# of tokens in the clause.
+				if action.arity != new_tokens.length
+					raise ParserConstructionError, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
+						'terminals and non-terminals in the clause.'
 				end
 				
 				# If no precedence is specified use the precedence of the
@@ -618,6 +652,10 @@ module RLTK
 			end
 			
 			alias :<< :add_state
+			
+			def check
+				
+			end
 			
 			def clean
 				@states.each {|state| state.clean}

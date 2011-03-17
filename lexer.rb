@@ -31,11 +31,14 @@ module RLTK
 		end
 	end
 	
+	class LexerConstructionError < Exception; end
+	
 	class Lexer
 		attr_accessor :start_state
 		
 		def Lexer.inherited(klass)
 			klass.class_exec do
+				@match_type	= :longest
 				@rules		= Hash.new {|h,k| h[k] = Array.new}
 				@start_state	= :default
 				
@@ -43,9 +46,21 @@ module RLTK
 				# Class Methods #
 				#################
 				
+				def self.match(type)
+					if type.is_a?(Symbol) and (type == :longest or type == :first)
+						@match_type = type
+					else
+						raise LexerConstructionError, 'Match type must be :first or :longest.'
+					end
+				end
+				
+				def self.match_type
+					@match_type
+				end
+				
 				def self.rule(pattern, state = :default, flags = [], &action)
-					#If no action is given we will set it to an empty
-					#action.
+					# If no action is given we will set it to an empty
+					# action.
 					action ||= Proc.new() {}
 					
 					r = Rule.new(pattern, action, state, flags)
@@ -53,11 +68,11 @@ module RLTK
 					if state == :ALL then @rules.each_key { |k| @rules[k] << r } else @rules[state] << r end
 				end
 				
-				def self.rules()
+				def self.rules
 					@rules
 				end
 				
-				def self.start_state()
+				def self.start_state
 					@start_state
 				end
 				
@@ -70,33 +85,38 @@ module RLTK
 				####################
 				
 				def lex(string)
-					#Set up the environment for this lexing pass.
-					env = Environment.new(self.class.start_state())
+					# Set up the environment for this lexing pass.
+					env = Environment.new(self.class.start_state)
 					
-					#Offset from start of stream.
+					# Offset from start of stream.
 					stream_offset = 0
 				
-					#Offset from the start of the line.
+					# Offset from the start of the line.
 					line_offset = 0
 					line_number = 1
 					
-					#Empty token list.
-					@tokens = Array.new()
+					# Empty token list.
+					@tokens = Array.new
 					
-					#The scanner.
+					# The scanner.
 					scanner = StringScanner.new(string)
 					
-					#Start scanning the input string.
+					# Start scanning the input string.
 					until scanner.eos?
 						match = nil
 						
-						#All rules for the currrent state need to be scanned so
-						#that we find the longest match possible.
-						self.class.rules()[env.state()].each do |rule|
+						# If the match_type is set to :longest all of the
+						# rules for the current state need to be scanned
+						# and the longest match returned.  If the
+						# match_type is :first, we only need to scan until
+						# we find a match.
+						self.class.rules[env.state].each do |rule|
 							if (rule.flags - env.flags).empty?
 								if txt = scanner.check(rule.pattern)
-									if not match or match[0].length() < txt.length()
+									if not match or match[0].length < txt.length
 										match = [txt, rule]
+										
+										break if self.class.match_type == :first
 									end
 								end
 							end
@@ -112,8 +132,8 @@ module RLTK
 								@tokens << Token.new(type, value, stream_offset, line_number, line_offset, line_offset + txt.length()) 
 							end
 							
-							#Advance our stat counters.
-							stream_offset += txt.length()
+							# Advance our stat counters.
+							stream_offset += txt.length
 							
 							if (newlines = txt.count("\n")) > 0
 								line_number += newlines
@@ -122,7 +142,7 @@ module RLTK
 								line_offset += txt.length()
 							end
 						else
-							error = LexingError.new(stream_offset, line_number, line_offset, scanner.post_match())
+							error = LexingError.new(stream_offset, line_number, line_offset, scanner.post_match)
 							raise(error, 'Unable to match string with any of the given rules')
 						end
 					end
@@ -133,11 +153,11 @@ module RLTK
 				def lex_file(file_name)
 					file = File.open(file_name, 'r')
 					
-					lex(file.read())
+					lex(file.read)
 				end
 				
-				def next_token()
-					@tokens.shift()
+				def next_token
+					@tokens.shift
 				end
 			end
 		end
@@ -151,7 +171,7 @@ module RLTK
 			
 			def initialize(start_state)
 				@state	= [start_state]
-				@flags	= Array.new()
+				@flags	= Array.new
 			end
 			
 			def add_state(state)
@@ -161,7 +181,7 @@ module RLTK
 			end
 			
 			def pop_state
-				@state.pop()
+				@state.pop
 				
 				nil
 			end
@@ -173,7 +193,7 @@ module RLTK
 			end
 			
 			def state
-				return @state.last()
+				return @state.last
 			end
 			
 			def set_flag(flag)
@@ -190,8 +210,8 @@ module RLTK
 				nil
 			end
 			
-			def clear_flags()
-				@flags = Array.new()
+			def clear_flags
+				@flags = Array.new
 				
 				nil
 			end
