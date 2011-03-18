@@ -118,10 +118,11 @@ module RLTK
 					
 					# Grab the captured tokens from the proxy.
 					@tokens = @proxy.tokens
+					all_tokens = @tokens.keys
 					
 					# Add our starting state to the transition table.
 					start_rule	= Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol)])
-					start_state	= Table::State.new([start_rule])
+					start_state	= Table::State.new(all_tokens, [start_rule])
 					
 					start_state.close(@rules)
 					
@@ -138,7 +139,7 @@ module RLTK
 					# Build the rest of the transition table.
 					@table.each do |state|
 						#Transition states
-						tstates = Hash.new {|h,k| h[k] = Table::State.new}
+						tstates = Hash.new {|h,k| h[k] = Table::State.new(all_tokens)}
 						
 						#Bin each item in this set into reachable
 						#transition states.
@@ -174,7 +175,7 @@ module RLTK
 								if item.symbol == :'!start'
 									state.on(:EOS, Table::Accept.new)
 								else
-									state.on(nil, Table::Reduce.new(item.id))
+									state.on_all(Table::Reduce.new(item.id))
 								end
 							end
 						end
@@ -670,10 +671,10 @@ module RLTK
 				attr_reader	:items
 				attr_reader	:actions
 				
-				def initialize(items = [])
+				def initialize(tokens, items = [])
 					@id		= nil
 					@items	= items
-					@actions	= Hash.new {|h,k| h[k] = Array.new}
+					@actions	= tokens.inject(Hash.new) { |h, t| h[t] = Array.new; h }
 				end
 				
 				def ==(other)
@@ -703,21 +704,29 @@ module RLTK
 				end
 				
 				def on(symbol, action)
-					@actions[symbol] << action
+					if @actions.key?(symbol)
+						@actions[symbol] << action
+					else
+						raise InternalParserError, 'Attempting to set action for token not seen in grammar definition.'
+					end
+				end
+				
+				def on_all(action)
+					@actions.each { |k, v| v << action }
 				end
 				
 				def on?(symbol)
 					# If we are asking about a non-terminal we are looking
 					# for a GoTo action, and should only return a single
 					# action.
-					if symbol and symbol.to_s == symbol.to_s.downcase
+					if symbol.to_s == symbol.to_s.downcase
 						if @actions[symbol].length > 1
 							raise InternalParserError, "Multiple GoTo actions present for non-terminal symbol #{symbol} in state #{@id}."
 						else
 							@actions[symbol].first
 						end
 					else
-						@actions[nil] | @actions[symbol]
+						@actions[symbol]
 					end
 				end
 			end
