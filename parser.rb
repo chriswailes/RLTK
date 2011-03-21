@@ -115,13 +115,11 @@ module RLTK
 								f.puts
 								f.puts("\t# ACTIONS #")
 								
-								state.actions.each do |sym, actions|
-									actions.each do |action|
+								state.actions.keys.map {|s| s.to_s}.sort.each do |sym|
+									state.actions[sym.to_sym].each do |action|
 										f.puts("\tOn #{if sym then sym else 'any' end} #{action}")
 									end
 								end
-								
-								#~conflict = false
 								
 								f.puts
 								f.puts("\t# CONFLICTS #")
@@ -214,6 +212,9 @@ module RLTK
 							end
 						end
 					end
+					
+					# Prune the table.
+					@table.prune(@rules, @precs)
 					
 					# Check the table.
 					@table.check
@@ -413,41 +414,6 @@ module RLTK
 							# Get the available actions for this stack.
 							actions = self.class.table[stack.state].on?(token.type)
 							
-							# Filter the actions based on precedence and
-							# associativity.
-							
-							reduces_ok = actions.inject(true) do |m, a|
-								if a.is_a?(Table::Reduce)
-									m and self.class.rules[a.id].prec
-								else
-									m
-								end
-							end
-							
-							if self.class.precs[token.type] and reduces_ok
-								max_prec = 0
-								selected_action = nil
-								
-								# Grab the associativity and precedence
-								# for the input token.
-								tassoc, tprec = self.class.precs[token.type]
-								
-								actions.each do |a|
-									assoc, prec = a.is_a?(Table::Shift) ? [tassoc, tprec] : self.class.rules[a.id].prec
-									
-									if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Table::Shift) ? :right : :left))
-										max_prec			= prec
-										selected_action	= a
-										
-									elsif prec == max_prec and assoc == :nonassoc
-										raise ParsingError, "Nonassociative token found during conflict resolution."
-										
-									end
-								end
-								
-								actions = [selected_action]
-							end
-							
 							actions.each do |action|
 								new_stacks << (nstack = stack.copy)
 								
@@ -474,7 +440,8 @@ module RLTK
 									if (goto = self.class.table[nstack.state].on?(rule.symbol))
 										nstack.push_state(goto.id)
 									else
-										raise InternalParserError, "No GoTo action found in state #{nstack.state} after reducing by rule #{action.id}"
+										raise InternalParserError, "No GoTo action found in state #{nstack.state} " +
+											"after reducing by rule #{action.id}"
 									end
 									
 								elsif action.class == Table::Shift
@@ -780,6 +747,67 @@ module RLTK
 			
 			def each
 				@states.each {|r| yield r}
+			end
+			
+			def prune(rules, precs)
+				@states.each do |state|
+					
+					#~puts "Pruning actions for state #{state.id}."
+					
+					state.actions.each do |symbol, actions|
+						
+						# We are only interested in pruning actions for
+						# terminal symbols.
+						next unless symbol.to_s == symbol.to_s.upcase
+						
+						# Skip to the next one if there is no possibility
+						# of a Shift/Reduce or Reduce/Reduce conflict.
+						next unless actions and actions.length > 1
+						
+						#~puts "Pruning actions for input token #{symbol}"
+						
+						# Prune actions based on precedence and
+						# associativity.
+						
+						reduces_ok = actions.inject(true) do |m, a|
+							if a.is_a?(Reduce)
+								m and rules[a.id].prec
+							else
+								m
+							end
+						end
+						
+						if precs[symbol] and reduces_ok
+							max_prec = 0
+							selected_action = nil
+							
+							# Grab the associativity and precedence for
+							# the input token.
+							tassoc, tprec = precs[symbol]
+							
+							actions.each do |a|
+								assoc, prec = a.is_a?(Shift) ? [tassoc, tprec] : rules[a.id].prec
+								
+								# If two actions have the same precedence we
+								# will only replace the previous rule if:
+								#  * The token is left associative and the current action is a Reduce
+								#  * The Token is right associative and the current action is a Shift
+								if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
+									max_prec			= prec
+									selected_action	= a
+									
+								elsif prec == max_prec and assoc == :nonassoc
+									raise ParserConstructionError, 'Non-associative token found during conflict resolution.'
+									
+								end
+							end
+							
+							#~puts "Selected action #{selected_action}."
+							
+							state.actions[symbol] = [selected_action]
+						end
+					end
+				end
 			end
 			
 			class State
