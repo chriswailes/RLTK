@@ -7,8 +7,6 @@
 # Requires #
 ############
 
-require 'pp'
-
 # Ruby Language Toolkit
 require 'lexers/ebnf'
 
@@ -46,11 +44,34 @@ module RLTK
 							# Print the rules.
 							@rules.keys.select {|k| k.is_a?(Symbol)}.each do |sym|
 								@rules[sym].each do |rule|
-									f.puts("\tRule #{rule.id}: #{rule.to_s}")
+									f.print("\tRule #{rule.id}: #{rule.to_s}")
+									
+									if rule.prec
+										f.print(" : (#{rule.prec.first}, #{rule.prec.last})")
+									end
+									
+									f.puts
 								end
 								
 								f.puts
 							end
+							
+							f.puts("###############" + '#' * self.name.length)
+							f.puts("# Tokens for #{self.name} #")
+							f.puts("###############" + '#' * self.name.length)
+							f.puts
+							
+							@symbols.keys.map {|sym| sym.to_s}.select {|s| s == s.upcase}.sort.each do |sym|
+								f.print("\t#{sym}")
+								
+								if @precs[sym.to_sym]
+									f.print(" : (#{@precs[sym.to_sym].first}, #{@precs[sym.to_sym].last})")
+								end
+								
+								f.puts
+							end
+							
+							f.puts
 							
 							f.puts("#####################")
 							f.puts("# Table Information #")
@@ -58,6 +79,9 @@ module RLTK
 							f.puts
 							
 							f.puts("\tStart symbol: #{@start_symbol}")
+							f.puts
+							
+							f.puts("\tTotal number of states: #{@table.states.length}")
 							f.puts
 							
 							f.puts("\tTotal conflicts: #{@table.conflicts.keys.flatten.length}")
@@ -270,9 +294,11 @@ module RLTK
 				end
 				
 				def self.left(*symbols)
+					prec_level = @precs[:'!left'] += 1
+					
 					symbols.each do |s|
 						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
-							@precs[s] = [:left, @precs[:'!left'] += 1]
+							@precs[s] = [:left, prec_level]
 						else
 							raise InternalParserError, 'Incorrect token specification given to the left directive.'
 						end
@@ -280,9 +306,11 @@ module RLTK
 				end
 				
 				def self.nonassoc(*symbols)
+					prec_level = @precs[:'!non'] += 1
+					
 					symbols.each do |s|
 						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
-							@precs[s] = [:non, @precs[:'!non'] += 1]
+							@precs[s] = [:non, prec_level]
 						else
 							raise InternalParserError, 'Incorrect token specification given to the nonassoc directive.'
 						end
@@ -294,9 +322,11 @@ module RLTK
 				end
 				
 				def self.right(*symbols)
+					prec_level = @precs[:'!right'] += 1
+					
 					symbols.each do |s|
 						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
-							@precs[s] = [:right, @precs[:'!right'] += 1]
+							@precs[s] = [:right, prec_level]
 						else
 							raise InternalParserError, 'Incorrect token specification given to the right directive.'
 						end
@@ -358,7 +388,7 @@ module RLTK
 					# current one.
 					tokens.each do |token|
 					
-						# Check to make sure this token as seen in the
+						# Check to make sure this token was seen in the
 						# grammar definition.
 						if not self.class.symbols[token.type]
 							raise ParsingError, 'Unexpected token.  Token not present in grammar definition.'
@@ -385,14 +415,27 @@ module RLTK
 							
 							# Filter the actions based on precedence and
 							# associativity.
-							if self.class.precs[token.type] and actions.inject(true) {|m, a| if a.is_a?(Table::Reduce) then m and self.class.rules[a.id].prec else m end}
+							
+							reduces_ok = actions.inject(true) do |m, a|
+								if a.is_a?(Table::Reduce)
+									m and self.class.rules[a.id].prec
+								else
+									m
+								end
+							end
+							
+							if self.class.precs[token.type] and reduces_ok
 								max_prec = 0
 								selected_action = nil
 								
+								# Grab the associativity and precedence
+								# for the input token.
+								tassoc, tprec = self.class.precs[token.type]
+								
 								actions.each do |a|
-									assoc, prec = a.is_a?(Table::Shift) ? self.class.precs[token.type] : self.class.rules[a.id].prec
+									assoc, prec = a.is_a?(Table::Shift) ? [tassoc, tprec] : self.class.rules[a.id].prec
 									
-									if prec > max_prec or (prec == max_prec and assoc == (a.is_a?(Table::Shift) ? :right : :left))
+									if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Table::Shift) ? :right : :left))
 										max_prec			= prec
 										selected_action	= a
 										
@@ -647,7 +690,7 @@ module RLTK
 		
 		class Table
 			attr_reader :conflicts
-			attr_reader :rows
+			attr_reader :states
 			
 			def initialize
 				@states = Array.new
@@ -733,8 +776,6 @@ module RLTK
 			
 			def inform_conflict(state_id, type, sym)
 				@conflicts[state_id] << [type, sym]
-				
-				pp @conflicts
 			end
 			
 			def each

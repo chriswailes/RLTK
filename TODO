@@ -1,11 +1,6 @@
 parser.rb:
-
-	Sanity checking:
-		Table.check
-
-	Operator priority and associativity.
-	Parsing errors that can be caught by the user's code.
 	Use LALR(1) lookahead sets to optimize parsing.
+	Parsing errors that can be caught by the user's code.
 	Optimize the parsing algorithm (remove unecessary copy operations and branching).
 	Saving and loading the parse table.
 	Implement some unit testing.

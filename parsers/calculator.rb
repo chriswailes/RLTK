@@ -24,13 +24,13 @@ module RLTK
 			rule(:e) do
 				clause("NUM") {|n| n}
 				
-				clause("e PLS NUM") {|e, _, n| e + n}
+				clause("e PLS e") {|e0, _, e1| e0 + e1}
 				
-				clause("e SUB NUM") {|e, _, n| e - n}
+				clause("e SUB e") {|e0, _, e1| e0 - e1}
 				
-				clause("e MUL NUM") {|e, _, n| e * n}
+				clause("e MUL e") {|e0, _, e1| e0 * e1}
 				
-				clause("e DIV NUM") {|e, _, n| e / n}
+				clause("e DIV e") {|e0, _, e1| e0 / e1}
 			end
 			
 			finalize('calc.table')
