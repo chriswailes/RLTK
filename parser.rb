@@ -46,14 +46,28 @@ module RLTK
 							# Print the rules.
 							@rules.keys.select {|k| k.is_a?(Symbol)}.each do |sym|
 								@rules[sym].each do |rule|
-									f.puts("\tRule #{rule.id} #{rule.to_s}")
+									f.puts("\tRule #{rule.id}: #{rule.to_s}")
 								end
 								
 								f.puts
 							end
 							
-							f.puts("Start symbol: #{@start_symbol}")
+							f.puts("#####################")
+							f.puts("# Table Information #")
+							f.puts("#####################")
 							f.puts
+							
+							f.puts("\tStart symbol: #{@start_symbol}")
+							f.puts
+							
+							f.puts("\tTotal conflicts: #{@table.conflicts.keys.flatten.length}")
+							f.puts
+							
+							@table.conflicts.each do |state_id, conflicts|
+								f.puts("\tState #{state_id} has #{conflicts.length} conflict(s)")
+							end
+							
+							f.puts if not @table.conflicts.empty?
 							
 							# Print the parse table.
 							f.puts("###############")
@@ -63,7 +77,9 @@ module RLTK
 							
 							@table.each do |state|
 								f.puts("State #{state.id}:")
+								f.puts
 								
+								f.puts("\t# ITEMS #")
 								max = state.items.inject(0) do |max, item|
 									if item.symbol.to_s.length > max then item.symbol.to_s.length else max end
 								end
@@ -81,30 +97,24 @@ module RLTK
 									end
 								end
 								
-								conflict = false
+								#~conflict = false
 								
 								f.puts
 								f.puts("\t# CONFLICTS #")
 								
-								state.actions.keys.each do |sym|
-									if sym.to_s == sym.to_s.upcase
-									
-										sandrs = state.on?(sym).select {|a| a.is_a?(Table::Shift) or a.is_a?(Table::Reduce)}
+								if @table.conflicts[state.id].length == 0
+									f.puts("\tNone\n\n")
+								else
+									@table.conflicts[state.id].each do |conflict|
+										type, sym = conflict
 										
-										if sandrs.length > 1
-											conflict = true
-											
-											f.puts("\tOn #{if sym then sym else 'any' end}")
-											
-											sandrs.each do |a|
-												f.puts("\t\t#{a}")
-											end
-											f.puts
-										end
+										f.print("\t#{if type == :SR then "Shift/Reduce" else "Reduce/Reduce" end} conflict")
+										
+										f.puts(" on #{sym}")
 									end
+									
+									f.puts
 								end
-								
-								f.puts("\tNone\n\n") if not conflict
 							end
 						end
 					else
@@ -117,12 +127,12 @@ module RLTK
 					@table = Table.new
 					
 					# Grab the captured tokens from the proxy.
-					@tokens = @proxy.tokens
-					all_tokens = @tokens.keys
+					@symbols = @proxy.symbols
+					all_symbols = @symbols.keys
 					
 					# Add our starting state to the transition table.
 					start_rule	= Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol)])
-					start_state	= Table::State.new(all_tokens, [start_rule])
+					start_state	= Table::State.new(all_symbols, [start_rule])
 					
 					start_state.close(@rules)
 					
@@ -139,7 +149,7 @@ module RLTK
 					# Build the rest of the transition table.
 					@table.each do |state|
 						#Transition states
-						tstates = Hash.new {|h,k| h[k] = Table::State.new(all_tokens)}
+						tstates = Hash.new {|h,k| h[k] = Table::State.new(all_symbols)}
 						
 						#Bin each item in this set into reachable
 						#transition states.
@@ -175,11 +185,14 @@ module RLTK
 								if item.symbol == :'!start'
 									state.on(:EOS, Table::Accept.new)
 								else
-									state.on_all(Table::Reduce.new(item.id))
+									state.on_any(Table::Reduce.new(item.id))
 								end
 							end
 						end
 					end
+					
+					# Check the table.
+					@table.check
 					
 					# Print the table if requested.
 					self.explain(explain_file) if explain_file
@@ -189,9 +202,6 @@ module RLTK
 					
 					# Clean the resources we are keeping.
 					@table.clean
-					
-					# Check the table.
-					@table.check
 					
 					@rules.values.select {|o| o.is_a?(Rule)}.each {|rule| rule.clean}
 				end
@@ -324,12 +334,12 @@ module RLTK
 					@start_symbol = symbol
 				end
 				
-				def self.table
-					@table
+				def self.symbols
+					@symbols
 				end
 				
-				def self.tokens
-					@tokens
+				def self.table
+					@table
 				end
 				
 				####################
@@ -350,7 +360,7 @@ module RLTK
 					
 						# Check to make sure this token as seen in the
 						# grammar definition.
-						if not self.class.tokens[token.type]
+						if not self.class.symbols[token.type]
 							raise ParsingError, 'Unexpected token.  Token not present in grammar definition.'
 						end
 						
@@ -537,7 +547,7 @@ module RLTK
 		end
 		
 		class RuleProxy
-			attr_reader :tokens
+			attr_reader :symbols
 			attr_writer :symbol
 			
 			def initialize(parser)
@@ -549,7 +559,7 @@ module RLTK
 				@rule_counter = 0
 				@symbol = nil
 				
-				@tokens = Hash.new(false)
+				@symbols = Hash.new(false).update({:EOS => true})
 			end
 			
 			def clause(expression, precedence = nil, &action)
@@ -563,10 +573,8 @@ module RLTK
 					
 					if ttype0 == :TERM or ttype0 == :NONTERM
 						
-						# Add this token to the @tokens hash.
-						if ttype0 == :TERM
-							@tokens[tokens[i].value] = true
-						end
+						# Add this symbol to the @symbols hash.
+						@symbols[tokens[i].value] = true
 						
 						if i + 1 < tokens.length
 							ttype1 = tokens[i + 1].type
@@ -585,15 +593,23 @@ module RLTK
 								else
 									tokens[i]
 							end
+							
+							# Add any non-terminal symbols that were
+							# returned by the EBNF helper functions to
+							# the @symbols hash.
+							@symbols[new_tokens.last.value] = true
 						else
 							new_tokens << tokens[i]
 						end
 					end
 				end
 				
+				# Make sure the production symbol is collected.
+				@symbols[@symbol] = true
+				
 				# Check to make sure the action's arity matches the number
 				# of tokens in the clause.
-				if action.arity != new_tokens.length
+				if action.arity != new_tokens.length - 1
 					raise ParserConstructionError, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
 						'terminals and non-terminals in the clause.'
 				end
@@ -630,10 +646,13 @@ module RLTK
 		end
 		
 		class Table
+			attr_reader :conflicts
 			attr_reader :rows
 			
 			def initialize
 				@states = Array.new
+				
+				@conflicts = Hash.new {|h, k| h[k] = Array.new}
 			end
 			
 			def [](index)
@@ -655,11 +674,67 @@ module RLTK
 			alias :<< :add_state
 			
 			def check
-				
+				@states.each do |state|
+					state.actions.each do |sym, actions|
+						if sym.to_s == sym.to_s.downcase
+							# Here we check actions for non-terminals.
+							
+							if actions.length > 1
+								raise ParserConstructionError, "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
+								
+							elsif actions.length == 1 and not actions.first.is_a?(GoTo)
+								puts actions.first
+								raise ParserConstructionError, "State #{state.id} has non-GoTo action for non-terminal #{sym}."
+								
+							end
+							
+						else
+							# Here we check actions for terminals.
+							
+							reduces	= 0
+							shifts	= 0
+							
+							actions.each do |action|
+								if action.is_a?(Accept)
+									if sym != :EOS
+										raise ParserConstructionError, "Accept action found for terminal #{sym} in state #{state.id}."
+									end
+									
+								elsif action.is_a?(Reduce)
+									reduces += 1
+								elsif action.is_a?(Shift)
+									shifts += 1
+									
+								else
+									raise ParserConstructionError, "Object of type #{action.class} found in actions for terminal " +
+										"#{sym} in state #{state.id}."
+									
+								end
+							end
+							
+							if shifts > 1
+								raise ParserConstructionError, "Multiple shifts found for terminal #{sym} in state #{state.id}."
+								
+							elsif shifts == 1 and reduces > 0
+								self.inform_conflict(state.id, :SR, sym)
+								
+							elsif reduces > 1
+								self.inform_conflict(state.id, :RR, sym)
+								
+							end
+						end
+					end
+				end
 			end
 			
 			def clean
 				@states.each {|state| state.clean}
+			end
+			
+			def inform_conflict(state_id, type, sym)
+				@conflicts[state_id] << [type, sym]
+				
+				pp @conflicts
 			end
 			
 			def each
@@ -707,12 +782,12 @@ module RLTK
 					if @actions.key?(symbol)
 						@actions[symbol] << action
 					else
-						raise InternalParserError, 'Attempting to set action for token not seen in grammar definition.'
+						raise InternalParserError, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
 					end
 				end
 				
-				def on_all(action)
-					@actions.each { |k, v| v << action }
+				def on_any(action)
+					@actions.each { |k, v| if k.to_s == k.to_s.upcase then v << action end }
 				end
 				
 				def on?(symbol)
@@ -720,11 +795,7 @@ module RLTK
 					# for a GoTo action, and should only return a single
 					# action.
 					if symbol.to_s == symbol.to_s.downcase
-						if @actions[symbol].length > 1
-							raise InternalParserError, "Multiple GoTo actions present for non-terminal symbol #{symbol} in state #{@id}."
-						else
-							@actions[symbol].first
-						end
+						@actions[symbol].first
 					else
 						@actions[symbol]
 					end
