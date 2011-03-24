@@ -1,5 +1,7 @@
 #!/usr/bin/ruby
 
+require 'pp'
+
 require 'lexer'
 require 'parser'
 

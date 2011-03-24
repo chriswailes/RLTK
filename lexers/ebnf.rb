@@ -15,19 +15,21 @@ require File.join(File.dirname(__FILE__), '..', 'lexer')
 #######################
 
 module RLTK
-	class EBNFLexer < Lexer
-		
-		#################
-		# Default State #
-		#################
-		
-		rule(/\*/)	{ :*   }
-		rule(/\+/)	{ :+   }
-		rule(/\?/)	{ :'?' }
-		
-		rule(/[a-z]+/)	{ |t| [:NONTERM, t.to_sym] }
-		rule(/[A-Z]+/)	{ |t| [:TERM,    t.to_sym] }
-		
-		rule(/\s/)
+	module Lexers
+		class EBNFLexer < Lexer
+			
+			#################
+			# Default State #
+			#################
+			
+			rule(/\*/)	{ :*   }
+			rule(/\+/)	{ :+   }
+			rule(/\?/)	{ :'?' }
+			
+			rule(/[a-z]+/)	{ |t| [:NONTERM, t.to_sym] }
+			rule(/[A-Z]+/)	{ |t| [:TERM,    t.to_sym] }
+			
+			rule(/\s/)
+		end
 	end
 end

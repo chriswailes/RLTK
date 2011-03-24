@@ -46,6 +46,77 @@ module RLTK
 				# Class Methods #
 				#################
 				
+				def self.lex(string, env = Environment.new(@start_state))
+					# Offset from start of stream.
+					stream_offset = 0
+				
+					# Offset from the start of the line.
+					line_offset = 0
+					line_number = 1
+					
+					# Empty token list.
+					tokens = Array.new
+					
+					# The scanner.
+					scanner = StringScanner.new(string)
+					
+					# Start scanning the input string.
+					until scanner.eos?
+						match = nil
+						
+						# If the match_type is set to :longest all of the
+						# rules for the current state need to be scanned
+						# and the longest match returned.  If the
+						# match_type is :first, we only need to scan until
+						# we find a match.
+						@rules[env.state].each do |rule|
+							if (rule.flags - env.flags).empty?
+								if txt = scanner.check(rule.pattern)
+									if not match or match[0].length < txt.length
+										match = [txt, rule]
+										
+										break if @match_type == :first
+									end
+								end
+							end
+						end
+						
+						if match
+							rule = match.last()
+							
+							txt = scanner.scan(rule.pattern)
+							type, value = env.instance_exec(txt, &rule.action)
+							
+							if type
+								tokens << Token.new(type, value, stream_offset, line_number, line_offset, line_offset + txt.length()) 
+							end
+							
+							# Advance our stat counters.
+							stream_offset += txt.length
+							
+							if (newlines = txt.count("\n")) > 0
+								line_number += newlines
+								line_offset  = 0
+							else
+								line_offset += txt.length()
+							end
+						else
+							error = LexingError.new(stream_offset, line_number, line_offset, scanner.post_match)
+							raise(error, 'Unable to match string with any of the given rules')
+						end
+					end
+					
+					return tokens << Token.new(:EOS)
+				end
+				
+				def self.lex_file(file_name)
+					file = File.open(file_name, 'r')
+					
+					lex(file.read)
+					
+					file.close
+				end
+				
 				def self.match(type)
 					if type.is_a?(Symbol) and (type == :longest or type == :first)
 						@match_type = type
@@ -68,96 +139,28 @@ module RLTK
 					if state == :ALL then @rules.each_key { |k| @rules[k] << r } else @rules[state] << r end
 				end
 				
-				def self.rules
-					@rules
+				def self.start(state)
+					@start_state = state
 				end
 				
 				def self.start_state
 					@start_state
 				end
 				
-				def self.start_state=(state)
-					@start_state = state
-				end
-				
 				####################
 				# Instance Methods #
 				####################
 				
+				def initialize
+					@env = Environment.new(self.class.start_state)
+				end
+				
 				def lex(string)
-					# Set up the environment for this lexing pass.
-					env = Environment.new(self.class.start_state)
-					
-					# Offset from start of stream.
-					stream_offset = 0
-				
-					# Offset from the start of the line.
-					line_offset = 0
-					line_number = 1
-					
-					# Empty token list.
-					@tokens = Array.new
-					
-					# The scanner.
-					scanner = StringScanner.new(string)
-					
-					# Start scanning the input string.
-					until scanner.eos?
-						match = nil
-						
-						# If the match_type is set to :longest all of the
-						# rules for the current state need to be scanned
-						# and the longest match returned.  If the
-						# match_type is :first, we only need to scan until
-						# we find a match.
-						self.class.rules[env.state].each do |rule|
-							if (rule.flags - env.flags).empty?
-								if txt = scanner.check(rule.pattern)
-									if not match or match[0].length < txt.length
-										match = [txt, rule]
-										
-										break if self.class.match_type == :first
-									end
-								end
-							end
-						end
-						
-						if match
-							rule = match.last()
-							
-							txt = scanner.scan(rule.pattern)
-							type, value = env.instance_exec(txt, &rule.action)
-							
-							if type
-								@tokens << Token.new(type, value, stream_offset, line_number, line_offset, line_offset + txt.length()) 
-							end
-							
-							# Advance our stat counters.
-							stream_offset += txt.length
-							
-							if (newlines = txt.count("\n")) > 0
-								line_number += newlines
-								line_offset  = 0
-							else
-								line_offset += txt.length()
-							end
-						else
-							error = LexingError.new(stream_offset, line_number, line_offset, scanner.post_match)
-							raise(error, 'Unable to match string with any of the given rules')
-						end
-					end
-					
-					return @tokens << Token.new(:EOS)
+					self.class.lex(string, @env)
 				end
 				
-				def lex_file(file_name)
-					file = File.open(file_name, 'r')
-					
-					lex(file.read)
-				end
-				
-				def next_token
-					@tokens.shift
+				def lex_file(file)
+					File.open(file_name, 'r') { |f| self.lex(f.read) }
 				end
 			end
 		end

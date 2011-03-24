@@ -1,4 +1,5 @@
 parser.rb:
+	Re-work with new CFG class.
 	Use LALR(1) lookahead sets to optimize parsing.
 	Parsing errors that can be caught by the user's code.
 	Optimize the parsing algorithm (remove unecessary copy operations and branching).

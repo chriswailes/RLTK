@@ -8,7 +8,7 @@
 ############
 
 # Ruby Language Toolkit
-require 'lexers/ebnf'
+require 'cfg'
 
 #######################
 # Classes and Modules #
@@ -17,455 +17,691 @@ require 'lexers/ebnf'
 module RLTK
 	class ParsingError < Exception; end
 	class ParserConstructionError < Exception; end
-	class InternalParserError < Exception; end
-	
-	def is_terminal?(sym)
-		(s = sym.to_s) == s.upcase
-	end
-	
-	def is_nonterminal?(sym)
-		(s = sym.to_s) == s.downcase
-	end
 	
 	class Parser
 		def Parser.inherited(klass)
 			klass.class_exec do
-				@precs		= {:'!left' => 0, :'!right' => 0, :'!non' => 0}
-				@proxy		= RuleProxy.new(self)
-				@rules		= Hash.new {|h, k| h[k] = Array.new}
-				@start_symbol	= nil
-				@table		= nil
-				@tokens		= nil
+				@core = ParserCore.new
 				
-				#################
-				# Class Methods #
-				#################
-				
-				def self.explain(explain_file)
-					if @proxy and @table
-						File.open(explain_file, 'w') do |f|
-							f.puts("##############" + '#' * self.name.length)
-							f.puts("# Rules for #{self.name} #")
-							f.puts("##############" + '#' * self.name.length)
-							f.puts
-							
-							# Print the rules.
-							@rules.keys.select {|k| k.is_a?(Symbol)}.each do |sym|
-								@rules[sym].each do |rule|
-									f.print("\tRule #{rule.id}: #{rule.to_s}")
-									
-									if rule.prec
-										f.print(" : (#{rule.prec.first}, #{rule.prec.last})")
-									end
-									
-									f.puts
-								end
-								
-								f.puts
-							end
-							
-							f.puts("###############" + '#' * self.name.length)
-							f.puts("# Tokens for #{self.name} #")
-							f.puts("###############" + '#' * self.name.length)
-							f.puts
-							
-							@symbols.keys.map {|sym| sym.to_s}.select {|s| s == s.upcase}.sort.each do |sym|
-								f.print("\t#{sym}")
-								
-								if @precs[sym.to_sym]
-									f.print(" : (#{@precs[sym.to_sym].first}, #{@precs[sym.to_sym].last})")
-								end
-								
-								f.puts
-							end
-							
-							f.puts
-							
-							f.puts("#####################")
-							f.puts("# Table Information #")
-							f.puts("#####################")
-							f.puts
-							
-							f.puts("\tStart symbol: #{@start_symbol}")
-							f.puts
-							
-							f.puts("\tTotal number of states: #{@table.states.length}")
-							f.puts
-							
-							f.puts("\tTotal conflicts: #{@table.conflicts.keys.flatten.length}")
-							f.puts
-							
-							@table.conflicts.each do |state_id, conflicts|
-								f.puts("\tState #{state_id} has #{conflicts.length} conflict(s)")
-							end
-							
-							f.puts if not @table.conflicts.empty?
-							
-							# Print the parse table.
-							f.puts("###############")
-							f.puts("# Parse Table #")
-							f.puts("###############")
-							f.puts
-							
-							@table.each do |state|
-								f.puts("State #{state.id}:")
-								f.puts
-								
-								f.puts("\t# ITEMS #")
-								max = state.items.inject(0) do |max, item|
-									if item.symbol.to_s.length > max then item.symbol.to_s.length else max end
-								end
-								
-								state.each do |item|
-									f.puts("\t#{item.to_s(max, true)}")
-								end
-								
-								f.puts
-								f.puts("\t# ACTIONS #")
-								
-								state.actions.keys.map {|s| s.to_s}.sort.each do |sym|
-									state.actions[sym.to_sym].each do |action|
-										f.puts("\tOn #{if sym then sym else 'any' end} #{action}")
-									end
-								end
-								
-								f.puts
-								f.puts("\t# CONFLICTS #")
-								
-								if @table.conflicts[state.id].length == 0
-									f.puts("\tNone\n\n")
-								else
-									@table.conflicts[state.id].each do |conflict|
-										type, sym = conflict
-										
-										f.print("\t#{if type == :SR then "Shift/Reduce" else "Reduce/Reduce" end} conflict")
-										
-										f.puts(" on #{sym}")
-									end
-									
-									f.puts
-								end
-							end
-						end
-					else
-						File.open(explain_file, 'w') {|f| f.puts('Parser.explain called outside of finalize.')}
-					end
+				def self.method_missing(method, *args, &proc)
+					@core.send(method, *args, &proc)
 				end
 				
-				def self.finalize(explain_file = nil)
-					# Create our Transition Table.
-					@table = Table.new
-					
-					# Grab the captured tokens from the proxy.
-					@symbols = @proxy.symbols
-					all_symbols = @symbols.keys
-					
-					# Add our starting state to the transition table.
-					start_rule	= Rule.new(0, :'!start', [Token.new(:DOT), Token.new(:NONTERM, @start_symbol)])
-					start_state	= Table::State.new(all_symbols, [start_rule])
-					
-					start_state.close(@rules)
-					
-					@table << start_state
-					
-					# Translate the precedence of rules from tokens to
-					# (associativity, precedence) pairs.
-					@rules.each_key do |key|
-						if key.is_a?(Integer)
-							@rules[key].prec = @precs[@rules[key].prec]
-						end
-					end
-					
-					# Build the rest of the transition table.
-					@table.each do |state|
-						#Transition states
-						tstates = Hash.new {|h,k| h[k] = Table::State.new(all_symbols)}
-						
-						#Bin each item in this set into reachable
-						#transition states.
-						state.each do |item|
-							if (next_token = item.next_token)
-								tstates[next_token.signature] << item.copy
-							end
-						end
-						
-						# For each transition state:
-						#  1) Get transition token
-						#  2) Advance dot
-						#  3) Close it
-						#  4) Get state id, and add transition
-						tstates.each do |ttoken, tstate|
-							tstate.each {|item| item.advance}
-							
-							tstate.close(@rules)
-							
-							id = @table << tstate
-							
-							# Add Goto and Shift actions.
-							if ttoken[0] == :NONTERM
-								state.on(ttoken[1], Table::GoTo.new(id))
-							else
-								state.on(ttoken[1], Table::Shift.new(id))
-							end
-						end
-						
-						# Find the Accept and Reduce actions for this state.
-						state.each do |item|
-							if item.tokens[-1].type == :DOT
-								if item.symbol == :'!start'
-									state.on(:EOS, Table::Accept.new)
-								else
-									state.on_any(Table::Reduce.new(item.id))
-								end
-							end
-						end
-					end
-					
-					# Prune the table.
-					@table.prune(all_symbols, @rules, @precs)
-					
-					# Check the table.
-					@table.check
-					
-					# Print the table if requested.
-					self.explain(explain_file) if explain_file
-					
-					# Remove references to the RuleProxy.
-					@proxy = nil
-					
-					# Clean the resources we are keeping.
-					@table.clean
-					
-					@rules.values.select {|o| o.is_a?(Rule)}.each {|rule| rule.clean}
+				def initialize
+					@env = Environment.new
 				end
-				
-				def self.get_question(token)
-					new_symbol	= ('!' + token.value.to_s.downcase + '_question').to_sym
-					new_token		= Token.new(:NONTERM, new_symbol)
-					
-					if not @rules.has_key?(new_token.value)
-						# Add the items for the following productions:
-						#
-						# token_question: | token
-						
-						# 1st (empty) production.
-						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT)]) {|| nil }
-						@rules[new_symbol] << (@rules[r.id] = r)
-						
-						# 2nd production
-						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token]) {|o| o}
-						@rules[new_symbol] << (@rules[r.id] = r)
-					end
-					
-					return new_token
-				end
-				
-				def self.get_plus(token)
-					new_symbol	= ('!' + token.value.to_s.downcase + '_plus').to_sym
-					new_token		= Token.new(:NONTERM, new_symbol)
-					
-					if not @rules.has_key?(new_token.value)
-						# Add the items for the following productions:
-						#
-						# token_plus: token | token token_plus
-						
-						# 1st production
-						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token]) {|t| [t]}
-						@rules[new_symbol] << (@rules[r.id] = r)
-						
-						# 2nd production
-						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token, new_token]) {|t, tp| [t] + tp}
-						@rules[new_symbol] << (@rules[r.id] = r)
-					end
-					
-					return new_token
-				end
-				
-				def self.get_star(token)
-					new_symbol	= ('!' + token.value.to_s.downcase + '_star').to_sym
-					new_token		= Token.new(:NONTERM, new_symbol)
-					
-					if not @rules.has_key?(new_token.value)
-						# Add the items for the following productions:
-						#
-						# token_star: | token token_star
-						
-						# 1st (empty) production
-						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT)]) {|| [] }
-						@rules[new_symbol] << (@rules[r.id] = r)
-						
-						# 2nd production
-						r = Rule.new(@proxy.next_id, new_symbol, [Token.new(:DOT), token, new_token]) {|t, ts| [t] + ts}
-						@rules[new_symbol] << (@rules[r.id] = r)
-					end
-					
-					return new_token
-				end
-				
-				def self.left(*symbols)
-					prec_level = @precs[:'!left'] += 1
-					
-					symbols.each do |s|
-						if s.is_a?(Symbol) and is_terminal?(s)
-							@precs[s] = [:left, prec_level]
-						else
-							raise InternalParserError, 'Incorrect token specification given to the left directive.'
-						end
-					end
-				end
-				
-				def self.nonassoc(*symbols)
-					prec_level = @precs[:'!non'] += 1
-					
-					symbols.each do |s|
-						if s.is_a?(Symbol) and is_terminal?(s)
-							@precs[s] = [:non, prec_level]
-						else
-							raise InternalParserError, 'Incorrect token specification given to the nonassoc directive.'
-						end
-					end
-				end
-				
-				def self.precs
-					@precs
-				end
-				
-				def self.right(*symbols)
-					prec_level = @precs[:'!right'] += 1
-					
-					symbols.each do |s|
-						if s.is_a?(Symbol) and is_terminal?(s)
-							@precs[s] = [:right, prec_level]
-						else
-							raise InternalParserError, 'Incorrect token specification given to the right directive.'
-						end
-					end
-				end
-				
-				def self.rule(symbol, expression = nil, precedence = nil, &action)
-					# Convert the 'symbol' to a Symbol if it isn't already.
-					symbol = symbol.to_sym if not symbol.is_a?(Symbol)
-					
-					# Set the start symbol if this is the first production
-					# defined.
-					@start_symbol ||= symbol
-					
-					# Set the symbol in the RuleProxy.
-					@proxy.symbol = symbol
-					
-					# Collect rules by symbol and by rule id.
-					if expression
-						@rules[symbol] << (rule = @proxy.clause(expression, precedence, &action))
-						
-						@rules[rule.id] = rule
-					else
-						@rules[symbol] += (rules = @proxy.wrapper(&action))
-						
-						rules.each {|rule| @rules[rule.id] = rule}
-					end
-				end
-				
-				def self.rules
-					@rules
-				end
-				
-				def self.start(symbol)
-					@start_symbol = symbol
-				end
-				
-				def self.symbols
-					@symbols
-				end
-				
-				def self.table
-					@table
-				end
-				
-				####################
-				# Instance Methods #
-				####################
 				
 				def parse(tokens, verbose = false)
-					v = if verbose then (verbose.class == String) ? File.open(verbose, 'a') : $stdout else nil end
-					
-					# Start out with one stack in state zero.
-					processing	= [ParseStack.new]
-					moving_on		= []
-					
-					# Iterate over the tokens.  We don't procede to the
-					# next token until every stack is done with the
-					# current one.
-					tokens.each do |token|
-					
-						# Check to make sure this token was seen in the
-						# grammar definition.
-						if not self.class.symbols[token.type]
-							raise ParsingError, 'Unexpected token.  Token not present in grammar definition.'
+					self.class.parse(tokens, @env, verbose)
+				end
+			end
+		end
+		
+		class Environment; end
+		
+		class ParserCore
+			def initialize
+				@curr_lhs		= nil
+				@curr_prec	= nil
+				
+				@conflicts	= Hash.new {|h, k| h[k] = Array.new}
+				@grammar		= CFG.new
+				@lh_sides		= Hash.new
+				@procs		= Array.new
+				@start_symbol	= nil
+				@states		= Array.new
+				
+				@prec_counts	= {:left => 0, :right => 0, :non => 0}
+				@rule_precs	= Array.new
+				@token_precs	= Hash.new
+				
+				@grammar.callback do |r, type, num|
+					@procs[r.id] =
+						if type == :*
+							if num == :first
+								Proc.new { || [] }
+							else
+								Proc.new { |o, os| [o] + os }
+							end
+						elsif type == :+
+							if num == :first
+								Proc.new { |o| o }
+							else
+								Proc.new { |o, os| [o] + os }
+							end
+						elsif type == :'?'
+							if num == :first
+								Proc.new { || nil }
+							else
+								Proc.new { |o| o }
+							end
 						end
+					
+					@rule_precs[r.id] = last_terminal(r)
+				end
+			end
+			
+			def add_state(state)
+				if (id = @states.index(state))
+					id
+				else
+					state.id = @states.length
+					
+					@states << state
+					
+					@states.length - 1
+				end
+			end
+			
+			alias :<< :add_state
+			
+			# FIXME Must redo this with the new CFG class.
+			def build_g_prime
+				g_prime = CFG.new
+				
+				@states.each do |state|
+					state.each do |item|
+						left = [state.id, item.next_token]
 						
-						# If we don't have any active stacks the string
-						# isn't in the language.
-						if processing.length == 0
-							raise ParsingError, 'String not in language.'
-						end
+						next if not is_terminal?(item.next_token) or g_prime.key?(left)
 						
-						if verbose
-							v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}")
-						end
+						g_prime[left] = Array.new
 						
-						# Iterate over the stacks until each one is done.
-						until processing.empty?
-							stack = processing.shift
+						g[item.next_token].each do |rule|
+							right = Array.new
 							
-							new_stacks = []
+							cstate = state
 							
-							# Get the available actions for this stack.
-							actions = self.class.table[stack.state].on?(token.type)
+							# We skip the first token because it is going
+							# to be a DOT.
+							rule.tokens[1..-1].each do |token|
+								right << [cstate.id, token.value]
+								
+								cstate = @states[cstate.on?(token.value).first.id]
+							end
+							
+							g_prime[left] << right
+						end
+					end
+				end
+				
+				return g_prime
+			end
+			
+			def check
+				@states.each do |state|
+					state.actions.each do |sym, actions|
+						if sym.is_terminal?
+							# Here we check actions for terminals.
+							
+							reduces	= 0
+							shifts	= 0
 							
 							actions.each do |action|
-								new_stacks << (nstack = stack.copy)
-								
-								if verbose
-									v.puts
-									v.puts("Current state stack: #{nstack.state_stack.inspect}")
-									v.puts("Action taken: #{action.to_s}")
-								end
-								
-								if action.class == Table::Accept
-									return nstack.result
-								
-								elsif action.class == Table::GoTo
-									raise InternalParserError, 'GoTo action encountered when reading a token.'
-								
-								elsif action.class == Table::Reduce
-									# Get the rule associated with this reduction.
-									if not (rule = self.class.rules[action.id])
-										raise InternalParserError, "No rule #{action.id} found."
+								if action.is_a?(Accept)
+									if sym != :EOS
+										raise ParserConstructionError, "Accept action found for terminal #{sym} in state #{state.id}."
 									end
 									
-									nstack.push_output(rule.action.call(*nstack.pop(rule.action.arity)))
+								elsif action.is_a?(Reduce)
+									reduces += 1
 									
-									if (goto = self.class.table[nstack.state].on?(rule.symbol).first)
-										nstack.push_state(goto.id)
-									else
-										raise InternalParserError, "No GoTo action found in state #{nstack.state} " +
-											"after reducing by rule #{action.id}"
-									end
+								elsif action.is_a?(Shift)
+									shifts += 1
 									
-								elsif action.class == Table::Shift
-									nstack.push(action.id, token.value)
+								else
+									raise ParserConstructionError, "Object of type #{action.class} found in actions for terminal " +
+										"#{sym} in state #{state.id}."
 									
-									moving_on << new_stacks.delete(nstack)
 								end
 							end
 							
-							processing += new_stacks
+							if shifts > 1
+								raise ParserConstructionError, "Multiple shifts found for terminal #{sym} in state #{state.id}."
+								
+							elsif shifts == 1 and reduces > 0
+								self.inform_conflict(state.id, :SR, sym)
+								
+							elsif reduces > 1
+								self.inform_conflict(state.id, :RR, sym)
+								
+							end
+						else
+							# Here we check actions for non-terminals.
+							
+							if actions.length > 1
+								raise ParserConstructionError, "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
+								
+							elsif actions.length == 1 and not actions.first.is_a?(GoTo)
+								puts actions.first
+								raise ParserConstructionError, "State #{state.id} has non-GoTo action for non-terminal #{sym}."
+								
+							end
+						end
+					end
+				end
+			end
+			
+			def clause(expression, precedence = nil, &action)
+				# Use the curr_prec only if it isn't overridden for this
+				# clause.
+				precedence ||= @curr_prec
+				
+				rule = @grammar.clause(expression)
+				
+				# Check to make sure the action's arity matches the number
+				# of symbols on the right-hand side.
+				if action.arity != rule.rhs.length
+					raise ParserConstructionError, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
+						'terminals and non-terminals in the clause.'
+				end
+
+				# If no precedence is specified use the precedence of the
+				# last terminal in the production.
+				@rule_precs[rule.id] = precedence || rule.last_terminal
+			end
+			
+			def clean
+				# We've told the developer about conflicts by now.
+				@conflicts = nil
+				
+				# Drop the grammar.
+				@grammar = nil
+				
+				# Drop the items from each of the states.
+				@states.each { |state| state.clean }
+			end
+			
+			def explain(explain_file)
+				if @grammar and not @states.empty?
+					File.open(explain_file, 'w') do |f|
+						f.puts("#########")
+						f.puts("# Rules #")
+						f.puts("#########")
+						f.puts
+						
+						# Print the rules.
+						@grammar.rules.each do |sym, rules|
+							rules.each do |rule|
+								f.print("\tRule #{rule.id}: #{rule.to_s}")
+								
+								if (prec = @rule_precs[rule.id])
+									f.print(" : (#{prec.first} , #{prec.last})")
+								end
+								
+								f.puts
+							end
+							
+							f.puts
 						end
 						
-						if verbose then v.puts("\n\n") end
+						f.puts("##########")
+						f.puts("# Tokens #")
+						f.puts("##########")
+						f.puts
 						
-						processing = moving_on
+						@grammar.terms.each do |term|
+							f.print("\t#{term}")
+							
+							if (prec = @token_precs[term])
+								f.print(" : (#{prec.first}, #{prec.last})")
+							end
+							
+							f.puts
+						end
+						
+						f.puts
+						
+						f.puts("#####################")
+						f.puts("# Table Information #")
+						f.puts("#####################")
+						f.puts
+						
+						f.puts("\tStart symbol: #{@start_symbol}")
+						f.puts
+						
+						f.puts("\tTotal number of states: #{@states.length}")
+						f.puts
+						
+						f.puts("\tTotal conflicts: #{@conflicts.keys.flatten.length}")
+						f.puts
+						
+						@conflicts.each do |state_id, conflicts|
+							f.puts("\tState #{state_id} has #{conflicts.length} conflict(s)")
+						end
+						
+						f.puts if not @conflicts.empty?
+						
+						# Print the parse table.
+						f.puts("###############")
+						f.puts("# Parse Table #")
+						f.puts("###############")
+						f.puts
+						
+						@states.each do |state|
+							f.puts("State #{state.id}:")
+							f.puts
+							
+							f.puts("\t# ITEMS #")
+							max = state.items.inject(0) do |max, item|
+								if item.lhs.to_s.length > max then item.lhs.to_s.length else max end
+							end
+							
+							state.each do |item|
+								f.puts("\t#{item.to_s(max)}")
+							end
+							
+							f.puts
+							f.puts("\t# ACTIONS #")
+							
+							state.actions.keys.map {|s| s.to_s}.sort.each do |sym|
+								state.actions[sym.to_sym].each do |action|
+									f.puts("\tOn #{sym} #{action}")
+								end
+							end
+							
+							f.puts
+							f.puts("\t# CONFLICTS #")
+							
+							if @conflicts[state.id].length == 0
+								f.puts("\tNone\n\n")
+							else
+								@conflicts[state.id].each do |conflict|
+									type, sym = conflict
+									
+									f.print("\t#{if type == :SR then "Shift/Reduce" else "Reduce/Reduce" end} conflict")
+									
+									f.puts(" on #{sym}")
+								end
+								
+								f.puts
+							end
+						end
 					end
+				else
+					raise ParserConstructionError, 'Parser.explain called outside of finalize.'
+				end
+			end
+			
+			def finalize(explain_file = nil)
+				# Grab all of the symbols that comprise the grammar (besides
+				# the start symbol).
+				@symbols = @grammar.symbols
+				
+				# Add our starting state to the state list.
+				start_rule	= @grammar.rule(:start, @start_symbol.to_s).first
+				start_state	= State.new(@symbols, [start_rule.to_item])
+				
+				start_state.close(@grammar.rules)
+				
+				@states << start_state
+				
+				# Translate the precedence of rules from tokens to
+				# (associativity, precedence) pairs.
+				@rule_precs.each_with_index do |prec, id|
+					@rule_precs[id] = @token_precs[prec]
+				end
+				
+				# Build the rest of the transition table.
+				@states.each do |state|
+					#Transition states.
+					tstates = Hash.new {|h,k| h[k] = State.new(@symbols)}
+					
+					#Bin each item in this set into reachable transition
+					#states.
+					state.each do |item|
+						if (next_symbol = item.next_symbol)
+							tstates[next_symbol] << item.copy
+						end
+					end
+					
+					# For each transition state:
+					#  1) Get transition symbol
+					#  2) Advance dot
+					#  3) Close it
+					#  4) Get state id and add transition
+					tstates.each do |symbol, tstate|
+						tstate.each { |item| item.advance }
+						
+						tstate.close(@grammar.rules)
+						
+						id = @states << tstate
+						
+						# Add Goto and Shift actions.
+						state.on(symbol, symbol.is_nonterminal? ? Goto.new(id) : Shift.new(id))
+					end
+					
+					# Find the Accept and Reduce actions for this state.
+					state.each do |item|
+						if item.at_end
+							if item.lhs == :start
+								state.on(CFG::GrammarSymbol.new(:EOS), Accept.new)
+							else
+								state.on_any(Reduce.new(item.id))
+							end
+						end
+					end
+				end
+				
+				# Build the rule.id -> rule.lhs map.
+				@grammar.rules(:id).to_a.inject(@lh_sides) do |h, pair|
+					id, rule = pair
+					
+					h[id] = rule.lhs
+					
+					h
+				end
+				
+				# Prune the parsing table for unnecessary reduce actions.
+				self.prune
+				
+				# Check the parser for inconsistencies.
+				self.check
+				
+				# Print the table if requested.
+				self.explain(explain_file) if explain_file
+				
+				# Clean the resources we are keeping.
+				self.clean
+			end
+			
+			def inform_conflict(state_id, type, sym)
+				@conflicts[state_id] << [type, sym]
+			end
+			
+			def left(*symbols)
+				prec_level = @prec_counts[:left] += 1
+				
+				symbols.map { |s| s.to_sym }.each do |sym|
+					@token_precs[sym] = [:left, prec_level]
+				end
+			end
+			
+			def nonassoc(*symbols)
+				prec_level = @prec_counts[:non] += 1
+				
+				symbols.map { |s| s.to_sym }.each do |sym|
+					@token_precs[sym] = [:non, prec_level]
+				end
+			end
+			
+			def parse(tokens, env = Environment.new, verbose = false)
+				v = if verbose then (verbose.class == String) ? File.open(verbose, 'a') : $stdout else nil end
+				
+				# Start out with one stack in state zero.
+				processing	= [ParseStack.new]
+				moving_on		= []
+				
+				# Iterate over the tokens.  We don't procede to the
+				# next token until every stack is done with the
+				# current one.
+				tokens.each do |token|
+				
+					# Check to make sure this token was seen in the
+					# grammar definition.
+					if not @symbols.include?(token.type)
+						raise ParsingError, 'Unexpected token.  Token not present in grammar definition.'
+					end
+					
+					# If we don't have any active stacks the string
+					# isn't in the language.
+					if processing.length == 0
+						raise ParsingError, 'String not in language.'
+					end
+					
+					if verbose
+						v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}")
+					end
+					
+					# Iterate over the stacks until each one is done.
+					until processing.empty?
+						stack = processing.shift
+						
+						new_stacks = []
+						
+						# Get the available actions for this stack.
+						actions = @states[stack.state].on?(token.type)
+						
+						actions.each do |action|
+							new_stacks << (nstack = stack.copy)
+							
+							if verbose
+								v.puts
+								v.puts("Current state stack: #{nstack.state_stack.inspect}")
+								v.puts("Action taken: #{action.to_s}")
+							end
+							
+							if action.is_a?(Accept)
+								return nstack.result
+							
+							elsif action.is_a?(GoTo)
+								raise InternalParserError, 'GoTo action encountered when reading a token.'
+							
+							elsif action.is_a?(Reduce)
+								
+								# Get the rule associated with this reduction.
+								if not (rule_proc = @procs[action.id])
+									raise InternalParserError, "No rule #{action.id} found."
+								end
+								
+								result = env.instance_exec(*nstack.pop(rule_proc.arity), &rule_proc)
+								
+								nstack.push_output(result)
+								
+								if (goto = @states[nstack.state].on?(@lh_sides[action.id]).first)
+									nstack.push_state(goto.id)
+								else
+									raise InternalParserError, "No GoTo action found in state #{nstack.state} " +
+										"after reducing by rule #{action.id}"
+								end
+								
+							elsif action.is_a?(Shift)
+								nstack.push(action.id, token.value)
+								
+								moving_on << new_stacks.delete(nstack)
+							end
+						end
+						
+						processing += new_stacks
+					end
+					
+					if verbose then v.puts("\n\n") end
+					
+					processing = moving_on
+				end
+			end
+			
+			def prune
+				#~symbols = @grammar.terms
+				
+				#~lookaheads = compute_lookaheads(self.build_g_prime)
+				
+				@states.each do |state|
+					
+					#~puts "Pruning actions for state #{state.id}."
+					
+					#####################
+					# Lookahead Pruning #
+					#####################
+					
+					#~reductions = state.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
+					#~
+					#~reductions.each do |r|
+						#~(symbols - lookaheads[@rules_id[r.id].symbol]).each do |k|
+							#~state.actions[k].delete(r)
+						#~end
+					#~end
+					
+					########################################
+					# Precedence and Associativity Pruning #
+					########################################
+					
+					state.actions.each do |symbol, actions|
+						
+						# We are only interested in pruning actions for
+						# terminal symbols.
+						next unless symbol.is_terminal?
+						
+						# Skip to the next one if there is no possibility
+						# of a Shift/Reduce or Reduce/Reduce conflict.
+						next unless actions and actions.length > 1
+						
+						reduces_ok = actions.inject(true) do |m, a|
+							if a.is_a?(Reduce)
+								m and @rules_id[a.id].prec
+							else
+								m
+							end
+						end
+						
+						if @precs[symbol] and reduces_ok
+							max_prec = 0
+							selected_action = nil
+							
+							# Grab the associativity and precedence for
+							# the input token.
+							tassoc, tprec = precs[symbol]
+							
+							actions.each do |a|
+								assoc, prec = a.is_a?(Shift) ? [tassoc, tprec] : @rule_precs[a.id]
+								
+								# If two actions have the same precedence we
+								# will only replace the previous rule if:
+								#  * The token is left associative and the current action is a Reduce
+								#  * The Token is right associative and the current action is a Shift
+								if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
+									max_prec			= prec
+									selected_action	= a
+									
+								elsif prec == max_prec and assoc == :nonassoc
+									raise ParserConstructionError, 'Non-associative token found during conflict resolution.'
+									
+								end
+							end
+							
+							state.actions[symbol] = [selected_action]
+						end
+					end
+				end
+			end
+			
+			def right(*symbols)
+				prec_level = @prec_counts[:right] += 1
+				
+				symbols.map { |s| s.to_sym }.each do |sym|
+					@token_precs[sym] = [:right, prec_level]
+				end
+			end
+			
+			def rule(symbol, expression = nil, precedence = nil, &action)
+				@grammar.curr_lhs	= symbol
+				@curr_prec		= precedence
+				
+				if expression
+					self.clause(expression, precedence, &action)
+				else
+					self.instance_exec(&action)
+				end
+				
+				@grammar.curr_lhs	= nil
+				@curr_prec		= nil
+			end
+			
+			def start(symbol)
+				if (s = symbol.to_s) != s.downcase
+					raise ParserConstructionError, 'Start symbol must be a non-terminal.'
+				end
+				
+				@start_symbol = symbol
+			end
+			
+			class State
+				attr_accessor	:id
+				attr_reader	:items
+				attr_reader	:actions
+				
+				def initialize(tokens, items = [])
+					@id		= nil
+					@items	= items
+					@actions	= tokens.inject(Hash.new) { |h, t| h[t] = Array.new; h }
+				end
+				
+				def ==(other)
+					self.items == other.items
+				end
+				
+				def append(item)
+					if item.is_a?(Item) and not @items.include?(item) then @items << item end
+				end
+				
+				alias :<< :append
+				
+				def clean
+					@items = nil
+				end
+				
+				def close(rules)
+					self.each do |item|
+						if (next_symbol = item.next_symbol) and next_symbol.is_nonterminal?
+							rules[next_symbol.value].each { |r| self << r.to_item }
+						end
+					end
+				end
+				
+				def each
+					@items.each {|item| yield item}
+				end
+				
+				def on(symbol, action)
+					if @actions.key?(symbol)
+						@actions[symbol] << action
+					else
+						raise ParserConstructionError, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
+					end
+				end
+				
+				def on_any(action)
+					@actions.each { |k, v| if is_terminal?(k) then v << action end }
+				end
+				
+				def on?(symbol)
+					
+					pp symbol
+					pp @actions
+					
+					@actions[symbol]
+				end
+			end
+			
+			class Action
+				attr_reader :id
+				
+				def initialize(id = nil)
+					@id = id
+				end
+			end
+			
+			class Accept < Action
+				def to_s
+					"Accept"
+				end
+			end
+			
+			class GoTo < Action
+				def to_s
+					"GoTo #{self.id}"
+				end
+			end
+			
+			class Reduce < Action
+				def to_s
+					"Reduce by Rule #{self.id}"
+				end
+			end
+			
+			class Shift < Action
+				def to_s
+					"Shift to State #{self.id}"
 				end
 			end
 		end
@@ -511,442 +747,6 @@ module RLTK
 			
 			def state
 				@state_stack.last
-			end
-		end
-		
-		class Rule
-			attr_reader :id
-			attr_reader :symbol
-			attr_reader :tokens
-			attr_reader :action
-			
-			attr_accessor :prec
-			
-			def initialize(id, symbol, tokens, precedence = nil, &action)
-				@id		= id
-				@symbol	= symbol
-				@tokens	= tokens
-				@prec	= precedence
-				@action	= action || Proc.new {}
-				
-				if @prec and not @prec.is_a?(Symbol)
-					raise ParserConstructionError, 'Non-Symbol object used to specify precedence.'
-				end
-				
-				@dot_index = @tokens.index {|t| t.type == :DOT}
-			end
-			
-			def ==(other)
-				self.action == other.action and self.tokens == other.tokens
-			end
-			
-			def advance
-				if (index = @dot_index) < @tokens.length - 1
-					@tokens[index], @tokens[index + 1] = @tokens[index + 1], @tokens[index]
-					@dot_index += 1
-				end
-			end
-			
-			def clean
-				@dot_index = @tokens = nil
-			end
-			
-			def copy
-				Rule.new(@id, @symbol, @tokens.clone, &@action)
-			end
-			
-			def next_token
-				@tokens[@dot_index + 1]
-			end
-			
-			def to_s(padding = 0, item_mode = false)
-				"#{format("%-#{padding}s", @symbol)} -> #{@tokens.map{|t| if t.type == :DOT and item_mode then '·' else t.value end}.join(' ')}"
-			end
-		end
-		
-		class RuleProxy
-			attr_reader :symbols
-			attr_writer :symbol
-			
-			def initialize(parser)
-				@parser = parser
-				
-				@lexer = EBNFLexer.new
-				@rules = Array.new
-				
-				@rule_counter = 0
-				@symbol = nil
-				
-				@symbols = Hash.new(false).update({:EOS => true})
-			end
-			
-			def clause(expression, precedence = nil, &action)
-				tokens = @lexer.lex(expression)
-				
-				new_tokens = [Token.new(:DOT)]
-				
-				# Remove EBNF tokens and replace them with new productions.
-				tokens.each_index do |i|
-					ttype0 = tokens[i].type
-					
-					if ttype0 == :TERM or ttype0 == :NONTERM
-						
-						# Add this symbol to the @symbols hash.
-						@symbols[tokens[i].value] = true
-						
-						if i + 1 < tokens.length
-							ttype1 = tokens[i + 1].type
-							
-							new_tokens <<
-							case tokens[i + 1].type
-								when :'?'
-									@parser.get_question(tokens[i])
-								
-								when :*
-									@parser.get_star(tokens[i])
-								
-								when :+
-									@parser.get_plus(tokens[i])
-								
-								else
-									tokens[i]
-							end
-							
-							# Add any non-terminal symbols that were
-							# returned by the EBNF helper functions to
-							# the @symbols hash.
-							@symbols[new_tokens.last.value] = true
-						else
-							new_tokens << tokens[i]
-						end
-					end
-				end
-				
-				# Make sure the production symbol is collected.
-				@symbols[@symbol] = true
-				
-				# Check to make sure the action's arity matches the number
-				# of tokens in the clause.
-				if action.arity != new_tokens.length - 1
-					raise ParserConstructionError, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
-						'terminals and non-terminals in the clause.'
-				end
-				
-				# If no precedence is specified use the precedence of the
-				# last terminal in the production.
-				if not precedence and new_tokens.length > 1
-					new_tokens.reverse_each do |t|
-						if t.type == :TERM
-							precedence = t.value
-							break
-						end
-					end
-				end
-				
-				# Add the item to the current list.
-				@rules << (rule = Rule.new(self.next_id, @symbol, new_tokens, precedence, &action))
-				
-				# Return the item from this clause.
-				return rule
-			end
-			
-			def next_id
-				@rule_counter += 1
-			end
-			
-			def wrapper(&block)
-				@rules = Array.new
-				
-				self.instance_exec(&block)
-				
-				return @rules
-			end
-		end
-		
-		class Table
-			attr_reader :conflicts
-			attr_reader :states
-			
-			def initialize
-				@states = Array.new
-				
-				@conflicts = Hash.new {|h, k| h[k] = Array.new}
-			end
-			
-			def [](index)
-				@states[index]
-			end
-			
-			def add_state(state)
-				if (id = @states.index(state))
-					id
-				else
-					state.id = @states.length
-					
-					@states << state
-					
-					@states.length - 1
-				end
-			end
-			
-			alias :<< :add_state
-			
-			def build_g_prime(g)
-				g_prime = Hash.new
-				
-				@states.each do |state|
-					state.each do |item|
-						left = [state.id, item.next_token]
-						
-						next if not is_terminal?(item.next_token) or g_prime.key?(left)
-						
-						g_prime[left] = Array.new
-						
-						g[item.next_token].each do |rule|
-							right = Array.new
-							
-							cstate = state
-							
-							# We skip the first token because it is going
-							# to be a DOT.
-							rule.tokens[1..-1].each do |token|
-								right << [cstate.id, token.value]
-								
-								cstate = @states[cstate.on?(token.value).first.id]
-							end
-							
-							g_prime[left] << right
-						end
-					end
-				end
-				
-				return g_prime
-			end
-			
-			def check
-				@states.each do |state|
-					state.actions.each do |sym, actions|
-						if is_nonterminal?(sym)
-							# Here we check actions for non-terminals.
-							
-							if actions.length > 1
-								raise ParserConstructionError, "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
-								
-							elsif actions.length == 1 and not actions.first.is_a?(GoTo)
-								puts actions.first
-								raise ParserConstructionError, "State #{state.id} has non-GoTo action for non-terminal #{sym}."
-								
-							end
-							
-						else
-							# Here we check actions for terminals.
-							
-							reduces	= 0
-							shifts	= 0
-							
-							actions.each do |action|
-								if action.is_a?(Accept)
-									if sym != :EOS
-										raise ParserConstructionError, "Accept action found for terminal #{sym} in state #{state.id}."
-									end
-									
-								elsif action.is_a?(Reduce)
-									reduces += 1
-								elsif action.is_a?(Shift)
-									shifts += 1
-									
-								else
-									raise ParserConstructionError, "Object of type #{action.class} found in actions for terminal " +
-										"#{sym} in state #{state.id}."
-									
-								end
-							end
-							
-							if shifts > 1
-								raise ParserConstructionError, "Multiple shifts found for terminal #{sym} in state #{state.id}."
-								
-							elsif shifts == 1 and reduces > 0
-								self.inform_conflict(state.id, :SR, sym)
-								
-							elsif reduces > 1
-								self.inform_conflict(state.id, :RR, sym)
-								
-							end
-						end
-					end
-				end
-			end
-			
-			def clean
-				@states.each {|state| state.clean}
-			end
-			
-			def inform_conflict(state_id, type, sym)
-				@conflicts[state_id] << [type, sym]
-			end
-			
-			def each
-				@states.each {|r| yield r}
-			end
-			
-			def prune(symbols, rules, precs)
-				symbols.select! { |sym| is_terminal?(sym) }
-				
-				lookaheads = compute_lookaheads(self.build_g_prime(rules))
-				
-				@states.each do |state|
-					
-					#~puts "Pruning actions for state #{state.id}."
-					
-					#####################
-					# Lookahead Pruning #
-					#####################
-					
-					reductions = state.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
-					
-					reductions.each do |r|
-						(symbols - lookaheads[rules[r.id].symbol]).each do |k|
-							state.actions[k].delete(r)
-						end
-					end
-					
-					########################################
-					# Precedence and Associativity Pruning #
-					########################################
-					
-					state.actions.each do |symbol, actions|
-						
-						# We are only interested in pruning actions for
-						# terminal symbols.
-						next unless is_terminal?(symbol)
-						
-						# Skip to the next one if there is no possibility
-						# of a Shift/Reduce or Reduce/Reduce conflict.
-						next unless actions and actions.length > 1
-						
-						reduces_ok = actions.inject(true) do |m, a|
-							if a.is_a?(Reduce)
-								m and rules[a.id].prec
-							else
-								m
-							end
-						end
-						
-						if precs[symbol] and reduces_ok
-							max_prec = 0
-							selected_action = nil
-							
-							# Grab the associativity and precedence for
-							# the input token.
-							tassoc, tprec = precs[symbol]
-							
-							actions.each do |a|
-								assoc, prec = a.is_a?(Shift) ? [tassoc, tprec] : rules[a.id].prec
-								
-								# If two actions have the same precedence we
-								# will only replace the previous rule if:
-								#  * The token is left associative and the current action is a Reduce
-								#  * The Token is right associative and the current action is a Shift
-								if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
-									max_prec			= prec
-									selected_action	= a
-									
-								elsif prec == max_prec and assoc == :nonassoc
-									raise ParserConstructionError, 'Non-associative token found during conflict resolution.'
-									
-								end
-							end
-							
-							state.actions[symbol] = [selected_action]
-						end
-					end
-				end
-			end
-			
-			class State
-				attr_accessor	:id
-				attr_reader	:items
-				attr_reader	:actions
-				
-				def initialize(tokens, items = [])
-					@id		= nil
-					@items	= items
-					@actions	= tokens.inject(Hash.new) { |h, t| h[t] = Array.new; h }
-				end
-				
-				def ==(other)
-					self.items == other.items
-				end
-				
-				def append(item)
-					if not @items.include?(item) then @items << item end
-				end
-				
-				alias :<< :append
-				
-				def clean
-					@items = nil
-				end
-				
-				def close(rules)
-					self.each do |item|
-						if (next_token = item.next_token) and next_token.type == :NONTERM
-							rules[next_token.value].each {|r| self << r}
-						end
-					end
-				end
-				
-				def each
-					@items.each {|item| yield item}
-				end
-				
-				def on(symbol, action)
-					if @actions.key?(symbol)
-						@actions[symbol] << action
-					else
-						raise InternalParserError, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
-					end
-				end
-				
-				def on_any(action)
-					@actions.each { |k, v| if is_terminal?(k) then v << action end }
-				end
-				
-				def on?(symbol)
-					@actions[symbol]
-				end
-			end
-			
-			class Action
-				attr_reader :id
-				
-				def initialize(id = nil)
-					@id = id
-				end
-			end
-			
-			class Accept < Action
-				def to_s
-					"Accept"
-				end
-			end
-			
-			class GoTo < Action
-				def to_s
-					"GoTo #{self.id}"
-				end
-			end
-			
-			class Reduce < Action
-				def to_s
-					"Reduce by Rule #{self.id}"
-				end
-			end
-			
-			class Shift < Action
-				def to_s
-					"Shift to State #{self.id}"
-				end
 			end
 		end
 	end
