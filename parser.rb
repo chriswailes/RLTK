@@ -19,6 +19,14 @@ module RLTK
 	class ParserConstructionError < Exception; end
 	class InternalParserError < Exception; end
 	
+	def is_terminal?(sym)
+		(s = sym.to_s) == s.upcase
+	end
+	
+	def is_nonterminal?(sym)
+		(s = sym.to_s) == s.downcase
+	end
+	
 	class Parser
 		def Parser.inherited(klass)
 			klass.class_exec do
@@ -214,7 +222,7 @@ module RLTK
 					end
 					
 					# Prune the table.
-					@table.prune(@rules, @precs)
+					@table.prune(all_symbols, @rules, @precs)
 					
 					# Check the table.
 					@table.check
@@ -298,7 +306,7 @@ module RLTK
 					prec_level = @precs[:'!left'] += 1
 					
 					symbols.each do |s|
-						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
+						if s.is_a?(Symbol) and is_terminal?(s)
 							@precs[s] = [:left, prec_level]
 						else
 							raise InternalParserError, 'Incorrect token specification given to the left directive.'
@@ -310,7 +318,7 @@ module RLTK
 					prec_level = @precs[:'!non'] += 1
 					
 					symbols.each do |s|
-						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
+						if s.is_a?(Symbol) and is_terminal?(s)
 							@precs[s] = [:non, prec_level]
 						else
 							raise InternalParserError, 'Incorrect token specification given to the nonassoc directive.'
@@ -326,7 +334,7 @@ module RLTK
 					prec_level = @precs[:'!right'] += 1
 					
 					symbols.each do |s|
-						if s.is_a?(Symbol) and s.to_s == s.to_s.upcase
+						if s.is_a?(Symbol) and is_terminal?(s)
 							@precs[s] = [:right, prec_level]
 						else
 							raise InternalParserError, 'Incorrect token specification given to the right directive.'
@@ -437,7 +445,7 @@ module RLTK
 									
 									nstack.push_output(rule.action.call(*nstack.pop(rule.action.arity)))
 									
-									if (goto = self.class.table[nstack.state].on?(rule.symbol))
+									if (goto = self.class.table[nstack.state].on?(rule.symbol).first)
 										nstack.push_state(goto.id)
 									else
 										raise InternalParserError, "No GoTo action found in state #{nstack.state} " +
@@ -683,10 +691,42 @@ module RLTK
 			
 			alias :<< :add_state
 			
+			def build_g_prime(g)
+				g_prime = Hash.new
+				
+				@states.each do |state|
+					state.each do |item|
+						left = [state.id, item.next_token]
+						
+						next if not is_terminal?(item.next_token) or g_prime.key?(left)
+						
+						g_prime[left] = Array.new
+						
+						g[item.next_token].each do |rule|
+							right = Array.new
+							
+							cstate = state
+							
+							# We skip the first token because it is going
+							# to be a DOT.
+							rule.tokens[1..-1].each do |token|
+								right << [cstate.id, token.value]
+								
+								cstate = @states[cstate.on?(token.value).first.id]
+							end
+							
+							g_prime[left] << right
+						end
+					end
+				end
+				
+				return g_prime
+			end
+			
 			def check
 				@states.each do |state|
 					state.actions.each do |sym, actions|
-						if sym.to_s == sym.to_s.downcase
+						if is_nonterminal?(sym)
 							# Here we check actions for non-terminals.
 							
 							if actions.length > 1
@@ -749,25 +789,40 @@ module RLTK
 				@states.each {|r| yield r}
 			end
 			
-			def prune(rules, precs)
+			def prune(symbols, rules, precs)
+				symbols.select! { |sym| is_terminal?(sym) }
+				
+				lookaheads = compute_lookaheads(self.build_g_prime(rules))
+				
 				@states.each do |state|
 					
 					#~puts "Pruning actions for state #{state.id}."
+					
+					#####################
+					# Lookahead Pruning #
+					#####################
+					
+					reductions = state.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
+					
+					reductions.each do |r|
+						(symbols - lookaheads[rules[r.id].symbol]).each do |k|
+							state.actions[k].delete(r)
+						end
+					end
+					
+					########################################
+					# Precedence and Associativity Pruning #
+					########################################
 					
 					state.actions.each do |symbol, actions|
 						
 						# We are only interested in pruning actions for
 						# terminal symbols.
-						next unless symbol.to_s == symbol.to_s.upcase
+						next unless is_terminal?(symbol)
 						
 						# Skip to the next one if there is no possibility
 						# of a Shift/Reduce or Reduce/Reduce conflict.
 						next unless actions and actions.length > 1
-						
-						#~puts "Pruning actions for input token #{symbol}"
-						
-						# Prune actions based on precedence and
-						# associativity.
 						
 						reduces_ok = actions.inject(true) do |m, a|
 							if a.is_a?(Reduce)
@@ -801,8 +856,6 @@ module RLTK
 									
 								end
 							end
-							
-							#~puts "Selected action #{selected_action}."
 							
 							state.actions[symbol] = [selected_action]
 						end
@@ -856,18 +909,11 @@ module RLTK
 				end
 				
 				def on_any(action)
-					@actions.each { |k, v| if k.to_s == k.to_s.upcase then v << action end }
+					@actions.each { |k, v| if is_terminal?(k) then v << action end }
 				end
 				
 				def on?(symbol)
-					# If we are asking about a non-terminal we are looking
-					# for a GoTo action, and should only return a single
-					# action.
-					if symbol.to_s == symbol.to_s.downcase
-						@actions[symbol].first
-					else
-						@actions[symbol]
-					end
+					@actions[symbol]
 				end
 			end
 			
