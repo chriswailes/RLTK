@@ -17,6 +17,7 @@ require 'cfg'
 module RLTK
 	class ParsingError < Exception; end
 	class ParserConstructionError < Exception; end
+	class InternalParserError < Exception; end
 	
 	class Parser
 		def Parser.inherited(klass)
@@ -93,8 +94,6 @@ module RLTK
 				end
 			end
 			
-			alias :<< :add_state
-			
 			# FIXME Must redo this with the new CFG class.
 			def build_g_prime
 				g_prime = CFG.new
@@ -103,7 +102,7 @@ module RLTK
 					state.each do |item|
 						left = [state.id, item.next_token]
 						
-						next if not is_terminal?(item.next_token) or g_prime.key?(left)
+						next if not CFG::is_terminal?(item.next_token) or g_prime.key?(left)
 						
 						g_prime[left] = Array.new
 						
@@ -131,7 +130,7 @@ module RLTK
 			def check
 				@states.each do |state|
 					state.actions.each do |sym, actions|
-						if sym.is_terminal?
+						if CFG::is_terminal?(sym)
 							# Here we check actions for terminals.
 							
 							reduces	= 0
@@ -195,6 +194,9 @@ module RLTK
 					raise ParserConstructionError, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
 						'terminals and non-terminals in the clause.'
 				end
+				
+				# Add the action to our proc list.
+				@procs[rule.id] = action
 
 				# If no precedence is specified use the precedence of the
 				# last terminal in the production.
@@ -263,7 +265,7 @@ module RLTK
 						f.puts("\tTotal number of states: #{@states.length}")
 						f.puts
 						
-						f.puts("\tTotal conflicts: #{@conflicts.keys.flatten.length}")
+						f.puts("\tTotal conflicts: #{@conflicts.values.flatten(1).length}")
 						f.puts
 						
 						@conflicts.each do |state_id, conflicts|
@@ -294,8 +296,8 @@ module RLTK
 							f.puts
 							f.puts("\t# ACTIONS #")
 							
-							state.actions.keys.map {|s| s.to_s}.sort.each do |sym|
-								state.actions[sym.to_sym].each do |action|
+							state.actions.keys.sort {|a,b| a.to_s <=> b.to_s}.each do |sym|
+								state.actions[sym].each do |action|
 									f.puts("\tOn #{sym} #{action}")
 								end
 							end
@@ -334,10 +336,11 @@ module RLTK
 				
 				start_state.close(@grammar.rules)
 				
-				@states << start_state
+				self.add_state(start_state)
 				
 				# Translate the precedence of rules from tokens to
 				# (associativity, precedence) pairs.
+				
 				@rule_precs.each_with_index do |prec, id|
 					@rule_precs[id] = @token_precs[prec]
 				end
@@ -345,7 +348,7 @@ module RLTK
 				# Build the rest of the transition table.
 				@states.each do |state|
 					#Transition states.
-					tstates = Hash.new {|h,k| h[k] = State.new(@symbols)}
+					tstates = Hash.new { |h,k| h[k] = State.new(@symbols) }
 					
 					#Bin each item in this set into reachable transition
 					#states.
@@ -365,17 +368,17 @@ module RLTK
 						
 						tstate.close(@grammar.rules)
 						
-						id = @states << tstate
+						id = self.add_state(tstate)
 						
 						# Add Goto and Shift actions.
-						state.on(symbol, symbol.is_nonterminal? ? Goto.new(id) : Shift.new(id))
+						state.on(symbol, CFG::is_nonterminal?(symbol) ? GoTo.new(id) : Shift.new(id))
 					end
 					
 					# Find the Accept and Reduce actions for this state.
 					state.each do |item|
 						if item.at_end
 							if item.lhs == :start
-								state.on(CFG::GrammarSymbol.new(:EOS), Accept.new)
+								state.on(:EOS, Accept.new)
 							else
 								state.on_any(Reduce.new(item.id))
 							end
@@ -540,7 +543,7 @@ module RLTK
 						
 						# We are only interested in pruning actions for
 						# terminal symbols.
-						next unless symbol.is_terminal?
+						next unless CFG::is_terminal?(symbol)
 						
 						# Skip to the next one if there is no possibility
 						# of a Shift/Reduce or Reduce/Reduce conflict.
@@ -548,19 +551,19 @@ module RLTK
 						
 						reduces_ok = actions.inject(true) do |m, a|
 							if a.is_a?(Reduce)
-								m and @rules_id[a.id].prec
+								m and @rule_precs[a.id]
 							else
 								m
 							end
 						end
 						
-						if @precs[symbol] and reduces_ok
+						if @token_precs[symbol] and reduces_ok
 							max_prec = 0
 							selected_action = nil
 							
 							# Grab the associativity and precedence for
 							# the input token.
-							tassoc, tprec = precs[symbol]
+							tassoc, tprec = @token_precs[symbol]
 							
 							actions.each do |a|
 								assoc, prec = a.is_a?(Shift) ? [tassoc, tprec] : @rule_precs[a.id]
@@ -594,8 +597,20 @@ module RLTK
 			end
 			
 			def rule(symbol, expression = nil, precedence = nil, &action)
+				
+				# Check the symbol.
+				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or (s = symbol.to_s) != s.downcase
+					riase ParserConstructionError, 'Production symbols must be Strings or Symbols and be in all lowercase.'
+				else
+					symbol = symbol.to_sym
+				end
+				
 				@grammar.curr_lhs	= symbol
 				@curr_prec		= precedence
+				
+				# Set this as the start symbol if there isn't one already
+				# defined.
+				@start_symbol ||= symbol
 				
 				if expression
 					self.clause(expression, precedence, &action)
@@ -631,7 +646,7 @@ module RLTK
 				end
 				
 				def append(item)
-					if item.is_a?(Item) and not @items.include?(item) then @items << item end
+					if item.is_a?(CFG::Item) and not @items.include?(item) then @items << item end
 				end
 				
 				alias :<< :append
@@ -642,8 +657,8 @@ module RLTK
 				
 				def close(rules)
 					self.each do |item|
-						if (next_symbol = item.next_symbol) and next_symbol.is_nonterminal?
-							rules[next_symbol.value].each { |r| self << r.to_item }
+						if (next_symbol = item.next_symbol) and CFG::is_nonterminal?(next_symbol)
+							rules[next_symbol].each { |r| self << r.to_item }
 						end
 					end
 				end
@@ -661,14 +676,10 @@ module RLTK
 				end
 				
 				def on_any(action)
-					@actions.each { |k, v| if is_terminal?(k) then v << action end }
+					@actions.each { |k, v| if CFG::is_terminal?(k) then v << action end }
 				end
 				
 				def on?(symbol)
-					
-					pp symbol
-					pp @actions
-					
 					@actions[symbol]
 				end
 			end

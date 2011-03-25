@@ -22,18 +22,34 @@ module RLTK
 	class CFG
 		attr_accessor :curr_lhs
 		
+		#################
+		# Class Methods #
+		#################
+		
+		def self.is_terminal?(sym)
+			(s = sym.to_s) == s.upcase
+		end
+		
+		def self.is_nonterminal?(sym)
+			(s = sym.to_s) == s.downcase
+		end
+		
+		####################
+		# Instance Methods #
+		####################
+		
 		def initialize(&callback)
 			@curr_lhs			= nil
 			@callback			= callback || Proc.new {}
 			@lexer			= Lexers::EBNFLexer.new
-			@rule_counter		= 0
+			@rule_counter		= -1
 			@wrapper_symbol	= nil
 			
 			@rules_id		= Hash.new
 			@rules_sym	= Hash.new { |h, k| h[k] = [] }
 			@rule_buffer	= Array.new
 			
-			@terms	= Hash.new(false).update({GrammarSymbol.new(:EOS) => true})
+			@terms	= Hash.new(false).update({:EOS => true})
 			@nonterms	= Hash.new(false)
 		end
 		
@@ -51,14 +67,14 @@ module RLTK
 				raise GrammarError, 'CFG.clause called outside of CFG.rule block.'
 			end
 			
-			lhs		= GrammarSymbol.new(@curr_lhs.to_sym)
+			lhs		= @curr_lhs.to_sym
 			rhs		= Array.new
 			tokens	= @lexer.lex(expression)
 			
 			# Remove EBNF tokens and replace them with new productions.
 			tokens.each_index do |i|
 				ttype0	= tokens[i].type
-				tvalue0	= GrammarSymbol.new(tokens[i].value)
+				tvalue0	= tokens[i].value
 				
 				if ttype0 == :TERM or ttype0 == :NONTERM
 					
@@ -102,15 +118,15 @@ module RLTK
 		end
 		
 		def follow_set(symbol)
-			symbol = GrammarSymbol(symbol) if not symbol.is_a?(GrammarSymbol)
+			
 		end
 		
 		def frist_set(symbol)
-			symbol = GrammarSymbol(symbol) if not symbol.is_a?(GrammarSymbol)
+			
 		end
 		
 		def get_question(symbol)
-			new_symbol = GrammarSymbol.new((symbol.value.to_s.downcase + '_question').to_sym)
+			new_symbol = (symbol.value.to_s.downcase + '_question').to_sym
 			
 			if not @rules_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -130,7 +146,7 @@ module RLTK
 		end
 		
 		def get_plus(symbol)
-			new_symbol = GrammarSymbol.new((symbol.value.to_s.downcase + '_plus').to_sym)
+			new_symbol = (symbol.value.to_s.downcase + '_plus').to_sym
 			
 			if not @rules_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -150,7 +166,7 @@ module RLTK
 		end
 		
 		def get_star(symbol)
-			new_symbol = GrammarSymbol.new((symbol.value.to_s.downcase + '_star').to_sym)
+			new_symbol = (symbol.value.to_s.downcase + '_star').to_sym
 			
 			if not @rules_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -231,7 +247,7 @@ module RLTK
 			end
 			
 			def last_terminal
-				@rhs.inject(nil) { |m, sym| if sym.is_terminal? then sym else m end }
+				@rhs.inject(nil) { |m, sym| if CFG::is_terminal?(sym) then sym else m end }
 			end
 			
 			def to_item
@@ -239,16 +255,22 @@ module RLTK
 			end
 			
 			def to_s(padding = 0)
-				"#{format("%-#{padding}s", @lhs)} -> #{@rhs.map { |s| s.value }.join(' ')}"
+				"#{format("%-#{padding}s", @lhs)} -> #{@rhs.map { |s| s.to_s }.join(' ')}"
 			end
 		end
 		
 		class Item < Rule
+			attr_reader :dot
+			
 			def initialize(dot, *args)
 				super(*args)
 				
 				# The Dot indicates the NEXT symbol to be read.
 				@dot = dot
+			end
+			
+			def ==(other)
+				self.dot == other.dot and self.lhs == other.lhs and self.rhs == other.rhs
 			end
 			
 			def advance
@@ -270,47 +292,8 @@ module RLTK
 			end
 			
 			def to_s(padding = 0)
-				"#{format("%-#{padding}s", @lhs)} -> #{@rhs.map { |s| s.value }.insert(@dot, '·').join(' ') }"
+				"#{format("%-#{padding}s", @lhs)} -> #{@rhs.map { |s| s.to_s }.insert(@dot, '·').join(' ') }"
 			end
 		end
-		
-		class GrammarSymbol
-			attr_reader :value
-			
-			def ==(other)
-				if other.is_a?(GrammarSymbol)
-					self.value == other.value
-				elsif other.is_a?(Symbol)
-					self.value == other
-				else
-					false
-				end
-			end
-			
-			def eql?(other)
-				self == other
-			end
-			
-			def hash
-				@value.hash
-			end
-			
-			def initialize(symbol)
-				@value = symbol
-			end
-			
-			def is_terminal?
-				(s = @symbol.to_s) == s.upcase
-			end
-			
-			def is_nonterminal?
-				(s = @symbol.to_s) == s.downcase
-			end
-			
-			def to_s
-				@value.to_s
-			end
-		end
-		
 	end
 end
