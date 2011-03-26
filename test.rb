@@ -57,4 +57,4 @@ end
 lexer = LALexer.new
 parser = LAParser.new
 
-#~puts parser.parse(lexer.lex(ARGV[0]), if ARGV[1] then (ARGV[1] == 'true') ? true : ARGV[1] end)
+puts parser.parse(lexer.lex(ARGV[0]), if ARGV[1] then (ARGV[1] == 'true') ? true : ARGV[1] end)

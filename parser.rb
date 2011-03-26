@@ -49,7 +49,6 @@ module RLTK
 				@grammar		= CFG.new
 				@lh_sides		= Hash.new
 				@procs		= Array.new
-				@start_symbol	= nil
 				@states		= Array.new
 				
 				@prec_counts	= {:left => 0, :right => 0, :non => 0}
@@ -153,8 +152,6 @@ module RLTK
 				# clause.
 				precedence ||= @curr_prec
 				
-				action ||= Proc.new { || }
-				
 				rule = @grammar.clause(expression)
 				
 				# Check to make sure the action's arity matches the number
@@ -228,7 +225,7 @@ module RLTK
 						f.puts("#####################")
 						f.puts
 						
-						f.puts("\tStart symbol: #{@start_symbol}")
+						f.puts("\tStart symbol: #{@grammar.start_symbol}")
 						f.puts
 						
 						f.puts("\tTotal number of states: #{@states.length}")
@@ -300,7 +297,7 @@ module RLTK
 				@symbols = @grammar.symbols
 				
 				# Add our starting state to the state list.
-				start_rule	= @grammar.rule(:start, @start_symbol.to_s).first
+				start_rule	= @grammar.rule(:start, @grammar.start_symbol.to_s).first
 				start_state	= State.new(@symbols, [start_rule.to_item])
 				
 				start_state.close(@grammar.rules)
@@ -525,19 +522,34 @@ module RLTK
 				# Initialize our empty lookahead table.
 				lookaheads = Hash.new { |h,k| h[k] = Hash.new { |h,k| h[k] = Array.new } }
 				
+				#~pp self.grammar_prime
+				
+				#~pp self.grammar_prime.follow_set(:'2_a')
+				#~pp self.grammar_prime.follow_set(:'3_a')
+				
 				self.grammar_prime.nonterms.each do |gp_sym|
+					
+					puts "Looking at grammar_prime symbol #{gp_sym}"
 					
 					# Get the State id and grammar symbol.
 					sid, g_sym = gp_sym.to_s.split('_')
+					
+					puts "Translates to symbol #{g_sym} in state #{sid} for grammar"
 					
 					# Get the follow set for the nonterminal in
 					# grammar_prime.
 					gp_follows = self.grammar_prime.follow_set(gp_sym)
 					
+					puts "Follow set:"
+					pp gp_follows
+					
 					# Translate those follow sets into the lookahead sets
 					# for the grammar.
 					lookaheads[sid][g_sym.to_sym] |= gp_follows.map { |sym| sym.to_s.split('_').last }
 				end
+				
+				pp lookaheads[5][:D]
+				pp lookaheads[7][:C]
 				
 				@states.each do |state|
 					
@@ -547,13 +559,13 @@ module RLTK
 					# Lookahead Pruning #
 					#####################
 					
-					reductions = state.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
-					
-					reductions.each do |r|
-						(symbols - lookaheads[state.id][@lh_sides[r.id]]).each do |sym|
-							state.actions[sym].delete(r)
-						end
-					end
+					#~reductions = state.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
+					#~
+					#~reductions.each do |r|
+						#~(symbols - lookaheads[state.id][@lh_sides[r.id]]).each do |sym|
+							#~state.actions[sym].delete(r)
+						#~end
+					#~end
 					
 					########################################
 					# Precedence and Associativity Pruning #
@@ -619,18 +631,12 @@ module RLTK
 			def rule(symbol, expression = nil, precedence = nil, &action)
 				
 				# Check the symbol.
-				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or (s = symbol.to_s) != s.downcase
+				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or not CFG::is_nonterminal?(symbol)
 					riase ParserConstructionError, 'Production symbols must be Strings or Symbols and be in all lowercase.'
 				end
 				
-				symbol = symbol.to_sym
-				
-				@grammar.curr_lhs	= symbol
+				@grammar.curr_lhs	= symbol.to_sym
 				@curr_prec		= precedence
-				
-				# Set this as the start symbol if there isn't one already
-				# defined.
-				@start_symbol ||= symbol
 				
 				if expression
 					self.clause(expression, precedence, &action)
@@ -643,11 +649,7 @@ module RLTK
 			end
 			
 			def start(symbol)
-				if (s = symbol.to_s) != s.downcase
-					raise ParserConstructionError, 'Start symbol must be a non-terminal.'
-				end
-				
-				@start_symbol = symbol
+				@grammar.start symbol
 			end
 			
 			class State

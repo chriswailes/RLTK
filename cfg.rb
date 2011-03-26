@@ -20,6 +20,8 @@ module RLTK
 	class GrammarError < Exception; end
 	
 	class CFG
+		attr_reader :start_symbol
+		
 		attr_accessor :curr_lhs
 		
 		#################
@@ -43,6 +45,7 @@ module RLTK
 			@callback			= callback || Proc.new {}
 			@lexer			= Lexers::EBNFLexer.new
 			@rule_counter		= -1
+			@start_symbol		= nil
 			@wrapper_symbol	= nil
 			
 			@rules_id		= Hash.new
@@ -73,6 +76,10 @@ module RLTK
 			lhs		= @curr_lhs.to_sym
 			rhs		= Array.new
 			tokens	= @lexer.lex(expression)
+			
+			# Set this as the start symbol if there isn't one already
+			# defined.
+			@start_symbol ||= lhs
 			
 			# Remove EBNF tokens and replace them with new productions.
 			tokens.each_index do |i|
@@ -125,8 +132,8 @@ module RLTK
 			# Memoize the result for later.
 			@firsts[sym0] ||=
 			
-			if self.symbols.include(sym0)
-				if CFG::is_terminal(sym0)
+			if self.symbols.include?(sym0)
+				if CFG::is_terminal?(sym0)
 					# If the symbol is a terminal, it is the only symbol in
 					# its follow set.
 					[sym0]
@@ -145,7 +152,7 @@ module RLTK
 								
 								# Grab the First set for the current
 								# symbol in this production.
-								set0 |= (set1 = first_set(sym1))
+								set0 |= (set1 = self.first_set(sym1)) - [:'ɛ']
 								
 								if not set1.include?(:'ɛ')
 									all_have_empty = false
@@ -167,9 +174,40 @@ module RLTK
 			end
 		end
 		
-		def follow_set(symbol)
+		def follow_set(sym0)
 			
-			@follows[symbol] ||= nil
+			#~puts "Building follow set for #{sym0}"
+			
+			# Memoize the result for later.
+			@follows[sym0] ||=
+			
+			if @nonterms[sym0]
+				
+				set0 = []
+				
+				# Add EOS to the start symbol's follow set.
+				set0 << :EOS if sym0 == @start_symbol
+				
+				@rules_id.values.each do |rule|
+					rule.rhs.each_cons(2) do |sym1, sym2|
+						if sym0 == sym1
+							set0 |= (set1 = self.first_set(sym2)) - [:'ɛ']
+							
+							if set1.include?('ɛ')
+								set0 |= self.follow_set(rule.lhs)
+							end
+						end
+					end
+					
+					if rule.lhs != sym0 and rule.rhs.last == sym0
+						set0 |= self.follow_set(rule.lhs) 
+					end
+				end
+				
+				set0
+			else
+				[]
+			end
 		end
 		
 		def get_question(symbol)
@@ -271,6 +309,14 @@ module RLTK
 			else
 				nil
 			end
+		end
+		
+		def start(symbol)
+			if not CFG::is_nonterminal?(symbol)
+				raise ParserConstructionError, 'Start symbol must be a non-terminal.'
+			end
+			
+			@start_symbol = symbol
 		end
 		
 		def symbols
