@@ -78,7 +78,7 @@ module RLTK
 							end
 						end
 					
-					@rule_precs[r.id] = last_terminal(r)
+					@rule_precs[r.id] = r.last_terminal
 				end
 			end
 			
@@ -92,39 +92,6 @@ module RLTK
 					
 					@states.length - 1
 				end
-			end
-			
-			# FIXME Must redo this with the new CFG class.
-			def build_g_prime
-				g_prime = CFG.new
-				
-				@states.each do |state|
-					state.each do |item|
-						left = [state.id, item.next_token]
-						
-						next if not CFG::is_terminal?(item.next_token) or g_prime.key?(left)
-						
-						g_prime[left] = Array.new
-						
-						g[item.next_token].each do |rule|
-							right = Array.new
-							
-							cstate = state
-							
-							# We skip the first token because it is going
-							# to be a DOT.
-							rule.tokens[1..-1].each do |token|
-								right << [cstate.id, token.value]
-								
-								cstate = @states[cstate.on?(token.value).first.id]
-							end
-							
-							g_prime[left] << right
-						end
-					end
-				end
-				
-				return g_prime
 			end
 			
 			def check
@@ -185,6 +152,8 @@ module RLTK
 				# Use the curr_prec only if it isn't overridden for this
 				# clause.
 				precedence ||= @curr_prec
+				
+				action ||= Proc.new { || }
 				
 				rule = @grammar.clause(expression)
 				
@@ -408,6 +377,36 @@ module RLTK
 				self.clean
 			end
 			
+			def grammar_prime
+				if not @grammar_prime
+					@grammar_prime = CFG.new
+					
+					@states.each do |state|
+						state.each do |item|
+							lhs = "#{state.id}_#{item.next_symbol}".to_sym
+							
+							next unless CFG::is_nonterminal?(item.next_symbol) and not @grammar_prime.rules.keys.include?(lhs)
+							
+							@grammar.rules[item.next_symbol].each do |rule|
+								rhs = ""
+								
+								cstate = state
+								
+								rule.rhs.each do |symbol|
+									rhs += "#{cstate.id}_#{symbol} "
+									
+									cstate = @states[cstate.on?(symbol).first.id]
+								end
+								
+								@grammar_prime.rule(lhs, rhs)
+							end
+						end
+					end
+				end
+				
+				@grammar_prime
+			end
+			
 			def inform_conflict(state_id, type, sym)
 				@conflicts[state_id] << [type, sym]
 			end
@@ -430,6 +429,12 @@ module RLTK
 			
 			def parse(tokens, env = Environment.new, verbose = false)
 				v = if verbose then (verbose.class == String) ? File.open(verbose, 'a') : $stdout else nil end
+				
+				if v
+					v.puts("Input tokens:")
+					v.puts(tokens.map { |t| t.type }.inspect)
+					v.puts
+				end
 				
 				# Start out with one stack in state zero.
 				processing	= [ParseStack.new]
@@ -515,9 +520,24 @@ module RLTK
 			end
 			
 			def prune
-				#~symbols = @grammar.terms
+				symbols = @grammar.terms
 				
-				#~lookaheads = compute_lookaheads(self.build_g_prime)
+				# Initialize our empty lookahead table.
+				lookaheads = Hash.new { |h,k| h[k] = Hash.new { |h,k| h[k] = Array.new } }
+				
+				self.grammar_prime.nonterms.each do |gp_sym|
+					
+					# Get the State id and grammar symbol.
+					sid, g_sym = gp_sym.to_s.split('_')
+					
+					# Get the follow set for the nonterminal in
+					# grammar_prime.
+					gp_follows = self.grammar_prime.follow_set(gp_sym)
+					
+					# Translate those follow sets into the lookahead sets
+					# for the grammar.
+					lookaheads[sid][g_sym.to_sym] |= gp_follows.map { |sym| sym.to_s.split('_').last }
+				end
 				
 				@states.each do |state|
 					
@@ -527,13 +547,13 @@ module RLTK
 					# Lookahead Pruning #
 					#####################
 					
-					#~reductions = state.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
-					#~
-					#~reductions.each do |r|
-						#~(symbols - lookaheads[@rules_id[r.id].symbol]).each do |k|
-							#~state.actions[k].delete(r)
-						#~end
-					#~end
+					reductions = state.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
+					
+					reductions.each do |r|
+						(symbols - lookaheads[state.id][@lh_sides[r.id]]).each do |sym|
+							state.actions[sym].delete(r)
+						end
+					end
 					
 					########################################
 					# Precedence and Associativity Pruning #
@@ -601,9 +621,9 @@ module RLTK
 				# Check the symbol.
 				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or (s = symbol.to_s) != s.downcase
 					riase ParserConstructionError, 'Production symbols must be Strings or Symbols and be in all lowercase.'
-				else
-					symbol = symbol.to_sym
 				end
+				
+				symbol = symbol.to_sym
 				
 				@grammar.curr_lhs	= symbol
 				@curr_prec		= precedence

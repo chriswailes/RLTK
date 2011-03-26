@@ -27,11 +27,11 @@ module RLTK
 		#################
 		
 		def self.is_terminal?(sym)
-			(s = sym.to_s) == s.upcase
+			sym and (s = sym.to_s) == s.upcase
 		end
 		
 		def self.is_nonterminal?(sym)
-			(s = sym.to_s) == s.downcase
+			sym and (s = sym.to_s) == s.downcase
 		end
 		
 		####################
@@ -51,6 +51,9 @@ module RLTK
 			
 			@terms	= Hash.new(false).update({:EOS => true})
 			@nonterms	= Hash.new(false)
+			
+			@firsts	= Hash.new
+			@follows	= Hash.new
 		end
 		
 		def add_rule(rule)
@@ -86,7 +89,7 @@ module RLTK
 						tvalue1	= tokens[i + 1].value
 						
 						rhs <<
-						case tvalue1
+						case ttype1
 							when :'?'
 								self.get_question(tvalue0)
 							
@@ -117,16 +120,60 @@ module RLTK
 			return rule
 		end
 		
-		def follow_set(symbol)
+		def first_set(sym0)
 			
+			# Memoize the result for later.
+			@firsts[sym0] ||=
+			
+			if self.symbols.include(sym0)
+				if CFG::is_terminal(sym0)
+					# If the symbol is a terminal, it is the only symbol in
+					# its follow set.
+					[sym0]
+				else
+					set = []
+					
+					@rules_sym[sym0].each do |rule|
+						if rule.rhs == []
+							# If this is an empty production we should
+							# add the empty string to the First set.
+							set0 << :'ɛ'
+						else
+							all_have_emtpy = true
+							
+							rule.rhs.each do |sym1|
+								
+								# Grab the First set for the current
+								# symbol in this production.
+								set0 |= (set1 = first_set(sym1))
+								
+								if not set1.include?(:'ɛ')
+									all_have_empty = false
+									break
+								end
+							end
+							
+							# Add the empty production if this production
+							# is all non-terminals that can be reduced to
+							# the empty string.
+							set0 << :'ɛ' if all_have_empty
+						end
+					end
+					
+					set0.uniq
+				end
+			else
+				nil
+			end
 		end
 		
-		def frist_set(symbol)
+		def follow_set(symbol)
 			
+			@follows[symbol] ||= nil
 		end
 		
 		def get_question(symbol)
-			new_symbol = (symbol.value.to_s.downcase + '_question').to_sym
+			new_symbol = (symbol.to_s.downcase + '_question').to_sym
 			
 			if not @rules_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -135,18 +182,21 @@ module RLTK
 				
 				# 1st (empty) production.
 				self.add_rule(rule = Rule.new(self.next_id, new_symbol, []))
-				@callback.call(rule, :*, :first)
+				@callback.call(rule, :'?', :first)
 				
 				# 2nd production
 				self.add_rule(rule = Rule.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(rule, :*, :second)
+				@callback.call(rule, :'?', :second)
+				
+				# Add the new symbol to the list of nonterminals.
+				@nonterms[new_symbol] = true
 			end
 			
 			return new_symbol
 		end
 		
 		def get_plus(symbol)
-			new_symbol = (symbol.value.to_s.downcase + '_plus').to_sym
+			new_symbol = (symbol.to_s.downcase + '_plus').to_sym
 			
 			if not @rules_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -160,13 +210,16 @@ module RLTK
 				# 2nd production
 				self.add_rule(rule = Rule.new(self.next_id, new_symbol, [symbol, new_symbol]))
 				@callback.call(rule, :+, :second)
+				
+				# Add the new symbol to the list of nonterminals.
+				@nonterms[new_symbol] = true
 			end
 			
 			return new_symbol
 		end
 		
 		def get_star(symbol)
-			new_symbol = (symbol.value.to_s.downcase + '_star').to_sym
+			new_symbol = (symbol.to_s.downcase + '_star').to_sym
 			
 			if not @rules_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -175,11 +228,14 @@ module RLTK
 				
 				# 1st (empty) production
 				self.add_rule(rule = Rule.new(self.next_id, new_symbol, []))
-				@callback.call(rule, :'?', :first)
+				@callback.call(rule, :*, :first)
 				
 				# 2nd production
 				self.add_rule(rule = Rule.new(self.next_id, new_symbol, [symbol, new_symbol]))
-				@callback.call(rule, :'?', :second)
+				@callback.call(rule, :*, :second)
+				
+				# Add the new symbol to the list of nonterminals.
+				@nonterms[new_symbol] = true
 			end
 			
 			return new_symbol
