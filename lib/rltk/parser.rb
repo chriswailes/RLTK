@@ -8,7 +8,7 @@
 ############
 
 # Ruby Language Toolkit
-require 'cfg'
+require 'rltk/cfg'
 
 #######################
 # Classes and Modules #
@@ -459,15 +459,17 @@ module RLTK
 					v.puts
 				end
 				
+				# Stack IDs to keep track of them during parsing.
+				stack_id = 0
+				
 				# Start out with one stack in state zero.
-				processing	= [ParseStack.new]
+				processing	= [ParseStack.new(stack_id += 1)]
 				moving_on		= []
 				
 				# Iterate over the tokens.  We don't procede to the
 				# next token until every stack is done with the
 				# current one.
 				tokens.each do |token|
-				
 					# Check to make sure this token was seen in the
 					# grammar definition.
 					if not @symbols.include?(token.type)
@@ -486,61 +488,74 @@ module RLTK
 					
 					# Iterate over the stacks until each one is done.
 					until processing.empty?
+						# Grab the current stack.
 						stack = processing.shift
-						
-						new_stacks = []
 						
 						# Get the available actions for this stack.
 						actions = @states[stack.state].on?(token.type)
 						
-						[stack, actions.pop] + actions.map {|action| [stack.copy, action] }
-						
-						actions.each do |action|
-							new_stacks << (nstack = stack.copy)
+						# Drop this stack if there are no actions.
+						if actions.empty?
+							if v
+								v.puts("Droping stack #{stack.id}: no more actions.")
+							end
 							
+							next
+						end
+						
+						# Make (stack, action) pairs, duplicating the
+						# stack as necessary.
+						pairs = [[stack, actions.pop]] + actions.map {|action| [stack.branch(stack_id += 1), action] }
+						
+						pairs.each do |stack, action|
 							if verbose
 								v.puts
-								v.puts("Current state stack: #{nstack.state_stack.inspect}")
+								v.puts('Current stack:')
+								v.puts("\tID: #{stack.id}")
+								v.puts("\tState stack:\t#{stack.state_stack.inspect}")
+								v.puts("\tOutput Stack:\t#{stack.output_stack.inspect}")
+								v.puts
 								v.puts("Action taken: #{action.to_s}")
 							end
 							
 							if action.is_a?(Accept)
-								return nstack.result
-							
-							elsif action.is_a?(GoTo)
-								raise InternalParserError, 'GoTo action encountered when reading a token.'
+								return stack.result
 							
 							elsif action.is_a?(Reduce)
-								
 								# Get the production associated with this reduction.
 								if not (production_proc = @procs[action.id])
 									raise InternalParserError, "No production #{action.id} found."
 								end
 								
-								result = env.instance_exec(*nstack.pop(production_proc.arity), &production_proc)
+								result = env.instance_exec(*stack.pop(production_proc.arity), &production_proc)
 								
-								nstack.push_output(result)
+								stack.push_output(result)
 								
-								if (goto = @states[nstack.state].on?(@lh_sides[action.id]).first)
-									nstack.push_state(goto.id)
+								if (goto = @states[stack.state].on?(@lh_sides[action.id]).first)
+									stack.push_state(goto.id)
 								else
 									raise InternalParserError, "No GoTo action found in state #{nstack.state} " +
 										"after reducing by production #{action.id}"
 								end
 								
-							elsif action.is_a?(Shift)
-								nstack.push(action.id, token.value)
+								# This stack is NOT ready for the next
+								# token.
+								processing << stack
 								
-								moving_on << new_stacks.delete(nstack)
+							elsif action.is_a?(Shift)
+								stack.push(action.id, token.value)
+								
+								# This stack is ready for the next
+								# token.
+								moving_on << stack
 							end
 						end
-						
-						processing += new_stacks
 					end
 					
 					if verbose then v.puts("\n\n") end
 					
-					processing = moving_on
+					processing	= moving_on
+					moving_on		= []
 				end
 			end
 			
@@ -752,15 +767,19 @@ module RLTK
 		end
 		
 		class ParseStack
+			attr_reader :id
+			attr_reader :output_stack
 			attr_reader :state_stack
 			
-			def initialize(ostack = [], sstack = [0])
+			def initialize(id, ostack = [], sstack = [0])
+				@id = id
+				
 				@output_stack	= ostack
 				@state_stack	= sstack
 			end
 			
-			def copy
-				ParseStack.new(Array.new(@output_stack), Array.new(@state_stack))
+			def branch(new_id)
+				ParseStack.new(new_id, Array.new(@output_stack), Array.new(@state_stack))
 			end
 			
 			def push(state, o)

@@ -9,7 +9,7 @@
 ############
 
 # Ruby Language Toolkit
-require 'lexers/ebnf'
+require 'rltk/lexers/ebnf'
 
 #######################
 # Classes and Modules #

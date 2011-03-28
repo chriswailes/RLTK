@@ -1,6 +1,5 @@
 parser.rb:
-	Optimize the parsing algorithm (remove unecessary copy operations and branching).
-	Make verbose parsing easier to track which stack is doing what.
+	Add all the options for ParserCore.parse
 	Track down but in ABParser with input "AAAAB".
 	Parse tree printing with graphviz.
 	Parsing errors that can be caught by the user's code.
