@@ -22,7 +22,7 @@ parser = RLTK::Parsers::Calc.new
 	#~
 	#~production(:a, "A* B") {|a, b| "Accepted with #{a.length} A(s)" }
 	#~
-	#~finalize('tester.table')
+	#~finalize
 #~end
 #~
 #~lexer = ABLexer.new
@@ -51,10 +51,10 @@ parser = RLTK::Parsers::Calc.new
 	#~
 	#~production(:b, 'G') { |_| }
 	#~
-	#~finalize('lookahead.table')
+	#~finalize
 #~end
 #~
 #~lexer = LALexer.new
 #~parser = LAParser.new
 
-puts parser.parse(lexer.lex(ARGV[0]), if ARGV[1] then (ARGV[1] == 'true') ? true : ARGV[1] end)
+puts parser.parse(lexer.lex(ARGV[0]), {:parse_tree => 'calc.dot', :verbose => if ARGV[1] == 'true' then true else ARGV[1] end})

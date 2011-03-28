@@ -38,8 +38,8 @@ module RLTK
 					@env = Environment.new
 				end
 				
-				def parse(tokens, verbose = false)
-					self.class.parse(tokens, @env, verbose)
+				def parse(tokens, opts = {})
+					self.class.parse(tokens, {:environment => @env}.update(opts))
 				end
 			end
 		end
@@ -99,7 +99,29 @@ module RLTK
 				end
 			end
 			
-			def check
+			def build_finalize_opts(opts)
+				opts[:explain] = self.get_io(opts[:explain])
+				
+				{
+					:explain		=> false,
+					:lookahead	=> true,
+					:precedence	=> true
+				}.update(opts)
+			end
+			
+			def build_parse_opts(opts)
+				opts[:parse_tree]	= self.get_io(opts[:parse_tree])
+				opts[:verbose]		= self.get_io(opts[:verbose])
+				
+				{
+					:accept		=> :first,
+					:env			=> Environment.new,
+					:parse_tree	=> false,
+					:verbose		=> false
+				}.update(opts)
+			end
+			
+			def check_sanity
 				@states.each do |state|
 					state.actions.each do |sym, actions|
 						if CFG::is_terminal?(sym)
@@ -206,118 +228,122 @@ module RLTK
 				@states.each { |state| state.clean }
 			end
 			
-			def explain(explain_file)
+			def explain(file)
 				if @grammar and not @states.empty?
-					File.open(explain_file, 'w') do |f|
-						f.puts("###############")
-						f.puts("# Productions #")
-						f.puts("###############")
-						f.puts
-						
-						# Print the productions.
-						@grammar.productions.each do |sym, productions|
-							productions.each do |production|
-								f.print("\Production #{production.id}: #{production.to_s}")
-								
-								if (prec = @production_precs[production.id])
-									f.print(" : (#{prec.first} , #{prec.last})")
-								end
-								
-								f.puts
+					file.puts("###############")
+					file.puts("# Productions #")
+					file.puts("###############")
+					file.puts
+					
+					# Print the productions.
+					@grammar.productions.each do |sym, productions|
+						productions.each do |production|
+							file.print("\Production #{production.id}: #{production.to_s}")
+							
+							if (prec = @production_precs[production.id])
+								file.print(" : (#{prec.first} , #{prec.last})")
 							end
 							
-							f.puts
+							file.puts
 						end
 						
-						f.puts("##########")
-						f.puts("# Tokens #")
-						f.puts("##########")
-						f.puts
+						file.puts
+					end
+					
+					file.puts("##########")
+					file.puts("# Tokens #")
+					file.puts("##########")
+					file.puts
+					
+					@grammar.terms.sort {|a,b| a.to_s <=> b.to_s }.each do |term|
+						file.print("\t#{term}")
 						
-						@grammar.terms.sort {|a,b| a.to_s <=> b.to_s }.each do |term|
-							f.print("\t#{term}")
-							
-							if (prec = @token_precs[term])
-								f.print(" : (#{prec.first}, #{prec.last})")
-							end
-							
-							f.puts
+						if (prec = @token_precs[term])
+							file.print(" : (#{prec.first}, #{prec.last})")
 						end
 						
-						f.puts
+						file.puts
+					end
+					
+					file.puts
+					
+					file.puts("#####################")
+					file.puts("# Table Information #")
+					file.puts("#####################")
+					file.puts
+					
+					file.puts("\tStart symbol: #{@grammar.start_symbol}")
+					file.puts
+					
+					file.puts("\tTotal number of states: #{@states.length}")
+					file.puts
+					
+					file.puts("\tTotal conflicts: #{@conflicts.values.flatten(1).length}")
+					file.puts
+					
+					@conflicts.each do |state_id, conflicts|
+						file.puts("\tState #{state_id} has #{conflicts.length} conflict(s)")
+					end
+					
+					file.puts if not @conflicts.empty?
+					
+					# Print the parse table.
+					file.puts("###############")
+					file.puts("# Parse Table #")
+					file.puts("###############")
+					file.puts
+					
+					@states.each do |state|
+						file.puts("State #{state.id}:")
+						file.puts
 						
-						f.puts("#####################")
-						f.puts("# Table Information #")
-						f.puts("#####################")
-						f.puts
-						
-						f.puts("\tStart symbol: #{@grammar.start_symbol}")
-						f.puts
-						
-						f.puts("\tTotal number of states: #{@states.length}")
-						f.puts
-						
-						f.puts("\tTotal conflicts: #{@conflicts.values.flatten(1).length}")
-						f.puts
-						
-						@conflicts.each do |state_id, conflicts|
-							f.puts("\tState #{state_id} has #{conflicts.length} conflict(s)")
+						file.puts("\t# ITEMS #")
+						max = state.items.inject(0) do |max, item|
+							if item.lhs.to_s.length > max then item.lhs.to_s.length else max end
 						end
 						
-						f.puts if not @conflicts.empty?
+						state.each do |item|
+							file.puts("\t#{item.to_s(max)}")
+						end
 						
-						# Print the parse table.
-						f.puts("###############")
-						f.puts("# Parse Table #")
-						f.puts("###############")
-						f.puts
+						file.puts
+						file.puts("\t# ACTIONS #")
 						
-						@states.each do |state|
-							f.puts("State #{state.id}:")
-							f.puts
-							
-							f.puts("\t# ITEMS #")
-							max = state.items.inject(0) do |max, item|
-								if item.lhs.to_s.length > max then item.lhs.to_s.length else max end
+						state.actions.keys.sort {|a,b| a.to_s <=> b.to_s}.each do |sym|
+							state.actions[sym].each do |action|
+								file.puts("\tOn #{sym} #{action}")
 							end
-							
-							state.each do |item|
-								f.puts("\t#{item.to_s(max)}")
-							end
-							
-							f.puts
-							f.puts("\t# ACTIONS #")
-							
-							state.actions.keys.sort {|a,b| a.to_s <=> b.to_s}.each do |sym|
-								state.actions[sym].each do |action|
-									f.puts("\tOn #{sym} #{action}")
-								end
-							end
-							
-							f.puts
-							f.puts("\t# CONFLICTS #")
-							
-							if @conflicts[state.id].length == 0
-								f.puts("\tNone\n\n")
-							else
-								@conflicts[state.id].each do |conflict|
-									type, sym = conflict
-									
-									f.print("\t#{if type == :SR then "Shift/Reduce" else "Reduce/Reduce" end} conflict")
-									
-									f.puts(" on #{sym}")
-								end
+						end
+						
+						file.puts
+						file.puts("\t# CONFLICTS #")
+						
+						if @conflicts[state.id].length == 0
+							file.puts("\tNone\n\n")
+						else
+							@conflicts[state.id].each do |conflict|
+								type, sym = conflict
 								
-								f.puts
+								file.print("\t#{if type == :SR then "Shift/Reduce" else "Reduce/Reduce" end} conflict")
+								
+								file.puts(" on #{sym}")
 							end
+							
+							file.puts
 						end
 					end
+					
+					# Close any IO objects that aren't $stdout.
+					file.close if file.is_a?(IO) and file != $stdout
 				else
 					raise ParserConstructionError, 'Parser.explain called outside of finalize.'
 				end
 			end
 			
-			def finalize(explain_file = nil)
+			def finalize(opts = {})
+				
+				opts = self.build_finalize_opts(opts)
+				
 				# Grab all of the symbols that comprise the grammar (besides
 				# the start symbol).
 				@symbols = @grammar.symbols
@@ -388,16 +414,28 @@ module RLTK
 				end
 				
 				# Prune the parsing table for unnecessary reduce actions.
-				self.prune
+				self.prune(opts[:lookahead], opts[:precedence])
 				
 				# Check the parser for inconsistencies.
-				self.check
+				self.check_sanity
 				
 				# Print the table if requested.
-				self.explain(explain_file) if explain_file
+				self.explain(opts[:explain]) if opts[:explain]
 				
 				# Clean the resources we are keeping.
 				self.clean
+			end
+			
+			def get_io(o)
+				if o.is_a?(TrueClass)
+					$stdout
+				elsif o.is_a?(String)
+					File.open(o, 'w')
+				elsif o.is_a?(IO)
+					o
+				else
+					false
+				end
 			end
 			
 			def grammar_prime
@@ -450,10 +488,11 @@ module RLTK
 				end
 			end
 			
-			def parse(tokens, env = Environment.new, verbose = false)
-				v = if verbose then (verbose.class == String) ? File.open(verbose, 'a') : $stdout else nil end
+			def parse(tokens, opts = {})
+				opts	= self.build_parse_opts(opts)
+				v	= opts[:verbose]
 				
-				if v
+				if opts[:verbose]
 					v.puts("Input tokens:")
 					v.puts(tokens.map { |t| t.type }.inspect)
 					v.puts
@@ -462,14 +501,22 @@ module RLTK
 				# Stack IDs to keep track of them during parsing.
 				stack_id = 0
 				
-				# Start out with one stack in state zero.
-				processing	= [ParseStack.new(stack_id += 1)]
+				# Our various list of stacks.
+				accepted		= []
 				moving_on		= []
+				processing	= [ParseStack.new(stack_id += 1)]
 				
 				# Iterate over the tokens.  We don't procede to the
 				# next token until every stack is done with the
 				# current one.
 				tokens.each do |token|
+					
+					#~puts "Processing:"
+					#~pp processing
+					#~
+					#~puts "Moving on:"
+					#~pp moving_on
+					
 					# Check to make sure this token was seen in the
 					# grammar definition.
 					if not @symbols.include?(token.type)
@@ -482,9 +529,7 @@ module RLTK
 						raise ParsingError, 'String not in language.'
 					end
 					
-					if verbose
-						v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}")
-					end
+					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
 					
 					# Iterate over the stacks until each one is done.
 					until processing.empty?
@@ -496,9 +541,7 @@ module RLTK
 						
 						# Drop this stack if there are no actions.
 						if actions.empty?
-							if v
-								v.puts("Droping stack #{stack.id}: no more actions.")
-							end
+							v.puts("No more actions for stack #{stack.id}.  Dropping stack.") if v
 							
 							next
 						end
@@ -508,7 +551,7 @@ module RLTK
 						pairs = [[stack, actions.pop]] + actions.map {|action| [stack.branch(stack_id += 1), action] }
 						
 						pairs.each do |stack, action|
-							if verbose
+							if v
 								v.puts
 								v.puts('Current stack:')
 								v.puts("\tID: #{stack.id}")
@@ -519,7 +562,14 @@ module RLTK
 							end
 							
 							if action.is_a?(Accept)
-								return stack.result
+								if opts[:accept] == :all
+									accepted << stack
+								else
+									v.puts('Accepting input.') if v
+									opts[:parse_tree].puts(stack.tree) if opts[:parse_tree]
+									
+									return stack.result
+								end
 							
 							elsif action.is_a?(Reduce)
 								# Get the production associated with this reduction.
@@ -527,12 +577,13 @@ module RLTK
 									raise InternalParserError, "No production #{action.id} found."
 								end
 								
-								result = env.instance_exec(*stack.pop(production_proc.arity), &production_proc)
-								
-								stack.push_output(result)
+								result = v.instance_exec(*stack.pop(production_proc.arity), &production_proc)
 								
 								if (goto = @states[stack.state].on?(@lh_sides[action.id]).first)
-									stack.push_state(goto.id)
+									
+									v.puts("Going to state #{goto.id}.\n") if v
+									
+									stack.push(goto.id, result, @lh_sides[action.id])
 								else
 									raise InternalParserError, "No GoTo action found in state #{nstack.state} " +
 										"after reducing by production #{action.id}"
@@ -543,7 +594,7 @@ module RLTK
 								processing << stack
 								
 							elsif action.is_a?(Shift)
-								stack.push(action.id, token.value)
+								stack.push(action.id, token.value, token.type)
 								
 								# This stack is ready for the next
 								# token.
@@ -552,11 +603,20 @@ module RLTK
 						end
 					end
 					
-					if verbose then v.puts("\n\n") end
+					v.puts("\n\n") if v
 					
 					processing	= moving_on
 					moving_on		= []
 				end
+				
+				# If we have reached this point we accept all derivations.
+				v.puts("Accepting input with #{accepted.length} derivation(s).") if v
+				
+				accepted.each do |stack|
+					opts[:parse_tree].puts(stack.tree) if opts[:parse_tree]
+				end
+				
+				return accepted.map { |stack| stack.result }
 			end
 			
 			def production(symbol, expression = nil, precedence = nil, &action)
@@ -579,8 +639,11 @@ module RLTK
 				@curr_prec		= nil
 			end
 			
-			def prune
-				symbols = @grammar.terms
+			def prune(do_lookahead, do_precedence)
+				terms = @grammar.terms
+				
+				# If both options are false there is no pruning to do.
+				return if not (do_lookahead or do_precedence)
 				
 				@states.each do |state0|
 					
@@ -588,29 +651,31 @@ module RLTK
 					# Lookahead Pruning #
 					#####################
 					
-					# Find all of the reductions in this state.
-					reductions = state0.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
-					
-					reductions.each do |reduction|
-						production = @grammar.productions(:id)[reduction.id]
+					if do_lookahead
+						# Find all of the reductions in this state.
+						reductions = state0.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
 						
-						lookahead = []
-						
-						# Build the lookahead set.
-						@states.each do |state1|
-							if self.check_reachability(state1, state0, production.rhs)
-								lookahead += self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym)
+						reductions.each do |reduction|
+							production = @grammar.productions(:id)[reduction.id]
+							
+							lookahead = []
+							
+							# Build the lookahead set.
+							@states.each do |state1|
+								if self.check_reachability(state1, state0, production.rhs)
+									lookahead += self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym)
+								end
 							end
-						end
-						
-						# Translate the G' follow symbols into G lookahead
-						# symbols.
-						lookahead = lookahead.map { |sym| sym.to_s.split('_').last.to_sym }
-						
-						# Remove the Reduce action from all terminal
-						# symbols that don't appear in the lookahead set.
-						(symbols - lookahead).each do |sym|
-							state0.actions[sym].delete(reduction)
+							
+							# Translate the G' follow symbols into G lookahead
+							# symbols.
+							lookahead = lookahead.map { |sym| sym.to_s.split('_').last.to_sym }
+							
+							# Remove the Reduce action from all terminal
+							# symbols that don't appear in the lookahead set.
+							(terms - lookahead).each do |sym|
+								state0.actions[sym].delete(reduction)
+							end
 						end
 					end
 					
@@ -618,50 +683,53 @@ module RLTK
 					# Precedence and Associativity Pruning #
 					########################################
 					
-					state0.actions.each do |symbol, actions|
-						
-						# We are only interested in pruning actions for
-						# terminal symbols.
-						next unless CFG::is_terminal?(symbol)
-						
-						# Skip to the next one if there is no possibility
-						# of a Shift/Reduce or Reduce/Reduce conflict.
-						next unless actions and actions.length > 1
-						
-						reduces_ok = actions.inject(true) do |m, a|
-							if a.is_a?(Reduce)
-								m and @production_precs[a.id]
-							else
-								m
-							end
-						end
-						
-						if @token_precs[symbol] and reduces_ok
-							max_prec = 0
-							selected_action = nil
+					if do_precedence
+						state0.actions.each do |symbol, actions|
 							
-							# Grab the associativity and precedence for
-							# the input token.
-							tassoc, tprec = @token_precs[symbol]
+							# We are only interested in pruning actions
+							# for terminal symbols.
+							next unless CFG::is_terminal?(symbol)
 							
-							actions.each do |a|
-								assoc, prec = a.is_a?(Shift) ? [tassoc, tprec] : @production_precs[a.id]
-								
-								# If two actions have the same precedence we
-								# will only replace the previous production if:
-								#  * The token is left associative and the current action is a Reduce
-								#  * The Token is right associative and the current action is a Shift
-								if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
-									max_prec			= prec
-									selected_action	= a
-									
-								elsif prec == max_prec and assoc == :nonassoc
-									raise ParserConstructionError, 'Non-associative token found during conflict resolution.'
-									
+							# Skip to the next one if there is no 
+							# possibility of a Shift/Reduce or
+							# Reduce/Reduce conflict.
+							next unless actions and actions.length > 1
+							
+							reduces_ok = actions.inject(true) do |m, a|
+								if a.is_a?(Reduce)
+									m and @production_precs[a.id]
+								else
+									m
 								end
 							end
 							
-							state0.actions[symbol] = [selected_action]
+							if @token_precs[symbol] and reduces_ok
+								max_prec = 0
+								selected_action = nil
+								
+								# Grab the associativity and precedence
+								# for the input token.
+								tassoc, tprec = @token_precs[symbol]
+								
+								actions.each do |a|
+									assoc, prec = a.is_a?(Shift) ? [tassoc, tprec] : @production_precs[a.id]
+									
+									# If two actions have the same precedence we
+									# will only replace the previous production if:
+									#  * The token is left associative and the current action is a Reduce
+									#  * The Token is right associative and the current action is a Shift
+									if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
+										max_prec			= prec
+										selected_action	= a
+										
+									elsif prec == max_prec and assoc == :nonassoc
+										raise ParserConstructionError, 'Non-associative token found during conflict resolution.'
+										
+									end
+								end
+								
+								state0.actions[symbol] = [selected_action]
+							end
 						end
 					end
 				end
@@ -729,7 +797,7 @@ module RLTK
 				end
 				
 				def on?(symbol)
-					@actions[symbol]
+					@actions[symbol].clone
 				end
 			end
 			
@@ -771,32 +839,42 @@ module RLTK
 			attr_reader :output_stack
 			attr_reader :state_stack
 			
-			def initialize(id, ostack = [], sstack = [0])
+			def initialize(id, ostack = [], sstack = [0], nstack = [], connections = [], labels = [])
 				@id = id
 				
+				@node_stack	= nstack
 				@output_stack	= ostack
 				@state_stack	= sstack
+				
+				@connections	= connections
+				@labels		= labels
 			end
 			
 			def branch(new_id)
-				ParseStack.new(new_id, Array.new(@output_stack), Array.new(@state_stack))
+				ParseStack.new(new_id, Array.new(@output_stack), Array.new(@state_stack),
+					Array.new(@node_stack), Array.new(@connections), Array.new(@labels))
 			end
 			
-			def push(state, o)
-				@state_stack << state
-				@output_stack << o
-			end
-			
-			def push_output(o)
-				@output_stack << o
-			end
-			
-			def push_state(state)
-				@state_stack << state
+			def push(state, o, node0)
+				@state_stack	<< state
+				@output_stack	<< o
+				@node_stack	<< @labels.length
+				@labels		<< node0
+				
+				if CFG::is_nonterminal?(node0)
+					@cbuffer.each do |node1|
+						@connections << [@labels.length - 1, node1]
+					end
+				end
 			end
 			
 			def pop(n = 1)
 				@state_stack.pop(n)
+				
+				# Pop the node stack so that the proper edges can be added
+				# when the production's left-hand side non-terminal is
+				# pushed onto the stack.
+				@cbuffer = @node_stack.pop(n)
 				
 				@output_stack.pop(n)
 			end
@@ -811,6 +889,28 @@ module RLTK
 			
 			def state
 				@state_stack.last
+			end
+			
+			def tree
+				tree  = "digraph tree#{@id} {\n"
+				
+				@labels.each_with_index do |label, i|
+					tree += "\tnode#{i} [label=\"#{label}\""
+					
+					if CFG::is_terminal?(label)
+						tree += " shape=box"
+					end
+					
+					tree += "];\n"
+				end
+				
+				tree += "\n"
+				
+				@connections.each do |from, to|
+					tree += "\tnode#{from} -> node#{to};\n"
+				end
+				
+				tree += "}"
 			end
 		end
 	end

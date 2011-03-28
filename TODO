@@ -1,12 +1,9 @@
 parser.rb:
-	Add all the options for ParserCore.parse
-		* Move to using options hash w/ defaults as constant.
-		* accept = :all or :first
-		* Parse tree printing with graphviz.
 	Track down bug in ABParser with input "AAAAB".
 	Parsing errors that can be caught by the user's code.
 	Saving and loading the parse table.
 	Implement some unit testing.
+	Add documentation.
 
 lexer.rb:
 

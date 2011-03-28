@@ -33,7 +33,7 @@ module RLTK
 				clause("e DIV e") {|e0, _, e1| e0 / e1}
 			end
 			
-			finalize('calc.table')
+			finalize
 		end
 	end
 end
