@@ -1,8 +1,9 @@
 parser.rb:
-	Use LALR(1) lookahead sets to optimize parsing.
-	Rename CFG::Rule to CFG::Production.
-	Parsing errors that can be caught by the user's code.
 	Optimize the parsing algorithm (remove unecessary copy operations and branching).
+	Make verbose parsing easier to track which stack is doing what.
+	Track down but in ABParser with input "AAAAB".
+	Parse tree printing with graphviz.
+	Parsing errors that can be caught by the user's code.
 	Saving and loading the parse table.
 	Implement some unit testing.
 

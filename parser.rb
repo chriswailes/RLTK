@@ -15,8 +15,14 @@ require 'cfg'
 #######################
 
 module RLTK
+	
+	# Used for problems with the input string.
 	class ParsingError < Exception; end
+	
+	# Used for errors that occure during parser construction.
 	class ParserConstructionError < Exception; end
+	
+	# Used for runtime errors that are the parsers falt.
 	class InternalParserError < Exception; end
 	
 	class Parser
@@ -51,9 +57,9 @@ module RLTK
 				@procs		= Array.new
 				@states		= Array.new
 				
-				@prec_counts	= {:left => 0, :right => 0, :non => 0}
-				@rule_precs	= Array.new
-				@token_precs	= Hash.new
+				@prec_counts		= {:left => 0, :right => 0, :non => 0}
+				@production_precs	= Array.new
+				@token_precs		= Hash.new
 				
 				@grammar.callback do |r, type, num|
 					@procs[r.id] =
@@ -77,7 +83,7 @@ module RLTK
 							end
 						end
 					
-					@rule_precs[r.id] = r.last_terminal
+					@production_precs[r.id] = r.last_terminal
 				end
 			end
 			
@@ -147,26 +153,46 @@ module RLTK
 				end
 			end
 			
+			def check_reachability(start, dest, symbols)
+				path_exists	= true
+				cur_state		= start
+				
+				symbols.each do |sym|
+					
+					actions = @states[cur_state.id].on?(sym)
+					actions = actions.select { |a| a.is_a?(Shift) } if CFG::is_terminal?(sym)
+					
+					if actions.empty?
+						path_exists = false
+						break
+					end
+					
+					cur_state = @states[actions.first.id]
+				end
+				
+				path_exists and cur_state.id == dest.id
+			end
+			
 			def clause(expression, precedence = nil, &action)
 				# Use the curr_prec only if it isn't overridden for this
 				# clause.
 				precedence ||= @curr_prec
 				
-				rule = @grammar.clause(expression)
+				production = @grammar.clause(expression)
 				
 				# Check to make sure the action's arity matches the number
 				# of symbols on the right-hand side.
-				if action.arity != rule.rhs.length
+				if action.arity != production.rhs.length
 					raise ParserConstructionError, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
 						'terminals and non-terminals in the clause.'
 				end
 				
 				# Add the action to our proc list.
-				@procs[rule.id] = action
+				@procs[production.id] = action
 
 				# If no precedence is specified use the precedence of the
 				# last terminal in the production.
-				@rule_precs[rule.id] = precedence || rule.last_terminal
+				@production_precs[production.id] = precedence || production.last_terminal
 			end
 			
 			def clean
@@ -183,17 +209,17 @@ module RLTK
 			def explain(explain_file)
 				if @grammar and not @states.empty?
 					File.open(explain_file, 'w') do |f|
-						f.puts("#########")
-						f.puts("# Rules #")
-						f.puts("#########")
+						f.puts("###############")
+						f.puts("# Productions #")
+						f.puts("###############")
 						f.puts
 						
-						# Print the rules.
-						@grammar.rules.each do |sym, rules|
-							rules.each do |rule|
-								f.print("\tRule #{rule.id}: #{rule.to_s}")
+						# Print the productions.
+						@grammar.productions.each do |sym, productions|
+							productions.each do |production|
+								f.print("\Production #{production.id}: #{production.to_s}")
 								
-								if (prec = @rule_precs[rule.id])
+								if (prec = @production_precs[production.id])
 									f.print(" : (#{prec.first} , #{prec.last})")
 								end
 								
@@ -208,7 +234,7 @@ module RLTK
 						f.puts("##########")
 						f.puts
 						
-						@grammar.terms.each do |term|
+						@grammar.terms.sort {|a,b| a.to_s <=> b.to_s }.each do |term|
 							f.print("\t#{term}")
 							
 							if (prec = @token_precs[term])
@@ -297,18 +323,18 @@ module RLTK
 				@symbols = @grammar.symbols
 				
 				# Add our starting state to the state list.
-				start_rule	= @grammar.rule(:start, @grammar.start_symbol.to_s).first
-				start_state	= State.new(@symbols, [start_rule.to_item])
+				start_production	= @grammar.production(:start, @grammar.start_symbol.to_s).first
+				start_state		= State.new(@symbols, [start_production.to_item])
 				
-				start_state.close(@grammar.rules)
+				start_state.close(@grammar.productions)
 				
 				self.add_state(start_state)
 				
-				# Translate the precedence of rules from tokens to
+				# Translate the precedence of productions from tokens to
 				# (associativity, precedence) pairs.
 				
-				@rule_precs.each_with_index do |prec, id|
-					@rule_precs[id] = @token_precs[prec]
+				@production_precs.each_with_index do |prec, id|
+					@production_precs[id] = @token_precs[prec]
 				end
 				
 				# Build the rest of the transition table.
@@ -332,7 +358,7 @@ module RLTK
 					tstates.each do |symbol, tstate|
 						tstate.each { |item| item.advance }
 						
-						tstate.close(@grammar.rules)
+						tstate.close(@grammar.productions)
 						
 						id = self.add_state(tstate)
 						
@@ -352,11 +378,11 @@ module RLTK
 					end
 				end
 				
-				# Build the rule.id -> rule.lhs map.
-				@grammar.rules(:id).to_a.inject(@lh_sides) do |h, pair|
-					id, rule = pair
+				# Build the production.id -> production.lhs map.
+				@grammar.productions(:id).to_a.inject(@lh_sides) do |h, pair|
+					id, production = pair
 					
-					h[id] = rule.lhs
+					h[id] = production.lhs
 					
 					h
 				end
@@ -382,20 +408,20 @@ module RLTK
 						state.each do |item|
 							lhs = "#{state.id}_#{item.next_symbol}".to_sym
 							
-							next unless CFG::is_nonterminal?(item.next_symbol) and not @grammar_prime.rules.keys.include?(lhs)
+							next unless CFG::is_nonterminal?(item.next_symbol) and not @grammar_prime.productions.keys.include?(lhs)
 							
-							@grammar.rules[item.next_symbol].each do |rule|
+							@grammar.productions[item.next_symbol].each do |production|
 								rhs = ""
 								
 								cstate = state
 								
-								rule.rhs.each do |symbol|
+								production.rhs.each do |symbol|
 									rhs += "#{cstate.id}_#{symbol} "
 									
 									cstate = @states[cstate.on?(symbol).first.id]
 								end
 								
-								@grammar_prime.rule(lhs, rhs)
+								@grammar_prime.production(lhs, rhs)
 							end
 						end
 					end
@@ -484,12 +510,12 @@ module RLTK
 							
 							elsif action.is_a?(Reduce)
 								
-								# Get the rule associated with this reduction.
-								if not (rule_proc = @procs[action.id])
-									raise InternalParserError, "No rule #{action.id} found."
+								# Get the production associated with this reduction.
+								if not (production_proc = @procs[action.id])
+									raise InternalParserError, "No production #{action.id} found."
 								end
 								
-								result = env.instance_exec(*nstack.pop(rule_proc.arity), &rule_proc)
+								result = env.instance_exec(*nstack.pop(production_proc.arity), &production_proc)
 								
 								nstack.push_output(result)
 								
@@ -497,7 +523,7 @@ module RLTK
 									nstack.push_state(goto.id)
 								else
 									raise InternalParserError, "No GoTo action found in state #{nstack.state} " +
-										"after reducing by rule #{action.id}"
+										"after reducing by production #{action.id}"
 								end
 								
 							elsif action.is_a?(Shift)
@@ -516,119 +542,7 @@ module RLTK
 				end
 			end
 			
-			def prune
-				symbols = @grammar.terms
-				
-				# Initialize our empty lookahead table.
-				lookaheads = Hash.new { |h,k| h[k] = Hash.new { |h,k| h[k] = Array.new } }
-				
-				#~pp self.grammar_prime
-				
-				#~pp self.grammar_prime.follow_set(:'2_a')
-				#~pp self.grammar_prime.follow_set(:'3_a')
-				
-				self.grammar_prime.nonterms.each do |gp_sym|
-					
-					puts "Looking at grammar_prime symbol #{gp_sym}"
-					
-					# Get the State id and grammar symbol.
-					sid, g_sym = gp_sym.to_s.split('_')
-					
-					puts "Translates to symbol #{g_sym} in state #{sid} for grammar"
-					
-					# Get the follow set for the nonterminal in
-					# grammar_prime.
-					gp_follows = self.grammar_prime.follow_set(gp_sym)
-					
-					puts "Follow set:"
-					pp gp_follows
-					
-					# Translate those follow sets into the lookahead sets
-					# for the grammar.
-					lookaheads[sid][g_sym.to_sym] |= gp_follows.map { |sym| sym.to_s.split('_').last }
-				end
-				
-				pp lookaheads[5][:D]
-				pp lookaheads[7][:C]
-				
-				@states.each do |state|
-					
-					#~puts "Pruning actions for state #{state.id}."
-					
-					#####################
-					# Lookahead Pruning #
-					#####################
-					
-					#~reductions = state.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
-					#~
-					#~reductions.each do |r|
-						#~(symbols - lookaheads[state.id][@lh_sides[r.id]]).each do |sym|
-							#~state.actions[sym].delete(r)
-						#~end
-					#~end
-					
-					########################################
-					# Precedence and Associativity Pruning #
-					########################################
-					
-					state.actions.each do |symbol, actions|
-						
-						# We are only interested in pruning actions for
-						# terminal symbols.
-						next unless CFG::is_terminal?(symbol)
-						
-						# Skip to the next one if there is no possibility
-						# of a Shift/Reduce or Reduce/Reduce conflict.
-						next unless actions and actions.length > 1
-						
-						reduces_ok = actions.inject(true) do |m, a|
-							if a.is_a?(Reduce)
-								m and @rule_precs[a.id]
-							else
-								m
-							end
-						end
-						
-						if @token_precs[symbol] and reduces_ok
-							max_prec = 0
-							selected_action = nil
-							
-							# Grab the associativity and precedence for
-							# the input token.
-							tassoc, tprec = @token_precs[symbol]
-							
-							actions.each do |a|
-								assoc, prec = a.is_a?(Shift) ? [tassoc, tprec] : @rule_precs[a.id]
-								
-								# If two actions have the same precedence we
-								# will only replace the previous rule if:
-								#  * The token is left associative and the current action is a Reduce
-								#  * The Token is right associative and the current action is a Shift
-								if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
-									max_prec			= prec
-									selected_action	= a
-									
-								elsif prec == max_prec and assoc == :nonassoc
-									raise ParserConstructionError, 'Non-associative token found during conflict resolution.'
-									
-								end
-							end
-							
-							state.actions[symbol] = [selected_action]
-						end
-					end
-				end
-			end
-			
-			def right(*symbols)
-				prec_level = @prec_counts[:right] += 1
-				
-				symbols.map { |s| s.to_sym }.each do |sym|
-					@token_precs[sym] = [:right, prec_level]
-				end
-			end
-			
-			def rule(symbol, expression = nil, precedence = nil, &action)
+			def production(symbol, expression = nil, precedence = nil, &action)
 				
 				# Check the symbol.
 				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or not CFG::is_nonterminal?(symbol)
@@ -646,6 +560,102 @@ module RLTK
 				
 				@grammar.curr_lhs	= nil
 				@curr_prec		= nil
+			end
+			
+			def prune
+				symbols = @grammar.terms
+				
+				@states.each do |state0|
+					
+					#####################
+					# Lookahead Pruning #
+					#####################
+					
+					# Find all of the reductions in this state.
+					reductions = state0.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
+					
+					reductions.each do |reduction|
+						production = @grammar.productions(:id)[reduction.id]
+						
+						lookahead = []
+						
+						# Build the lookahead set.
+						@states.each do |state1|
+							if self.check_reachability(state1, state0, production.rhs)
+								lookahead += self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym)
+							end
+						end
+						
+						# Translate the G' follow symbols into G lookahead
+						# symbols.
+						lookahead = lookahead.map { |sym| sym.to_s.split('_').last.to_sym }
+						
+						# Remove the Reduce action from all terminal
+						# symbols that don't appear in the lookahead set.
+						(symbols - lookahead).each do |sym|
+							state0.actions[sym].delete(reduction)
+						end
+					end
+					
+					########################################
+					# Precedence and Associativity Pruning #
+					########################################
+					
+					state0.actions.each do |symbol, actions|
+						
+						# We are only interested in pruning actions for
+						# terminal symbols.
+						next unless CFG::is_terminal?(symbol)
+						
+						# Skip to the next one if there is no possibility
+						# of a Shift/Reduce or Reduce/Reduce conflict.
+						next unless actions and actions.length > 1
+						
+						reduces_ok = actions.inject(true) do |m, a|
+							if a.is_a?(Reduce)
+								m and @production_precs[a.id]
+							else
+								m
+							end
+						end
+						
+						if @token_precs[symbol] and reduces_ok
+							max_prec = 0
+							selected_action = nil
+							
+							# Grab the associativity and precedence for
+							# the input token.
+							tassoc, tprec = @token_precs[symbol]
+							
+							actions.each do |a|
+								assoc, prec = a.is_a?(Shift) ? [tassoc, tprec] : @production_precs[a.id]
+								
+								# If two actions have the same precedence we
+								# will only replace the previous production if:
+								#  * The token is left associative and the current action is a Reduce
+								#  * The Token is right associative and the current action is a Shift
+								if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
+									max_prec			= prec
+									selected_action	= a
+									
+								elsif prec == max_prec and assoc == :nonassoc
+									raise ParserConstructionError, 'Non-associative token found during conflict resolution.'
+									
+								end
+							end
+							
+							state0.actions[symbol] = [selected_action]
+						end
+					end
+				end
+			end
+			
+			def right(*symbols)
+				prec_level = @prec_counts[:right] += 1
+				
+				symbols.map { |s| s.to_sym }.each do |sym|
+					@token_precs[sym] = [:right, prec_level]
+				end
 			end
 			
 			def start(symbol)
@@ -677,10 +687,10 @@ module RLTK
 					@items = nil
 				end
 				
-				def close(rules)
+				def close(productions)
 					self.each do |item|
 						if (next_symbol = item.next_symbol) and CFG::is_nonterminal?(next_symbol)
-							rules[next_symbol].each { |r| self << r.to_item }
+							productions[next_symbol].each { |p| self << p.to_item }
 						end
 					end
 				end
@@ -728,7 +738,7 @@ module RLTK
 			
 			class Reduce < Action
 				def to_s
-					"Reduce by Rule #{self.id}"
+					"Reduce by Production #{self.id}"
 				end
 			end
 			

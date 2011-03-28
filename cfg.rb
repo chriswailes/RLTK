@@ -44,13 +44,13 @@ module RLTK
 			@curr_lhs			= nil
 			@callback			= callback || Proc.new {}
 			@lexer			= Lexers::EBNFLexer.new
-			@rule_counter		= -1
+			@production_counter	= -1
 			@start_symbol		= nil
 			@wrapper_symbol	= nil
 			
-			@rules_id		= Hash.new
-			@rules_sym	= Hash.new { |h, k| h[k] = [] }
-			@rule_buffer	= Array.new
+			@productions_id	= Hash.new
+			@productions_sym	= Hash.new { |h, k| h[k] = [] }
+			@production_buffer	= Array.new
 			
 			@terms	= Hash.new(false).update({:EOS => true})
 			@nonterms	= Hash.new(false)
@@ -59,8 +59,8 @@ module RLTK
 			@follows	= Hash.new
 		end
 		
-		def add_rule(rule)
-			@rules_sym[rule.lhs] << (@rules_id[rule.id] = rule)
+		def add_production(production)
+			@productions_sym[production.lhs] << (@productions_id[production.id] = production)
 		end
 		
 		def callback(&callback)
@@ -70,7 +70,7 @@ module RLTK
 		def clause(expression)
 			
 			if not @curr_lhs
-				raise GrammarError, 'CFG.clause called outside of CFG.rule block.'
+				raise GrammarError, 'CFG.clause called outside of CFG.production block.'
 			end
 			
 			lhs		= @curr_lhs.to_sym
@@ -115,49 +115,65 @@ module RLTK
 				end
 			end
 			
-			# Make the rule.
-			@rule_buffer << (rule = Rule.new(self.next_id, lhs, rhs))
+			# Make the production.
+			@production_buffer << (production = Production.new(self.next_id, lhs, rhs))
 			
 			# Make sure the production symbol is collected.
 			@nonterms[lhs] = true
 			
-			# Add the new rule to our collections.
-			self.add_rule(rule)
+			# Add the new production to our collections.
+			self.add_production(production)
 			
-			return rule
+			return production
 		end
 		
-		def first_set(sym0)
-			
-			# Memoize the result for later.
-			@firsts[sym0] ||=
-			
+		def first_set(sentence)
+			if sentence.is_a?(Symbol)
+				self.first_set_prime(sentence)
+				
+			elsif sentence.inject(true) { |m, sym| m and self.symbols.include?(sym) }
+				set0 = []
+				all_have_empty = true
+				
+				sentence.each do |sym|
+					set0 |= (set1 = self.first_set(sym)) - [:'ɛ']
+					
+					break if not (all_have_empty = set1.include?(:'ɛ'))
+				end
+				
+				if all_have_empty then set0 + [:'ɛ'] else set0 end
+			else
+				nil
+			end
+		end
+		
+		def first_set_prime(sym0)
 			if self.symbols.include?(sym0)
+				# Memoize the result for later.
+				@firsts[sym0] ||=
+				
 				if CFG::is_terminal?(sym0)
 					# If the symbol is a terminal, it is the only symbol in
 					# its follow set.
 					[sym0]
 				else
-					set = []
+					set0 = []
 					
-					@rules_sym[sym0].each do |rule|
-						if rule.rhs == []
+					@productions_sym[sym0].each do |production|
+						if production.rhs == []
 							# If this is an empty production we should
 							# add the empty string to the First set.
 							set0 << :'ɛ'
 						else
-							all_have_emtpy = true
+							all_have_empty = true
 							
-							rule.rhs.each do |sym1|
+							production.rhs.each do |sym1|
 								
 								# Grab the First set for the current
 								# symbol in this production.
 								set0 |= (set1 = self.first_set(sym1)) - [:'ɛ']
 								
-								if not set1.include?(:'ɛ')
-									all_have_empty = false
-									break
-								end
+								break if not (all_have_empty = set1.include?(:'ɛ'))
 							end
 							
 							# Add the empty production if this production
@@ -174,33 +190,27 @@ module RLTK
 			end
 		end
 		
-		def follow_set(sym0)
-			
-			#~puts "Building follow set for #{sym0}"
-			
+		def follow_set(sym0, seen_lh_sides = [])
 			# Memoize the result for later.
 			@follows[sym0] ||=
 			
 			if @nonterms[sym0]
-				
 				set0 = []
 				
 				# Add EOS to the start symbol's follow set.
 				set0 << :EOS if sym0 == @start_symbol
 				
-				@rules_id.values.each do |rule|
-					rule.rhs.each_cons(2) do |sym1, sym2|
-						if sym0 == sym1
-							set0 |= (set1 = self.first_set(sym2)) - [:'ɛ']
-							
-							if set1.include?('ɛ')
-								set0 |= self.follow_set(rule.lhs)
+				@productions_id.values.each do |production|
+					production.rhs.each_with_index do |sym1, i|
+						if i + 1 < production.rhs.length
+							if sym0 == sym1
+								set0 |= (set1 = self.first_set(production.rhs[(i + 1)..-1])) - [:'ɛ']
+								
+								set0 |= self.follow_set(production.lhs) if set1.include?(:'ɛ')
 							end
+						elsif sym0 != production.lhs and sym0 == sym1 and not seen_lh_sides.include?(production.lhs)
+							set0 |= self.follow_set(production.lhs, seen_lh_sides << production.lhs)
 						end
-					end
-					
-					if rule.lhs != sym0 and rule.rhs.last == sym0
-						set0 |= self.follow_set(rule.lhs) 
 					end
 				end
 				
@@ -213,18 +223,18 @@ module RLTK
 		def get_question(symbol)
 			new_symbol = (symbol.to_s.downcase + '_question').to_sym
 			
-			if not @rules_sym.has_key?(new_symbol)
+			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
 				#
 				# nonterm_question: | nonterm
 				
 				# 1st (empty) production.
-				self.add_rule(rule = Rule.new(self.next_id, new_symbol, []))
-				@callback.call(rule, :'?', :first)
+				self.add_production(production = Production.new(self.next_id, new_symbol, []))
+				@callback.call(production, :'?', :first)
 				
 				# 2nd production
-				self.add_rule(rule = Rule.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(rule, :'?', :second)
+				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol]))
+				@callback.call(production, :'?', :second)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -236,18 +246,18 @@ module RLTK
 		def get_plus(symbol)
 			new_symbol = (symbol.to_s.downcase + '_plus').to_sym
 			
-			if not @rules_sym.has_key?(new_symbol)
+			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
 				#
 				# token_plus: token | token token_plus
 				
 				# 1st production
-				self.add_rule(rule = Rule.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(rule, :+, :first)
+				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol]))
+				@callback.call(production, :+, :first)
 				
 				# 2nd production
-				self.add_rule(rule = Rule.new(self.next_id, new_symbol, [symbol, new_symbol]))
-				@callback.call(rule, :+, :second)
+				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol, new_symbol]))
+				@callback.call(production, :+, :second)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -259,18 +269,18 @@ module RLTK
 		def get_star(symbol)
 			new_symbol = (symbol.to_s.downcase + '_star').to_sym
 			
-			if not @rules_sym.has_key?(new_symbol)
+			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
 				#
 				# token_star: | token token_star
 				
 				# 1st (empty) production
-				self.add_rule(rule = Rule.new(self.next_id, new_symbol, []))
-				@callback.call(rule, :*, :first)
+				self.add_production(production = Production.new(self.next_id, new_symbol, []))
+				@callback.call(production, :*, :first)
 				
 				# 2nd production
-				self.add_rule(rule = Rule.new(self.next_id, new_symbol, [symbol, new_symbol]))
-				@callback.call(rule, :*, :second)
+				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol, new_symbol]))
+				@callback.call(production, :*, :second)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -280,15 +290,15 @@ module RLTK
 		end
 		
 		def next_id
-			@rule_counter += 1
+			@production_counter += 1
 		end
 		
 		def nonterms
 			@nonterms.keys
 		end
 		
-		def rule(symbol, expression = nil, &block)
-			@rule_buffer = Array.new
+		def production(symbol, expression = nil, &block)
+			@production_buffer = Array.new
 			@curr_lhs = symbol
 			
 			if expression
@@ -298,14 +308,14 @@ module RLTK
 			end
 			
 			@curr_lhs = nil
-			return @rule_buffer.clone
+			return @production_buffer.clone
 		end
 		
-		def rules(by = :sym)
+		def productions(by = :sym)
 			if by == :sym
-				@rules_sym
+				@productions_sym
 			elsif by == :id
-				@rules_id
+				@productions_id
 			else
 				nil
 			end
@@ -313,7 +323,7 @@ module RLTK
 		
 		def start(symbol)
 			if not CFG::is_nonterminal?(symbol)
-				raise ParserConstructionError, 'Start symbol must be a non-terminal.'
+				raise GrammarError, 'Start symbol must be a non-terminal.'
 			end
 			
 			@start_symbol = symbol
@@ -327,7 +337,7 @@ module RLTK
 			@terms.keys
 		end
 		
-		class Rule
+		class Production
 			attr_reader :id
 			attr_reader :lhs
 			attr_reader :rhs
@@ -345,7 +355,7 @@ module RLTK
 			end
 			
 			def copy
-				Rule.new(@id, @lhs, @rhs.clone)
+				Production.new(@id, @lhs, @rhs.clone)
 			end
 			
 			def last_terminal
@@ -361,7 +371,7 @@ module RLTK
 			end
 		end
 		
-		class Item < Rule
+		class Item < Production
 			attr_reader :dot
 			
 			def initialize(dot, *args)

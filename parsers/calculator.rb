@@ -21,7 +21,7 @@ module RLTK
 			left :PLS, :SUB
 			right :MUL, :DIV
 			
-			rule(:e) do
+			production(:e) do
 				clause("NUM") {|n| n}
 				
 				clause("e PLS e") {|e0, _, e1| e0 + e1}
