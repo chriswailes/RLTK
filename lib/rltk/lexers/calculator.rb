@@ -8,7 +8,7 @@
 ############
 
 # Ruby Language Toolkit
-require File.join(File.dirname(__FILE__), '..', 'lexer')
+require 'rltk/lexer'
 
 #######################
 # Classes and Modules #

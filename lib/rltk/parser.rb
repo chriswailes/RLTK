@@ -493,6 +493,8 @@ module RLTK
 						# Get the available actions for this stack.
 						actions = @states[stack.state].on?(token.type)
 						
+						[stack, actions.pop] + actions.map {|action| [stack.copy, action] }
+						
 						actions.each do |action|
 							new_stacks << (nstack = stack.copy)
 							

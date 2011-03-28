@@ -2,8 +2,8 @@
 
 require 'pp'
 
-require 'lexer'
-require 'parser'
+require 'rltk/lexer'
+require 'rltk/parser'
 
 #~require 'lexers/calculator'
 #~require 'parsers/calculator'
