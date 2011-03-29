@@ -1,7 +1,5 @@
 parser.rb:
-	Track down bug in ABParser with input "AAAAB".
-	Parsing errors that can be caught by the user's code.
-	Saving and loading the parse table.
+	Error productions.
 	Implement some unit testing.
 	Add documentation.
 

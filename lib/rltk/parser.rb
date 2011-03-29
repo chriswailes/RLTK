@@ -61,6 +61,8 @@ module RLTK
 				@production_precs	= Array.new
 				@token_precs		= Hash.new
 				
+				@did_load = false
+				
 				@grammar.callback do |r, type, num|
 					@procs[r.id] =
 						if type == :*
@@ -100,7 +102,7 @@ module RLTK
 			end
 			
 			def build_finalize_opts(opts)
-				opts[:explain] = self.get_io(opts[:explain])
+				opts[:explain]	= self.get_io(opts[:explain])
 				
 				{
 					:explain		=> false,
@@ -510,13 +512,6 @@ module RLTK
 				# next token until every stack is done with the
 				# current one.
 				tokens.each do |token|
-					
-					#~puts "Processing:"
-					#~pp processing
-					#~
-					#~puts "Moving on:"
-					#~pp moving_on
-					
 					# Check to make sure this token was seen in the
 					# grammar definition.
 					if not @symbols.include?(token.type)
@@ -746,92 +741,6 @@ module RLTK
 			def start(symbol)
 				@grammar.start symbol
 			end
-			
-			class State
-				attr_accessor	:id
-				attr_reader	:items
-				attr_reader	:actions
-				
-				def initialize(tokens, items = [])
-					@id		= nil
-					@items	= items
-					@actions	= tokens.inject(Hash.new) { |h, t| h[t] = Array.new; h }
-				end
-				
-				def ==(other)
-					self.items == other.items
-				end
-				
-				def append(item)
-					if item.is_a?(CFG::Item) and not @items.include?(item) then @items << item end
-				end
-				
-				alias :<< :append
-				
-				def clean
-					@items = nil
-				end
-				
-				def close(productions)
-					self.each do |item|
-						if (next_symbol = item.next_symbol) and CFG::is_nonterminal?(next_symbol)
-							productions[next_symbol].each { |p| self << p.to_item }
-						end
-					end
-				end
-				
-				def each
-					@items.each {|item| yield item}
-				end
-				
-				def on(symbol, action)
-					if @actions.key?(symbol)
-						@actions[symbol] << action
-					else
-						raise ParserConstructionError, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
-					end
-				end
-				
-				def on_any(action)
-					@actions.each { |k, v| if CFG::is_terminal?(k) then v << action end }
-				end
-				
-				def on?(symbol)
-					@actions[symbol].clone
-				end
-			end
-			
-			class Action
-				attr_reader :id
-				
-				def initialize(id = nil)
-					@id = id
-				end
-			end
-			
-			class Accept < Action
-				def to_s
-					"Accept"
-				end
-			end
-			
-			class GoTo < Action
-				def to_s
-					"GoTo #{self.id}"
-				end
-			end
-			
-			class Reduce < Action
-				def to_s
-					"Reduce by Production #{self.id}"
-				end
-			end
-			
-			class Shift < Action
-				def to_s
-					"Shift to State #{self.id}"
-				end
-			end
 		end
 		
 		class ParseStack
@@ -911,6 +820,92 @@ module RLTK
 				end
 				
 				tree += "}"
+			end
+		end
+		
+		class State
+			attr_accessor	:id
+			attr_reader	:items
+			attr_reader	:actions
+			
+			def initialize(tokens, items = [])
+				@id		= nil
+				@items	= items
+				@actions	= tokens.inject(Hash.new) { |h, t| h[t] = Array.new; h }
+			end
+			
+			def ==(other)
+				self.items == other.items
+			end
+			
+			def append(item)
+				if item.is_a?(CFG::Item) and not @items.include?(item) then @items << item end
+			end
+			
+			alias :<< :append
+			
+			def clean
+				@items = nil
+			end
+			
+			def close(productions)
+				self.each do |item|
+					if (next_symbol = item.next_symbol) and CFG::is_nonterminal?(next_symbol)
+						productions[next_symbol].each { |p| self << p.to_item }
+					end
+				end
+			end
+			
+			def each
+				@items.each {|item| yield item}
+			end
+			
+			def on(symbol, action)
+				if @actions.key?(symbol)
+					@actions[symbol] << action
+				else
+					raise ParserConstructionError, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
+				end
+			end
+			
+			def on_any(action)
+				@actions.each { |k, v| if CFG::is_terminal?(k) then v << action end }
+			end
+			
+			def on?(symbol)
+				@actions[symbol].clone
+			end
+		end
+		
+		class Action
+			attr_reader :id
+			
+			def initialize(id = nil)
+				@id = id
+			end
+		end
+		
+		class Accept < Action
+			def to_s
+				"Accept"
+			end
+		end
+		
+		class GoTo < Action
+			def to_s
+				"GoTo #{self.id}"
+			end
+		end
+		
+		class Reduce < Action
+			def to_s
+				"Reduce by Production #{self.id}"
+			end
+		end
+		
+		class Shift < Action
+			def to_s
+				"Shift to State #{self.id}"
 			end
 		end
 	end

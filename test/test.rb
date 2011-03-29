@@ -5,28 +5,28 @@ require 'pp'
 require 'rltk/lexer'
 require 'rltk/parser'
 
-require 'rltk/lexers/calculator'
-require 'rltk/parsers/calculator'
-
-lexer = RLTK::Lexers::Calc.new
-parser = RLTK::Parsers::Calc.new
-
-#~class ABLexer < RLTK::Lexer
-	#~rule(/A/) { [:A, 1] }
-	#~rule(/B/) { [:B, 2] }
-	#~
-	#~rule(/\s/)
-#~end
+#~require 'rltk/lexers/calculator'
+#~require 'rltk/parsers/calculator'
 #~
-#~class ABParser < RLTK::Parser
-	#~
-	#~production(:a, "A* B") {|a, b| "Accepted with #{a.length} A(s)" }
-	#~
-	#~finalize
-#~end
-#~
-#~lexer = ABLexer.new
-#~parser = ABParser.new
+#~lexer = RLTK::Lexers::Calc.new
+#~parser = RLTK::Parsers::Calc.new
+
+class ABLexer < RLTK::Lexer
+	rule(/A/) { [:A, 1] }
+	rule(/B/) { [:B, 2] }
+	
+	rule(/\s/)
+end
+
+class ABParser < RLTK::Parser
+	
+	production(:a, "A* B") {|a, b| "Accepted with #{a.length} A(s)" }
+	
+	finalize
+end
+
+lexer = ABLexer.new
+parser = ABParser.new
 
 #~class LALexer < RLTK::Lexer
 	#~rule(/A/) { [:A, 1] }
@@ -57,4 +57,4 @@ parser = RLTK::Parsers::Calc.new
 #~lexer = LALexer.new
 #~parser = LAParser.new
 
-puts parser.parse(lexer.lex(ARGV[0]), {:parse_tree => 'calc.dot', :verbose => if ARGV[1] == 'true' then true else ARGV[1] end})
+puts parser.parse(lexer.lex(ARGV[0]), {:parse_tree => 'abs.dot', :verbose => if ARGV[1] == 'true' then true else ARGV[1] end})
