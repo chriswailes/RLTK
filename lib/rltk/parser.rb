@@ -57,35 +57,37 @@ module RLTK
 				@procs		= Array.new
 				@states		= Array.new
 				
+				# Variables for dealing with precedence.
 				@prec_counts		= {:left => 0, :right => 0, :non => 0}
 				@production_precs	= Array.new
 				@token_precs		= Hash.new
 				
-				@did_load = false
+				# Set the default argument handling policy.
+				@args = :splat
 				
-				@grammar.callback do |r, type, num|
-					@procs[r.id] =
-						if type == :*
-							if num == :first
-								Proc.new { || [] }
-							else
-								Proc.new { |o, os| [o] + os }
-							end
-						elsif type == :+
-							if num == :first
-								Proc.new { |o| o }
-							else
-								Proc.new { |o, os| [o] + os }
-							end
-						elsif type == :'?'
-							if num == :first
-								Proc.new { || nil }
-							else
-								Proc.new { |o| o }
-							end
+				@grammar.callback do |p, type, num|
+					@procs[p.id] =
+					[if type == :*
+						if num == :first
+							Proc.new { || [] }
+						else
+							Proc.new { |o, os| [o] + os }
 						end
+					elsif type == :+
+						if num == :first
+							Proc.new { |o| o }
+						else
+							Proc.new { |o, os| [o] + os }
+						end
+					elsif type == :'?'
+						if num == :first
+							Proc.new { || nil }
+						else
+							Proc.new { |o| o }
+						end
+					end, p.rhs.length]
 					
-					@production_precs[r.id] = r.last_terminal
+					@production_precs[p.id] = p.last_terminal
 				end
 			end
 			
@@ -98,6 +100,37 @@ module RLTK
 					@states << state
 					
 					@states.length - 1
+				end
+			end
+			
+			def array_args
+				if @grammar.productions.length == 0
+					@args = :array
+					
+					@grammar.callback do |p, type, num|
+						@procs[p.id] =
+						[if type == :*
+							if num == :first
+								Proc.new { |v| [] }
+							else
+								Proc.new { |v| [v[0]] + v[1] }
+							end
+						elsif type == :+
+							if num == :first
+								Proc.new { |v| v[0] }
+							else
+								Proc.new { |v| [v[0]] + v[1] }
+							end
+						elsif type == :'?'
+							if num == :first
+								Proc.new { |v| nil }
+							else
+								Proc.new { |v| v[0] }
+							end
+						end, p.rhs.length]
+						
+						@production_precs[p.id] = p.last_terminal
+					end
 				end
 			end
 			
@@ -124,6 +157,15 @@ module RLTK
 			end
 			
 			def check_sanity
+				# Check to make sure all non-terminals appear on the
+				# left-hand side of some production.
+				@grammar.nonterms.each do |sym|
+					if not @lh_sides.values.include?(sym)
+						raise ParserConstructionError, "Non-terminal #{sym} does not appear on the left-hand side of any production."
+					end
+				end
+				
+				# Check the actions in each state.
 				@states.each do |state|
 					state.actions.each do |sym, actions|
 						if CFG::is_terminal?(sym)
@@ -191,6 +233,9 @@ module RLTK
 						break
 					end
 					
+					# There can only be one Shift action for terminals and
+					# one GoTo action for non-terminals, so we know the
+					# first action is the only one in the list.
 					cur_state = @states[actions.first.id]
 				end
 				
@@ -206,14 +251,14 @@ module RLTK
 				
 				# Check to make sure the action's arity matches the number
 				# of symbols on the right-hand side.
-				if action.arity != production.rhs.length
+				if @args == :splat and action.arity != production.rhs.length
 					raise ParserConstructionError, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
 						'terminals and non-terminals in the clause.'
 				end
 				
 				# Add the action to our proc list.
-				@procs[production.id] = action
-
+				@procs[production.id] = [action, production.rhs.length]
+				
 				# If no precedence is specified use the precedence of the
 				# last terminal in the production.
 				@production_precs[production.id] = precedence || production.last_terminal
@@ -503,6 +548,10 @@ module RLTK
 				# Stack IDs to keep track of them during parsing.
 				stack_id = 0
 				
+				# Error mode indicators.
+				error_mode		= false
+				reduction_guard	= false
+				
 				# Our various list of stacks.
 				accepted		= []
 				moving_on		= []
@@ -527,16 +576,61 @@ module RLTK
 					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
 					
 					# Iterate over the stacks until each one is done.
-					until processing.empty?
-						# Grab the current stack.
-						stack = processing.shift
-						
+					while (stack = processing.shift)
 						# Get the available actions for this stack.
 						actions = @states[stack.state].on?(token.type)
 						
-						# Drop this stack if there are no actions.
 						if actions.empty?
-							v.puts("No more actions for stack #{stack.id}.  Dropping stack.") if v
+							# If we are already in error mode and there
+							# are no actions we skip this token.
+							if error_mode
+								moving_on << stack
+								next
+							end
+							
+							# We would be dropping the last stack so we
+							# are going to go into error mode.
+							if accepted.emtpy? and moving_on.empty? and processing.empty?
+								# Try and find a valid error state.
+								while stack.state
+									item_found =
+									@states[stack.state].inject(false) do |m, item|
+										m or item.next_symbol == :ERROR
+									end
+									
+									if item_found
+										# Find the shift action for
+										# ERROR.
+										action = @states[stack.state].on?(:ERROR).select { |a| a.is_a?(Shift) }.first
+										
+										# Enter the found error state.
+										stack.push(action.id, nil, :ERROR)
+										
+										break
+									else
+										# This state doesn't have an
+										# error production. Moving on.
+										stack.pop
+									end
+								end
+								
+								if stack.state
+									# We found a valid error state.
+									
+									error_mode = reduction_guard = true
+									processing << stack
+									
+									v.puts('Invalid input encountered.  Entering error handling mode.')
+								else
+									# No valid error states could be
+									# found.  Time to print a message
+									# and leave.
+									
+									v.puts("No more actions for stack #{stack.id}.  Dropping stack.") if v
+								end
+							else
+								v.puts("No more actions for stack #{stack.id}.  Dropping stack.") if v
+							end
 							
 							next
 						end
@@ -568,11 +662,18 @@ module RLTK
 							
 							elsif action.is_a?(Reduce)
 								# Get the production associated with this reduction.
-								if not (production_proc = @procs[action.id])
+								production_proc, pop_size = @procs[action.id]
+								
+								if not production_proc
 									raise InternalParserError, "No production #{action.id} found."
 								end
 								
-								result = v.instance_exec(*stack.pop(production_proc.arity), &production_proc)
+								result =
+								if @args == :array
+									opts[:env].instance_exec(stack.pop(pop_size), &production_proc)
+								else
+									opts[:env].instance_exec(*stack.pop(pop_size), &production_proc)
+								end
 								
 								if (goto = @states[stack.state].on?(@lh_sides[action.id]).first)
 									
@@ -588,12 +689,18 @@ module RLTK
 								# token.
 								processing << stack
 								
+								# Exit error mode if necessary.
+								error_mode = false if error_mode and not reduction_guard
+								
 							elsif action.is_a?(Shift)
 								stack.push(action.id, token.value, token.type)
 								
 								# This stack is ready for the next
 								# token.
 								moving_on << stack
+								
+								# Exit error mode if necessary.
+								error_mode = false if error_mode
 							end
 						end
 					end
@@ -602,6 +709,8 @@ module RLTK
 					
 					processing	= moving_on
 					moving_on		= []
+					
+					reduction_guard = false
 				end
 				
 				# If we have reached this point we accept all derivations.

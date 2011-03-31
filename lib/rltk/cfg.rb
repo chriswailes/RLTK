@@ -68,7 +68,6 @@ module RLTK
 		end
 		
 		def clause(expression)
-			
 			if not @curr_lhs
 				raise GrammarError, 'CFG.clause called outside of CFG.production block.'
 			end
@@ -220,29 +219,6 @@ module RLTK
 			end
 		end
 		
-		def get_question(symbol)
-			new_symbol = (symbol.to_s.downcase + '_question').to_sym
-			
-			if not @productions_sym.has_key?(new_symbol)
-				# Add the items for the following productions:
-				#
-				# nonterm_question: | nonterm
-				
-				# 1st (empty) production.
-				self.add_production(production = Production.new(self.next_id, new_symbol, []))
-				@callback.call(production, :'?', :first)
-				
-				# 2nd production
-				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(production, :'?', :second)
-				
-				# Add the new symbol to the list of nonterminals.
-				@nonterms[new_symbol] = true
-			end
-			
-			return new_symbol
-		end
-		
 		def get_plus(symbol)
 			new_symbol = (symbol.to_s.downcase + '_plus').to_sym
 			
@@ -258,6 +234,29 @@ module RLTK
 				# 2nd production
 				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol, new_symbol]))
 				@callback.call(production, :+, :second)
+				
+				# Add the new symbol to the list of nonterminals.
+				@nonterms[new_symbol] = true
+			end
+			
+			return new_symbol
+		end
+		
+		def get_question(symbol)
+			new_symbol = (symbol.to_s.downcase + '_question').to_sym
+			
+			if not @productions_sym.has_key?(new_symbol)
+				# Add the items for the following productions:
+				#
+				# nonterm_question: | nonterm
+				
+				# 1st (empty) production.
+				self.add_production(production = Production.new(self.next_id, new_symbol, []))
+				@callback.call(production, :'?', :first)
+				
+				# 2nd production
+				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol]))
+				@callback.call(production, :'?', :second)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true

@@ -20,7 +20,9 @@ end
 
 class ABParser < RLTK::Parser
 	
-	production(:a, "A* B") {|a, b| "Accepted with #{a.length} A(s)" }
+	array_args
+	
+	production(:a, "A* B") {|values| "Accepted with #{values[0].length} A(s)" }
 	
 	finalize
 end
