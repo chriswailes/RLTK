@@ -1,7 +1,7 @@
 # Author:		Chris Wailes <chris.wailes@gmail.com>
 # Project: 	Ruby Language Toolkit
-# Date:		2011/03/04
-# Description:	This file contains a parser for a simple calculator.
+# Date:		2011/04/06
+# Description:	This file contains a parser for a simple postfix calculator.
 
 ############
 # Requires #
@@ -16,21 +16,20 @@ require 'rltk/parser'
 
 module RLTK
 	module Parsers
-		class Calc < Parser
-			
-			left :PLS, :SUB
-			right :MUL, :DIV
+		class PostfixCalc < Parser
 			
 			production(:e) do
 				clause("NUM") {|n| n}
 				
-				clause("e PLS e") {|e0, _, e1| e0 + e1}
+				clause("LPAREN e RPAREN") { |_, e, _| e }
 				
-				clause("e SUB e") {|e0, _, e1| e0 - e1}
+				clause("e e PLS") { |e0, e1, _| e0 + e1 }
 				
-				clause("e MUL e") {|e0, _, e1| e0 * e1}
+				clause("e e SUB") { |e0, e1, _| e0 - e1 }
 				
-				clause("e DIV e") {|e0, _, e1| e0 / e1}
+				clause("e e MUL") { |e0, e1, _| e0 * e1 }
+				
+				clause("e e DIV") { |e0, e1, _| e0 / e1 }
 			end
 			
 			finalize

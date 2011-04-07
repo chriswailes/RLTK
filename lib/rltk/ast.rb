@@ -4,8 +4,6 @@
 # Description:	This file provides a base Node class for ASTs.
 
 module RLTK
-	class ASTError < Exception; end
-	
 	class NotImplementedError < Exception
 		def initialize(obj, method)
 			@class	= obj.class
@@ -19,8 +17,6 @@ module RLTK
 	
 	class ASTNode
 		attr_accessor :parent
-		
-		alias :'key?' :'has_key?'
 		
 		def ==(other)
 			self.children == other.children
@@ -44,22 +40,24 @@ module RLTK
 			children.each { |c| c.parent = self }
 		end
 		
-		def delete(key)
+		def delete_note(key)
 			@notes.delete(key)
-			self.children.each { |c| c.delete(key) }
+			self.children.each { |c| c.delete_note(key) }
 		end
 		
 		def each
 			self.children.each { |c| yield c }
 		end
 		
-		def has_key?(key)
+		def has_note?(key)
 			@notes.has_key?(key)
 		end
 		
+		alias :'note?' :'has_note?'
+		
 		def initialize
 			if self.class == RLTK::Node
-				raise Exception, 'Attempting to instantiate the RLTK::Node class.'
+				raise Exception, 'Attempting to instantiate the RLTK::ASTNode class.'
 			else
 				@notes	= Hash.new()
 				@parent	= nil

@@ -16,7 +16,7 @@ require 'rltk/lexer'
 
 module RLTK
 	module Lexers
-		class Calc < Lexer
+		class Calculator < Lexer
 			
 			#################
 			# Default State #
@@ -26,6 +26,9 @@ module RLTK
 			rule(/-/)		{ :SUB }
 			rule(/\*/)	{ :MUL }
 			rule(/\//)	{ :DIV }
+			
+			rule(/\(/)	{ :LPAREN }
+			rule(/\)/)	{ :RPAREN }
 			
 			rule(/[0-9]+/)	{ |t| [:NUM, t.to_i] }
 			

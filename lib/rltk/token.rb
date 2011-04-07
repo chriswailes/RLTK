@@ -34,10 +34,6 @@ module RLTK
 			self.type == other.type and self.value == other.value
 		end
 		
-		def signature
-			return [self.type, self.value]
-		end
-		
 		def to_s
 			if value
 				"#{self.type}(#{self.value})"
