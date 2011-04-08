@@ -117,16 +117,8 @@ module RLTK
 					file.close
 				end
 				
-				def self.match(type)
-					if type.is_a?(Symbol) and (type == :longest or type == :first)
-						@match_type = type
-					else
-						raise LexerConstructionError, 'Match type must be :first or :longest.'
-					end
-				end
-				
-				def self.match_type
-					@match_type
+				def self.match_first
+					@match_type = :first
 				end
 				
 				def self.rule(pattern, state = :default, flags = [], &action)

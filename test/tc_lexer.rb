@@ -34,7 +34,7 @@ class LexerTester < Test::Unit::TestCase
 				Token.new(:RPAREN),
 			]
 		
-		actual	= RLTK::Lexers::Calc.lex('1 + - * / ( )')
+		actual = RLTK::Lexers::Calc.lex('1 + - * / ( )')
 		
 		assert_equal(expected, actual)
 	end

@@ -1,7 +1,7 @@
 # Author:		Chris Wailes <chris.wailes@gmail.com>
 # Project: 	Ruby Language Toolkit
 # Date:		2011/04/06
-# Description:	This file contains unit tests for the RLTK::Lexer class.
+# Description:	This file contains unit tests for the RLTK::Parser class.
 
 ############
 # Requires #
@@ -11,6 +11,7 @@
 require 'test/unit'
 
 # Ruby Language Toolkit
+require 'rltk/lexer'
 require 'rltk/parser'
 require 'rltk/parsers/prefix_calc'
 require 'rltk/parsers/infix_calc'
@@ -19,6 +20,31 @@ require 'rltk/parsers/postfix_calc'
 #######################
 # Classes and Modules #
 #######################
+
+class ABLexer < RLTK::Lexer
+	rule(/A/) { [:A, 1] }
+	rule(/B/) { [:B, 2] }
+	
+	rule(/\s/)
+end
+
+class APlusBParser < RLTK::Parser
+	production(:a, 'A+ B') { |a, _| "Accepted with #{a.length} A(s)" }
+	
+	finalize
+end
+
+class AQuestionBParser < RLTK::Parser
+	production(:a, 'A? B') { |a, _| "Accepted #{if a then 'with' else 'without' end} an A" }
+	
+	finalize
+end
+
+class AStarBParser < RLTK::Parser
+	production(:a, 'A* B') { |a, _| "Accepted with #{a.length} A(s)" }
+	
+	finalize
+end
 
 class ParserTester < Test::Unit::TestCase
 	def test_ambiguous_grammar

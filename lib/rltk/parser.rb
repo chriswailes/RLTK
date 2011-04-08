@@ -441,7 +441,7 @@ module RLTK
 					
 					# Find the Accept and Reduce actions for this state.
 					state.each do |item|
-						if item.at_end
+						if item.at_end?
 							if item.lhs == :start
 								state.on(:EOS, Accept.new)
 							else

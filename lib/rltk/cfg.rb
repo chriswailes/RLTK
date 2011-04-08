@@ -390,7 +390,7 @@ module RLTK
 				end
 			end
 			
-			def at_end
+			def at_end?
 				@dot == @rhs.length
 			end
 			

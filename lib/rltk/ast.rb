@@ -19,7 +19,7 @@ module RLTK
 		attr_accessor :parent
 		
 		def ==(other)
-			self.children == other.children
+			self.class == other.class and self.children == other.children
 		end
 		
 		def [](key)
@@ -40,9 +40,9 @@ module RLTK
 			children.each { |c| c.parent = self }
 		end
 		
-		def delete_note(key)
+		def delete_note(key, recursive = true)
+			self.children.each { |c| c.delete_note(key) } if recursive
 			@notes.delete(key)
-			self.children.each { |c| c.delete_note(key) }
 		end
 		
 		def each
@@ -55,12 +55,14 @@ module RLTK
 		
 		alias :'note?' :'has_note?'
 		
-		def initialize
-			if self.class == RLTK::Node
+		def initialize(children = [])
+			if self.class == RLTK::ASTNode
 				raise Exception, 'Attempting to instantiate the RLTK::ASTNode class.'
 			else
 				@notes	= Hash.new()
 				@parent	= nil
+				
+				self.children = children
 			end
 		end
 		
