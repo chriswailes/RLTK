@@ -17,11 +17,8 @@ require 'rltk/parser'
 module RLTK
 	module Parsers
 		class PrefixCalc < Parser
-			
 			production(:e) do
 				clause("NUM") {|n| n}
-				
-				clause("LPAREN e RPAREN") { |_, e, _| e }
 				
 				clause("PLS e e") { |_, e0, e1| e0 + e1 }
 				

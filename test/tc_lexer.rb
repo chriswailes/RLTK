@@ -121,9 +121,19 @@ class LexerTester < Test::Unit::TestCase
 		
 		assert_equal(expected, actual)
 		
-		actual = ENVLexer.new.lex('aaa')
+		lexer = ENVLexer.new
 		
-		assert_equal(expected, actual)
+		assert_equal(expected, lexer.lex('aaa'))
+		
+		expected =
+			[
+				RLTK::Token.new(:A, 3),
+				RLTK::Token.new(:A, 4),
+				RLTK::Token.new(:A, 5),
+				RLTK::Token.new(:EOS)
+			]
+		
+		assert_equal(expected, lexer.lex('aaa'))
 	end
 	
 	def test_first_match

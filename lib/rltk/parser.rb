@@ -30,7 +30,7 @@ module RLTK
 			klass.class_exec do
 				@core = ParserCore.new
 				
-				def core
+				def self.core
 					@core
 				end
 				
@@ -49,7 +49,7 @@ module RLTK
 				end
 				
 				def parse(tokens, opts = {})
-					self.class.core.parse(tokens, {:environment => @env}.update(opts))
+					self.class.core.parse(tokens, {:env => @env}.update(opts))
 				end
 			end
 		end
@@ -403,7 +403,7 @@ module RLTK
 				
 				# Grab all of the symbols that comprise the grammar (besides
 				# the start symbol).
-				@symbols = @grammar.symbols
+				@symbols = @grammar.symbols << :ERROR
 				
 				# Add our starting state to the state list.
 				start_production	= @grammar.production(:start, @grammar.start_symbol.to_s).first
@@ -603,34 +603,24 @@ module RLTK
 							if accepted.empty? and moving_on.empty? and processing.empty?
 								# Try and find a valid error state.
 								while stack.state
-									item_found =
-									@states[stack.state].items.inject(false) do |m, item|
-										m or item.next_symbol == :ERROR
-									end
-									
-									if item_found
-										# Find the shift action for
-										# ERROR.
-										action = @states[stack.state].on?(:ERROR).select { |a| a.is_a?(Shift) }.first
-										
-										# Enter the found error state.
-										stack.push(action.id, nil, :ERROR)
-										
-										break
-									else
+									if (actions = @states[stack.state].on?(:ERROR)).empty?
 										# This state doesn't have an
 										# error production. Moving on.
 										stack.pop
+									else
+										# Enter the found error state.
+										stack.push(actions.first.id, nil, :ERROR)
+										
+										break
 									end
 								end
 								
 								if stack.state
 									# We found a valid error state.
-									
 									error_mode = reduction_guard = true
 									processing << stack
 									
-									v.puts('Invalid input encountered.  Entering error handling mode.')
+									v.puts('Invalid input encountered.  Entering error handling mode.') if v
 								else
 									# No valid error states could be
 									# found.  Time to print a message
@@ -709,8 +699,8 @@ module RLTK
 								# token.
 								moving_on << stack
 								
-								# Exit error mode if necessary.
-								error_mode = false if error_mode
+								# Exit error mode.
+								error_mode = false
 							end
 						end
 					end
@@ -879,8 +869,7 @@ module RLTK
 			end
 			
 			def branch(new_id)
-				ParseStack.new(new_id, Array.new(@output_stack), Array.new(@state_stack),
-					Array.new(@node_stack), Array.new(@connections), Array.new(@labels))
+				ParseStack.new(new_id, @output_stack.clone, @state_stack.clone, @node_stack.clone, @connections.clone, @labels.clone)
 			end
 			
 			def push(state, o, node0)
@@ -911,7 +900,7 @@ module RLTK
 				if @output_stack.length == 1
 					return @output_stack.last
 				else
-					raise InternalParserError, "The parsing stack should have 1 element on the output stack, not #{@utput_stack.length}."
+					raise InternalParserError, "The parsing stack should have 1 element on the output stack, not #{@output_stack.length}."
 				end
 			end
 			
@@ -954,7 +943,7 @@ module RLTK
 			end
 			
 			def ==(other)
-				self.items == other.items
+				if self.items and other.items then self.items == other.items else self.id == other.id end
 			end
 			
 			def append(item)
