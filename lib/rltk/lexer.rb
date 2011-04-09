@@ -19,7 +19,7 @@ require File.join(File.dirname(__FILE__), 'token')
 
 module RLTK
 	class LexingError < Exception
-		def initialize(streamstream_offset, line_number, line_offset, remainder)
+		def initialize(stream_offset, line_number, line_offset, remainder)
 			@stream_offset	= stream_offset
 			@line_number	= line_number
 			@line_offset	= line_offset
@@ -31,22 +31,51 @@ module RLTK
 		end
 	end
 	
-	class LexerConstructionError < Exception; end
-	
 	class Lexer
-		attr_accessor :start_state
-		
 		def Lexer.inherited(klass)
 			klass.class_exec do
+				@core = LexerCore.new
+				
+				def self.core
+					@core
+				end
+				
+				def self.lex(str)
+					@core.lex(str, self::Environment.new(@core.start_state))
+				end
+				
+				def self.method_missing(method, *args, &proc)
+					@core.send(method, *args, &proc)
+				end
+				
+				def initialize
+					@env = self.class::Environment.new(self.class.core.start_state)
+				end
+				
+				def lex(string)
+					self.class.core.lex(string, @env)
+				end
+				
+				def lex_file(file)
+					File.open(file_name, 'r') { |f| self.class.core.lex(f.read, @env) }
+				end
+			end
+		end
+		
+		#################
+		# Inner Classes #
+		#################
+		
+		class LexerCore
+			attr_reader :start_state
+			
+			def initialize
 				@match_type	= :longest
 				@rules		= Hash.new {|h,k| h[k] = Array.new}
 				@start_state	= :default
-				
-				#################
-				# Class Methods #
-				#################
-				
-				def self.lex(string, env = Environment.new(@start_state))
+			end
+			
+			def lex(string, env)
 					# Offset from start of stream.
 					stream_offset = 0
 				
@@ -72,7 +101,7 @@ module RLTK
 						@rules[env.state].each do |rule|
 							if (rule.flags - env.flags).empty?
 								if txt = scanner.check(rule.pattern)
-									if not match or match[0].length < txt.length
+									if not match or match.first.length < txt.length
 										match = [txt, rule]
 										
 										break if @match_type == :first
@@ -82,7 +111,7 @@ module RLTK
 						end
 						
 						if match
-							rule = match.last()
+							rule = match.last
 							
 							txt = scanner.scan(rule.pattern)
 							type, value = env.instance_exec(txt, &rule.action)
@@ -109,7 +138,7 @@ module RLTK
 					return tokens << Token.new(:EOS)
 				end
 				
-				def self.lex_file(file_name)
+				def lex_file(file_name)
 					file = File.open(file_name, 'r')
 					
 					lex(file.read)
@@ -117,11 +146,11 @@ module RLTK
 					file.close
 				end
 				
-				def self.match_first
+				def match_first
 					@match_type = :first
 				end
 				
-				def self.rule(pattern, state = :default, flags = [], &action)
+				def rule(pattern, state = :default, flags = [], &action)
 					# If no action is given we will set it to an empty
 					# action.
 					action ||= Proc.new() {}
@@ -131,35 +160,10 @@ module RLTK
 					if state == :ALL then @rules.each_key { |k| @rules[k] << r } else @rules[state] << r end
 				end
 				
-				def self.start(state)
+				def start(state)
 					@start_state = state
 				end
-				
-				def self.start_state
-					@start_state
-				end
-				
-				####################
-				# Instance Methods #
-				####################
-				
-				def initialize
-					@env = Environment.new(self.class.start_state)
-				end
-				
-				def lex(string)
-					self.class.lex(string, @env)
-				end
-				
-				def lex_file(file)
-					File.open(file_name, 'r') { |f| self.lex(f.read) }
-				end
-			end
 		end
-		
-		#################
-		# Inner Classes #
-		#################
 		
 		class Environment
 			attr_reader :flags
@@ -169,14 +173,14 @@ module RLTK
 				@flags	= Array.new
 			end
 			
-			def add_state(state)
-				@state << state
+			def pop_state
+				@state.pop
 				
 				nil
 			end
 			
-			def pop_state
-				@state.pop
+			def push_state(state)
+				@state << state
 				
 				nil
 			end

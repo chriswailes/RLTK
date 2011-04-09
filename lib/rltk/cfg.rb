@@ -43,7 +43,7 @@ module RLTK
 		def initialize(&callback)
 			@curr_lhs			= nil
 			@callback			= callback || Proc.new {}
-			@lexer			= Lexers::EBNFLexer.new
+			@lexer			= Lexers::EBNF.new
 			@production_counter	= -1
 			@start_symbol		= nil
 			@wrapper_symbol	= nil
@@ -146,7 +146,7 @@ module RLTK
 			end
 		end
 		
-		def first_set_prime(sym0)
+		def first_set_prime(sym0, seen_lh_sides = [])
 			if self.symbols.include?(sym0)
 				# Memoize the result for later.
 				@firsts[sym0] ||=
@@ -168,9 +168,13 @@ module RLTK
 							
 							production.rhs.each do |sym1|
 								
+								set1 = []
+								
 								# Grab the First set for the current
 								# symbol in this production.
-								set0 |= (set1 = self.first_set(sym1)) - [:'ɛ']
+								if not seen_lh_sides.include?(sym1)
+									set0 |= (set1 = self.first_set_prime(sym1, seen_lh_sides << sym1)) - [:'ɛ']
+								end
 								
 								break if not (all_have_empty = set1.include?(:'ɛ'))
 							end

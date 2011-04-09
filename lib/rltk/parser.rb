@@ -30,16 +30,26 @@ module RLTK
 			klass.class_exec do
 				@core = ParserCore.new
 				
+				def core
+					@core
+				end
+				
 				def self.method_missing(method, *args, &proc)
 					@core.send(method, *args, &proc)
 				end
 				
+				def self.parse(tokens, opts = {})
+					opts[:env] ||= self::Environment.new
+					
+					@core.parse(tokens, opts)
+				end
+				
 				def initialize
-					@env = Environment.new
+					@env = self.class::Environment.new
 				end
 				
 				def parse(tokens, opts = {})
-					self.class.parse(tokens, {:environment => @env}.update(opts))
+					self.class.core.parse(tokens, {:environment => @env}.update(opts))
 				end
 			end
 		end
@@ -590,11 +600,11 @@ module RLTK
 							
 							# We would be dropping the last stack so we
 							# are going to go into error mode.
-							if accepted.emtpy? and moving_on.empty? and processing.empty?
+							if accepted.empty? and moving_on.empty? and processing.empty?
 								# Try and find a valid error state.
 								while stack.state
 									item_found =
-									@states[stack.state].inject(false) do |m, item|
+									@states[stack.state].items.inject(false) do |m, item|
 										m or item.next_symbol == :ERROR
 									end
 									

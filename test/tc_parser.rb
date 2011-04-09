@@ -13,6 +13,7 @@ require 'test/unit'
 # Ruby Language Toolkit
 require 'rltk/lexer'
 require 'rltk/parser'
+require 'rltk/lexers/calculator'
 require 'rltk/parsers/prefix_calc'
 require 'rltk/parsers/infix_calc'
 require 'rltk/parsers/postfix_calc'
@@ -48,35 +49,49 @@ end
 
 class ParserTester < Test::Unit::TestCase
 	def test_ambiguous_grammar
-	
+		
 	end
 	
 	def test_array_args
-	
+		
 	end
 	
 	def test_environment
-	
+		
 	end
 	
 	def test_infix_calc
-	
+		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2'))
+		assert_equal(3, actual)
+		
+		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'))
+		assert_equal(7, actual)
+		
+		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('(1 + 2) * 3'))
+		assert_equal(9, actual)
 	end
 	
 	def test_input
-	
+		
 	end
 	
 	def test_parse_stack
-	
+		
 	end
 	
 	def test_postfix_calc
-	
+		
 	end
 	
 	def test_prefix_calc
-	
+		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
+		assert_equal(3, actual)
+		
+		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 * 2 3'))
+		assert_equal(7, actual)
+		
+		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
+		assert_equal(9, actual)
 	end
 	
 	def test_state

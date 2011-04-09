@@ -16,7 +16,7 @@ require 'rltk/lexer'
 
 module RLTK
 	module Lexers
-		class EBNFLexer < Lexer
+		class EBNF < Lexer
 			
 			#################
 			# Default State #
