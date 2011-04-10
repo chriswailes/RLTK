@@ -15,9 +15,17 @@ require 'rltk/cfg'
 #######################
 
 module RLTK
+	class BadToken < Exception
+		def to_s
+			'Unexpected token.  Token not present in grammar definition.'
+		end
+	end
 	
-	# Used for problems with the input string.
-	class ParsingError < Exception; end
+	class NotInLangauge < Exception
+		def to_s
+			'String not in language.'
+		end
+	end
 	
 	# Used for errors that occure during parser construction.
 	class ParserConstructionError < Exception; end
@@ -85,7 +93,7 @@ module RLTK
 						end
 					elsif type == :+
 						if num == :first
-							Proc.new { |o| o }
+							Proc.new { |o| [o] }
 						else
 							Proc.new { |o, os| [o] + os }
 						end
@@ -455,7 +463,7 @@ module RLTK
 							if item.lhs == :start
 								state.on(:EOS, Accept.new)
 							else
-								state.on_any(Reduce.new(item.id))
+								state.add_reduction(item.id)
 							end
 						end
 					end
@@ -574,13 +582,13 @@ module RLTK
 					# Check to make sure this token was seen in the
 					# grammar definition.
 					if not @symbols.include?(token.type)
-						raise ParsingError, 'Unexpected token.  Token not present in grammar definition.'
+						raise BadToken
 					end
 					
 					# If we don't have any active stacks the string
 					# isn't in the language.
 					if processing.length == 0
-						raise ParsingError, 'String not in language.'
+						raise NotInLangauge
 					end
 					
 					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
@@ -681,7 +689,7 @@ module RLTK
 									
 									stack.push(goto.id, result, @lh_sides[action.id])
 								else
-									raise InternalParserError, "No GoTo action found in state #{nstack.state} " +
+									raise InternalParserError, "No GoTo action found in state #{stack.state} " +
 										"after reducing by production #{action.id}"
 								end
 								
@@ -946,6 +954,13 @@ module RLTK
 				if self.items and other.items then self.items == other.items else self.id == other.id end
 			end
 			
+			def add_reduction(production_id)
+				action = Reduce.new(production_id)
+				
+				# Reduce actions are not allowed for the ERROR terminal.
+				@actions.each { |k, v| if CFG::is_terminal?(k) and k != :ERROR then v << action end }
+			end
+			
 			def append(item)
 				if item.is_a?(CFG::Item) and not @items.include?(item) then @items << item end
 			end
@@ -974,10 +989,6 @@ module RLTK
 				else
 					raise ParserConstructionError, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
 				end
-			end
-			
-			def on_any(action)
-				@actions.each { |k, v| if CFG::is_terminal?(k) then v << action end }
 			end
 			
 			def on?(symbol)
