@@ -1,1 +1,177 @@
-FOO BAR!
+Welcome to the Ruby Language Toolkit, a collection of classes designed to help you work with languages in an easy to use and sensible manner.  The toolkit includes classes representing:
+
+* Lexers
+* Parsers
+* AST nodes
+* Context free grammars
+
+In addition, RLTK includes several ready-made lexers and parsers for use in your code, and as examples for how to use the toolkit.
+
+== Lexers
+
+To create your own lexer using RLTK you simply need to subclass the RLTK::Lexer class and define the _rules_ that will be used for matching text and generating tokens.  Here we see a simple lexer for a calculator:
+
+	class Calculator < RLTK::Lexer
+		rule(/\+/)	{ :PLS }
+		rule(/-/)		{ :SUB }
+		rule(/\*/)	{ :MUL }
+		rule(/\//)	{ :DIV }
+		
+		rule(/\(/)	{ :LPAREN }
+		rule(/\)/)	{ :RPAREN }
+		
+		rule(/[0-9]+/)	{ |t| [:NUM, t.to_i] }
+		
+		rule(/\s/)
+	end
+
+The +rule+ method's first argument is the regular expression used for matching text.  The block passed to the function is the action that executes when a substring is matched by the rule.  These blocks must return the _type_ of the token (which must be in ALL CAPS; see the Parsers section), and optionally a _value_.  In the latter case you must return an array containing the _type_ and _value_, which you can see an example of in the Calculator lexer shown above.  The values returned by the proc object are used to build a RLTK::Token object that includes the _type_ and _value_ information, as well as information about the line number the token was found on, the offset from the beginning of the line to the start of the token, and the length of the token's text.  If the _type_ value returned by the proc is +nil+ the input is discarded and no token is produced.
+
+The RLTK::Lexer class provides both RLTK::Lexer::lex and RLTK::Lexer::lex_file.  The RLTK::Lexer::lex method takes a string as its argument and returns an array of tokens, with an <em>end of stream</em> token automatically added to the result.  The RLTK::Lexer::lex_file method takes the name of a file as input, and lexes the contents of the specified file.
+
+=== The Lexing Environment
+
+The proc objects passed to the +rule+ methods are evaluated inside an instance of the RLTK::Lexer::Environment class.  This gives you access to methods for manipulating the lexer's state and flags (see bellow).  You can also subclass the environment inside your lexer to provide additional functionality to your rule blocks.  When doing so you need to ensure that you name your new class Environment like in the following example:
+
+	class MyLexer < RLTK::Lexer
+		...
+		
+		class Environment < Environment
+			def helper_function
+				...
+			end
+			
+			...
+		end
+	end
+
+=== Using States
+
+The lexing environment may be used to keep track of state inside your lexer.  When rules are defined they are defined inside a given state, which is specified by the second parameter to +rule+.  The default state is cleverly named +:default+.  When the lexer is scanning the input string for matching rules, it only considers the rules for the given state.
+
+The methods used to manipulate state are:
+
+* RLTK::Lexer::Environment.push_state - Pushes a new state onto the stack.
+* RLTK::Lexer::Environment.pop_state - Pops a state off of the stack.
+* RLTK::Lexer::Environment.set_state - Sets the state at the top of the stack.
+* RLTK::Lexer::Environment.state - Returns the current state.
+
+States may be used to easily support nested comments.
+
+	class StateLexer < RLTK::Lexer
+		rule(/a/)		{ :A }
+		rule(/\s/)
+		
+		rule(/\(\*/)	{ push_state(:comment) }
+		
+		rule(/\(\*/, :comment)	{ push_state(:comment) }
+		rule(/\*\)/, :comment)	{ pop_state }
+		rule(/./,    :comment)
+	end
+
+By default the lexer will start in the +:default+ state.  To change this, you may use the RLTK::Lexer::start method.
+
+=== Using Flags
+
+The lexing environment also maintains a set of _flags_.  This set is manipulated using the following methods:
+
+* RLTK::Lexer::Environment.set_flag - Adds the specified flag to the set of flags.
+* RLTK::Lexer::Environment.unset_flag - Removes the specified flag from the set of flags.
+* RLTK::Lexer::Environment.clear_flags - Unsets all flags.
+
+When _rules_ are defined they may use a third parameter to specify a list of flags that must be set before the rule is considered when matching substrings.  An example of this usage follows:
+
+	class FlagLexer < RLTK::Lexer
+		rule(/a/)		{ set_flag(:a); :A }
+		
+		rule(/\s/)
+		
+		rule(/b/, :default, [:a])	{ set_flag(:b); :B }
+		rule(/c/, :default, [:a, :b])	{ :C }
+	end
+
+=== Instantiating Lexers
+
+In addition to using the RLTK::Lexer::lex class method you may also instantiate lexer objects.  The only difference then is that the lexing environment used between subsequent calls to +object.lex+ is the same object, and therefor allows you to keep persistent state.
+
+=== First and Longest Match
+
+A RLTK::Lexer may be told to select either the first substring that is found to match a rule or the longest substring to match any rule.  The default behavior is to match the longest substring possible, but you can change this by using the +match_first+ method inside your class definition as follows:
+
+	class MyLexer < RLTK::Lexer
+		match_first
+		
+		...
+	end
+
+== Parsers
+
+Here we describe how to use the Parser class.
+
+== ASTNode
+
+The RLTK::ASTNode base class is meant to be a good starting point for implementing your own abstract syntax tree.  By subclassing RLTK::ASTNode you automagically get features such as comparison of trees, notes, uniform access to child nodes including the +each+ and +map+ functions, the ability to retrieve the root of a tree from any member node, and the ability to print trees using the +to_src+ and +inspect+ methods.
+
+When subclassing RLTK::ASTNode be sure to implement the following methods:
+
+* +children+ - Must return an array of the children of a node.
+* +initialize+ - Make sure to call +super+ and pass it an array of the node's children.
+* +inspect+ - Provides a textual representation of the structure of the AST.
+* +set_children+ - Takes an array of children as input and assigns them to variables appropriately.
+* +to_src+ - Print the AST as source code.
+
+== Context Free Grammars
+
+The RLTK::CFG class provides an abstraction for context-free grammars.  For the purpose of this class terminal symbols appear in *ALL* *CAPS*, and non-terminal symbols appear in *all* *lowercase*.  Once a grammar is defined the RLTK::CFG.first_set and RLTK::CFG.follow_set methods can be used to find _first_ and _follow_ sets.
+
+=== Defining Grammars
+
+A grammar is defined by first instantiating the RLTK::CFG class.  The RLTK::CFG.production and RLTK::CFG.clause methods may then be used to define the productions of the grammar.  The +production+ method can take a Symbol denoting the left-hand side of the production and a string describing the left-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the +clause+ method, each call producing a new production with the same left-hand side but different right-hand sides.  RLTK::CFG.clause may not be called outside of RLTK::CFG.production.  Bellow we see a grammar definition that uses both methods:
+
+	grammar = RLTK::CFG.new
+	
+	grammar.production(:s) do
+		clause('A G D')
+		clause('A a C')
+		clause('B a D')
+		clause('B G C')
+	end
+	
+	grammar.production(:a, 'b')
+	grammar.production(:b, 'G')
+
+=== Extended Backus–Naur Form
+
+The RLTK::CFG class understands grammars written in the extended Backus–Naur form.  This allows you to use the \*, \+, and ? operators in your grammar definitions.  When each of these operators are encountered additional productions are generated.  For example, if the right-hand side of a production contained 'NUM*' a production of the form 'num_star -> | NUM num_star' is added to the grammar.  As such, your grammar should not contain productions with similar left-hand sides (e.g. foo_star, bar_question, or baz_plus).
+
+As these additional productions are added internally to the grammar a callback functionality is provided to let you know when such an event occurs.  The callback proc object can either be specified when the CFG object is created, or by using the RLTK::CFG.callback method.  The callback will receive three arguments: the production generated, the operator that triggered the generation, and a symbol (:first or :second) specifying which clause of the production this callback is for.
+
+=== Helper Functions
+
+Once a grammar has been defined you can use the following functions to obtain information about it:
+
+* RLTK::CFG.first_set - Returns the _first_ _set_ for the provided symbol or sentence.
+* RLTK::CFG.follow_set - Returns the _follow_ _set_ for the provided symbol.
+* RLTK::CFG.nonterms - Returns a list of the non-terminal symbols used in the grammar's definition.
+* RLTK::CFG.productions - Provides either a hash or array of the grammar's productions.
+* RLTK::CFG.symbols - Returns a list of all symbols used in the grammar's definition.
+* RLTK::CFG.terms - Returns a list of the terminal symbols used in the grammar's definition.
+
+== Provided Lexers and Parsers
+
+The following lexer and parser classes are included as part of RLTK:
+
+* RLTK::Lexers::Calculator
+* RLTK::Lexers::EBNF
+* RLTK::Parsers::PrefixCalc
+* RLTK::Parsers::InfixCalc
+* RLTK::Parsers::PostfixCalc
+
+== Contributing
+
+If you are interested in contributing to RLTK you can:
+
+* Help provide unit tests.  Not all of RLTK is tested as well as it could be.  Specifically, more tests for the RLTK::CFG and RLTK::Parser classes would be appreciated.
+* Write lexers or parsers that you think others might want to use.  Possibilities include HTML, JSON/YAML, Javascript, and Ruby.
+* Write a class for dealing with regular languages.
+* Extend the RLTK::CFG class with additional functionality.

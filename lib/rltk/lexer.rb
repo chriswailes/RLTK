@@ -11,7 +11,7 @@
 require 'strscan'
 
 # Ruby Language Toolkit
-require File.join(File.dirname(__FILE__), 'token')
+require 'rltk/token'
 
 #######################
 # Classes and Modules #
@@ -117,7 +117,7 @@ module RLTK
 							type, value = env.instance_exec(txt, &rule.action)
 							
 							if type
-								tokens << Token.new(type, value, stream_offset, line_number, line_offset, line_offset + txt.length()) 
+								tokens << Token.new(type, value, stream_offset, line_number, line_offset, txt.length) 
 							end
 							
 							# Advance our stat counters.

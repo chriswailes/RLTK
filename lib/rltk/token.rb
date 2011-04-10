@@ -15,19 +15,17 @@ module RLTK
 		attr_reader :stream_offset
 		attr_reader :line_number
 		attr_reader :line_offset_start
-		attr_reader :line_offset_end
 		
 		alias :start :line_offset_start
-		alias :end   :line_offset_end
 		
-		def initialize(type, value = nil, stream_offset = nil, line_number = nil, line_offset_start = nil, line_offset_end = nil)
+		def initialize(type, value = nil, stream_offset = nil, line_number = nil, line_offset = nil, length = nil)
 			@type	= type
 			@value	= value
 			
-			@stream_offset		= stream_offset
-			@line_number		= line_number
-			@line_offset_start	= line_offset_start
-			@line_offset_end	= line_offset_end
+			@stream_offset	= stream_offset
+			@line_number	= line_number
+			@line_offset	= line_offset
+			@length		= length
 		end
 		
 		def ==(other)

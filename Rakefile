@@ -10,10 +10,8 @@
 require 'rake/rdoctask'
 require 'rake/testtask'
 
-Rake::RDocTask.new do |rd|
-	rd.main = 'README'
-	rd.rdoc_dir = 'doc'
-	rd.rdoc_files.include('README', 'lib/**/*.rb')
+task :rdoc do
+	`rdoc -w 5 -o doc -m README -t "The Ruby Language Toolkit" README lib/rltk/*.rb lib/rltk/**/*.rb`
 end
 
 Rake::TestTask.new do |t|
