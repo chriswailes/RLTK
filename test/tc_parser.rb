@@ -30,19 +30,19 @@ class ABLexer < RLTK::Lexer
 end
 
 class APlusBParser < RLTK::Parser
-	production(:a, 'A+ B') { |a, _| "Accepted with #{a.length} A(s)" }
+	production(:a, 'A+ B') { |a, _| a.length }
 	
 	finalize
 end
 
 class AQuestionBParser < RLTK::Parser
-	production(:a, 'A? B') { |a, _| "Accepted #{if a then 'with' else 'without' end} an A" }
+	production(:a, 'A? B') { |a, _| a }
 	
 	finalize
 end
 
 class AStarBParser < RLTK::Parser
-	production(:a, 'A* B') { |a, _| "Accepted with #{a.length} A(s)" }
+	production(:a, 'A* B') { |a, _| a.length }
 	
 	finalize
 end
@@ -111,6 +111,10 @@ class ParserTester < Test::Unit::TestCase
 		
 		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
 		assert_equal(9, actual)
+	end
+	
+	def test_ebnf_parsing
+		
 	end
 	
 	def test_environment

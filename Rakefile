@@ -21,3 +21,7 @@ Rake::TestTask.new do |t|
 	t.test_files = FileList['test/ts_rltk.rb']
 	t.verbose = true
 end
+
+task :stats do
+	puts `sloccount .`
+end
