@@ -52,6 +52,10 @@ module RLTK
 					@env = self.class::Environment.new(self.class.core.start_state)
 				end
 				
+				def env
+					@env
+				end
+				
 				def lex(string)
 					self.class.core.lex(string, @env)
 				end

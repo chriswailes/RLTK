@@ -56,6 +56,10 @@ module RLTK
 					@env = self.class::Environment.new
 				end
 				
+				def env
+					@env
+				end
+				
 				def parse(tokens, opts = {})
 					self.class.core.parse(tokens, {:env => @env}.update(opts))
 				end
@@ -65,6 +69,9 @@ module RLTK
 		class Environment; end
 		
 		class ParserCore
+			
+			attr_reader :grammar
+			
 			def initialize
 				@curr_lhs		= nil
 				@curr_prec	= nil
@@ -807,15 +814,15 @@ module RLTK
 							# Reduce/Reduce conflict.
 							next unless actions and actions.length > 1
 							
-							reduces_ok = actions.inject(true) do |m, a|
+							resolve_ok = actions.inject(true) do |m, a|
 								if a.is_a?(Reduce)
 									m and @production_precs[a.id]
 								else
 									m
 								end
-							end
+							end and actions.inject(false) { |m, a| m or a.is_a?(Shift) }
 							
-							if @token_precs[symbol] and reduces_ok
+							if @token_precs[symbol] and resolve_ok
 								max_prec = 0
 								selected_action = nil
 								
@@ -829,7 +836,7 @@ module RLTK
 									# If two actions have the same precedence we
 									# will only replace the previous production if:
 									#  * The token is left associative and the current action is a Reduce
-									#  * The Token is right associative and the current action is a Shift
+									#  * The token is right associative and the current action is a Shift
 									if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
 										max_prec			= prec
 										selected_action	= a

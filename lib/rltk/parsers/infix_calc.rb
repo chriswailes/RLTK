@@ -22,7 +22,7 @@ module RLTK
 			right :MUL, :DIV
 			
 			production(:e) do
-				clause('NUM') {|n| n}
+				clause('NUM') { |n| n }
 				
 				clause('LPAREN e RPAREN') { |_, e, _| e }
 				
