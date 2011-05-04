@@ -88,7 +88,7 @@ States may be used to easily support nested comments.
 		rule(/./,    :comment)
 	end
 
-By default the lexer will start in the +:default+ state.  To change this, you may use the RLTK::Lexer::start method.
+By default the lexer will start in the +:default+ state.  To change this, you may use the RLTK::Lexer::LexerCore.start method.
 
 === Using Flags
 
@@ -115,7 +115,7 @@ In addition to using the RLTK::Lexer::lex class method you may also instantiate 
 
 === First and Longest Match
 
-A RLTK::Lexer may be told to select either the first substring that is found to match a rule or the longest substring to match any rule.  The default behavior is to match the longest substring possible, but you can change this by using the +match_first+ method inside your class definition as follows:
+A RLTK::Lexer may be told to select either the first substring that is found to match a rule or the longest substring to match any rule.  The default behavior is to match the longest substring possible, but you can change this by using the RLTK::Lexer::LexerCore.match_first method inside your class definition as follows:
 
 	class MyLexer < RLTK::Lexer
 		match_first
@@ -158,7 +158,7 @@ The default starting symbol of the grammar is the left-hand side of the first pr
 
 To help you remove ambiguity from your grammars RLTK lets you assign precedence and associativity information to terminal symbols.  Productions then get assigned precedence and associativity based on either the last terminal symbol on the right-hand side of the production, or an optional parameter to the RLTK::Parser::ParserCore.production or RLTK::Parser::ParserCore.clause methods.  When an RLTK::Parser encounters a shift/reduce error it will attempt to resolve it using the following rules:
 
-1. If there is precedence and associativity information present for all reduce actions involved and for the input token we attempt to resolve the conflict using the following rules.  If not, no resolution is possible and the parser generator moves on.  This conflict will later be reported to the programmer.
+1. If there is precedence and associativity information present for all reduce actions involved and for the input token we attempt to resolve the conflict using the following rule.  If not, no resolution is possible and the parser generator moves on.  This conflict will later be reported to the programmer.
 
 2. The precedence of the actions involved in the conflict are compared (a shift action's precedence is based on the input token), and the action with the highest precedence is selected.  If two actions have the same precedence the associativity of the input symbol is used: left associativity means we select the reduce action, right associativity means we select the shift action, and non-associativity means that we have encountered an error.
 
@@ -189,7 +189,7 @@ Here we use associativity information to properly deal with the different preced
 
 === Array Arguments
 
-By default the proc objects associated with productions are passed one argument for each symbol on the right-hand side of the production.  This can lead to long, unwieldy argument lists.  To have your parser pass in an array of the values of the right-hand side symbols as the only argument to procs you may use the RLTK::ParserCore.array_args method.  It must be invoked before any productions are declared, and affects all proc objects passed to +production+ and +clause+ methods.
+By default the proc objects associated with productions are passed one argument for each symbol on the right-hand side of the production.  This can lead to long, unwieldy argument lists.  To have your parser pass in an array of the values of the right-hand side symbols as the only argument to procs you may use the RLTK::Parser::ParserCore.array_args method.  It must be invoked before any productions are declared, and affects all proc objects passed to +production+ and +clause+ methods.
 
 === The Parsing Environment
 
@@ -233,7 +233,7 @@ accept:: Either +:first+ or +:all+.  Default value is +:first+.  This option tel
 
 env:: This option specifies the environment in which the productions' proc objects are evaluated.  The RLTK::Parser::parse class function will create a new RLTK::Parser::Environment on each call unless one is specified.  RLTK::Parser objects have an internal, per-instance, RLTK::Parser::Environment that is the default value for this option when calling RLTK::Parser.parse
 
-parse_tree:: Value should be +true+, +false+, an +IO+ object, or a file name.  Default value is +false+.  If a non +false+ (or +nil+) value is specified a DOT language description of all accepted parse_trees will be printed out to $stdout, the provided +IO+ object, or the specified file.
+parse_tree:: Value should be +true+, +false+, an +IO+ object, or a file name.  Default value is +false+.  If a non +false+ (or +nil+) value is specified a DOT language description of all accepted parse trees will be printed out to $stdout, the provided +IO+ object, or the specified file.
 
 verbose:: Value should be +true+, +false+, an +IO+ object, or a file name.  Default value is +false+.  If a non +false+ (or +nil+) value is specified a detailed description of the actions of the parser are printed to $stdout, the provided +IO+ object, or the specified file as it parses the input.
 

@@ -11,7 +11,7 @@ require 'rake/rdoctask'
 require 'rake/testtask'
 
 task :rdoc do
-	`rdoc -w 5 -o doc -m README -t "The Ruby Language Toolkit" README lib/rltk/*.rb lib/rltk/**/*.rb`
+	`rdoc -w 5 -o doc -m README -t "The Ruby Language Toolkit" README lib/*.rb lib/rltk/*.rb lib/rltk/**/*.rb`
 end
 
 Rake::TestTask.new do |t|

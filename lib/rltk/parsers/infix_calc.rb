@@ -14,8 +14,13 @@ require 'rltk/parser'
 # Classes and Modules #
 #######################
 
-module RLTK
+module RLTK # :nodoc:
+	
+	# The RLTK::Parsers module contains the parsers that are included as part
+	# of the RLKT project.
 	module Parsers
+		
+		# A parser for a simple infix calculator.
 		class InfixCalc < Parser
 			
 			left :PLS, :SUB

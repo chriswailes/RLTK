@@ -14,8 +14,11 @@ require 'rltk/lexer'
 # Classes and Modules #
 #######################
 
-module RLTK
-	module Lexers
+module RLTK  # :nodoc:
+	module Lexers # :nodoc:
+		
+		# The Calculator lexer is a simple lexer for use with several of the
+		# provided parsers.
 		class Calculator < Lexer
 			
 			#################

@@ -14,8 +14,10 @@ require 'rltk/parser'
 # Classes and Modules #
 #######################
 
-module RLTK
-	module Parsers
+module RLTK # :nodoc:
+	module Parsers # :nodoc:
+		
+		# A parser for a simple post-fix calculator.
 		class PostfixCalc < Parser
 			production(:e) do
 				clause('NUM') { |n| n }
