@@ -27,9 +27,26 @@ module RLTK # :nodoc:
 	# A NotInLanguage exception is raised whenever there is no valid parse tree
 	# for a given token stream.  In other words, the input string is not in the
 	# defined language.
-	class NotInLangauge < Exception
+	class NotInLanguage < Exception
 		def to_s
 			'String not in language.'
+		end
+	end
+	
+	# An exception of this type is raised when the parser encountered a error
+	# that was handled by an error production.
+	class HandledError < Exception
+		
+		# The errors as reported by the parser.
+		attr_reader :errors
+		
+		# The result that would have been returned by the call to _parse_.
+		attr_reader :result
+		
+		# Instantiate a new HandledError object with _errors_.
+		def initialize(errors, result)
+			@errors = errors
+			@result = result
 		end
 	end
 	
@@ -95,7 +112,30 @@ module RLTK # :nodoc:
 		# All actions passed to ParserCore.rule and ParserCore.clause are
 		# evaluated inside an instance of the Environment class or its
 		# subclass (which must have the same name).
-		class Environment; end
+		class Environment
+			# Indicates if an error was encountered and handled.
+			attr_accessor :he
+			
+			# A list of all objects added using the _error_ method.
+			attr_reader :errors
+			
+			# Instantiate a new Environment object.
+			def initialize
+				self.reset
+			end
+			
+			# Adds an object to the list of errors.
+			def error(o)
+				@errors << o
+			end
+			
+			# Reset any variables that need to be re-initialized between
+			# parse calls.
+			def reset
+				@errors	= Array.new
+				@he		= false
+			end
+		end
 		
 		# The ParserCore class provides mos of the functionality of the Parser
 		# class.  A ParserCore is instantiated for each subclass of Parser,
@@ -739,6 +779,7 @@ module RLTK # :nodoc:
 								if stack.state
 									# We found a valid error state.
 									error_mode = reduction_guard = true
+									opts[:env].eh = true
 									processing << stack
 									
 									v.puts('Invalid input encountered.  Entering error handling mode.') if v
@@ -778,7 +819,11 @@ module RLTK # :nodoc:
 									v.puts('Accepting input.') if v
 									opts[:parse_tree].puts(stack.tree) if opts[:parse_tree]
 									
-									return stack.result
+									if opts[:env].he
+										raise HandledError.new(opts[:env].errors, stack.result)
+									else
+										return stack.result
+									end
 								end
 							
 							elsif action.is_a?(Reduce)
@@ -841,7 +886,13 @@ module RLTK # :nodoc:
 					opts[:parse_tree].puts(stack.tree) if opts[:parse_tree]
 				end
 				
-				return accepted.map { |stack| stack.result }
+				results = accepted.map { |stack| stack.result }
+				
+				if opts[:env].he
+					raise HandledError.new(opts[:env].errors, results)
+				else
+					return results
+				end
 			end
 			
 			# Adds a new production to the parser with a left-hand value of

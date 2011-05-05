@@ -1,6 +1,4 @@
 parser.rb:
-	Cause the parsing function to continue parsing when errors are encountered but throw a HandledError exception instead of returning the string as accepted.
-	
 	Make the Token objects available to the productions' parse objects.
 
 lexer.rb:

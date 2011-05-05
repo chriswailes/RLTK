@@ -237,6 +237,15 @@ parse_tree:: Value should be +true+, +false+, an +IO+ object, or a file name.  D
 
 verbose:: Value should be +true+, +false+, an +IO+ object, or a file name.  Default value is +false+.  If a non +false+ (or +nil+) value is specified a detailed description of the actions of the parser are printed to $stdout, the provided +IO+ object, or the specified file as it parses the input.
 
+=== Parsing Exceptions
+
+Calls to RLTK::Parser::ParserCore.parse may raise one of four exceptions:
+
+* RLTK::BadToken - This exception is raised when a token is observed in the input stream that wasn't used in the language's definition.
+* RLTK::HandledError - This exception is raised whenever an error production is encountered.  The input stream is not actually in the langauge, but we were able to handle the encountered errors in a way that makes it appear that it is.
+* RLTK::InternalParserError - This exception tells you that something REALLY went wrong.  Users should never receive this exception.
+* RLTK::NotInLanguage - This exception indicates that the input token stream is not in the parser's language.
+
 === Error Productions
 
 <b>Warning, this is the lest tested feature of RLTK.  If you encounter any problems while using it, please let me know so I can fix any bugs as soon as possible</b>
