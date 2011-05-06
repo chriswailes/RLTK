@@ -23,11 +23,8 @@ module RLTK # :nodoc:
 				clause('NUM') { |n| n }
 				
 				clause('e e PLS') { |e0, e1, _| e0 + e1 }
-				
 				clause('e e SUB') { |e0, e1, _| e0 - e1 }
-				
 				clause('e e MUL') { |e0, e1, _| e0 * e1 }
-				
 				clause('e e DIV') { |e0, e1, _| e0 / e1 }
 			end
 			

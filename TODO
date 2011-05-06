@@ -1,6 +1,5 @@
 parser.rb:
-	Make the Token objects available to the productions' parse objects.
-
+	
 lexer.rb:
 
 ast.rb:

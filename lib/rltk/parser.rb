@@ -129,11 +129,22 @@ module RLTK # :nodoc:
 				@errors << o
 			end
 			
+			# Returns a StreamPosition object for the symbol at location n,
+			# indexed from zero.
+			def pos(n)
+				@positions[n]
+			end
+			
 			# Reset any variables that need to be re-initialized between
 			# parse calls.
 			def reset
 				@errors	= Array.new
 				@he		= false
+			end
+			
+			# Setter for the _positions_ array.
+			def set_positions(positions)
+				@positions = positions
 			end
 		end
 		
@@ -291,37 +302,21 @@ module RLTK # :nodoc:
 						if CFG::is_terminal?(sym)
 							# Here we check actions for terminals.
 							
-							reduces	= 0
-							shifts	= 0
-							
 							actions.each do |action|
 								if action.is_a?(Accept)
 									if sym != :EOS
 										raise ParserConstructionError, "Accept action found for terminal #{sym} in state #{state.id}."
 									end
-									
-								elsif action.is_a?(Reduce)
-									reduces += 1
-									
-								elsif action.is_a?(Shift)
-									shifts += 1
-									
-								else
+										
+								elsif not (action.is_a?(GoTo) or action.is_a?(Reduce) or action.is_a?(Shift))
 									raise ParserConstructionError, "Object of type #{action.class} found in actions for terminal " +
 										"#{sym} in state #{state.id}."
 									
 								end
 							end
 							
-							if shifts > 1
-								raise ParserConstructionError, "Multiple shifts found for terminal #{sym} in state #{state.id}."
-								
-							elsif shifts == 1 and reduces > 0
-								self.inform_conflict(state.id, :SR, sym)
-								
-							elsif reduces > 1
-								self.inform_conflict(state.id, :RR, sym)
-								
+							if (conflict = state.conflict_on?(sym))
+								self.inform_conflict(state.id, conflict, sym)
 							end
 						else
 							# Here we check actions for non-terminals.
@@ -330,7 +325,6 @@ module RLTK # :nodoc:
 								raise ParserConstructionError, "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
 								
 							elsif actions.length == 1 and not actions.first.is_a?(GoTo)
-								puts actions.first
 								raise ParserConstructionError, "State #{state.id} has non-GoTo action for non-terminal #{sym}."
 								
 							end
@@ -479,7 +473,7 @@ module RLTK # :nodoc:
 							if item.lhs.to_s.length > max then item.lhs.to_s.length else max end
 						end
 						
-						io.each do |item|
+						state.each do |item|
 							io.puts("\t#{item.to_s(max)}")
 						end
 						
@@ -741,7 +735,7 @@ module RLTK # :nodoc:
 					# If we don't have any active stacks the string
 					# isn't in the language.
 					if processing.length == 0
-						raise NotInLangauge
+						raise NotInLanguage
 					end
 					
 					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
@@ -770,7 +764,7 @@ module RLTK # :nodoc:
 										stack.pop
 									else
 										# Enter the found error state.
-										stack.push(actions.first.id, nil, :ERROR)
+										stack.push(actions.first.id, nil, :ERROR, token.position)
 										
 										break
 									end
@@ -779,7 +773,7 @@ module RLTK # :nodoc:
 								if stack.state
 									# We found a valid error state.
 									error_mode = reduction_guard = true
-									opts[:env].eh = true
+									opts[:env].he = true
 									processing << stack
 									
 									v.puts('Invalid input encountered.  Entering error handling mode.') if v
@@ -834,18 +828,39 @@ module RLTK # :nodoc:
 									raise InternalParserError, "No production #{action.id} found."
 								end
 								
+								args, positions = stack.pop(pop_size)
+								opts[:env].set_positions(positions)
+								
 								result =
 								if @args == :array
-									opts[:env].instance_exec(stack.pop(pop_size), &production_proc)
+									opts[:env].instance_exec(args, &production_proc)
 								else
-									opts[:env].instance_exec(*stack.pop(pop_size), &production_proc)
+									opts[:env].instance_exec(*args, &production_proc)
 								end
 								
 								if (goto = @states[stack.state].on?(@lh_sides[action.id]).first)
 									
 									v.puts("Going to state #{goto.id}.\n") if v
 									
-									stack.push(goto.id, result, @lh_sides[action.id])
+									pos0 = nil
+									
+									if args.empty?
+										# Empty productions need to be
+										# handled specially.
+										pos0 = stack.position
+										
+										pos0.stream_offset	+= pos0.length + 1
+										pos0.line_offset	+= pos0.length + 1
+										
+										pos0.length = 0
+									else
+										pos0 = opts[:env].pos( 0)
+										pos1 = opts[:env].pos(-1)
+										
+										pos0.length = (pos1.stream_offset + pos1.length) - pos0.stream_offset
+									end
+									
+									stack.push(goto.id, result, @lh_sides[action.id], pos0)
 								else
 									raise InternalParserError, "No GoTo action found in state #{stack.state} " +
 										"after reducing by production #{action.id}"
@@ -859,7 +874,7 @@ module RLTK # :nodoc:
 								error_mode = false if error_mode and not reduction_guard
 								
 							elsif action.is_a?(Shift)
-								stack.push(action.id, token.value, token.type)
+								stack.push(action.id, token.value, token.type, token.position)
 								
 								# This stack is ready for the next
 								# token.
@@ -956,10 +971,13 @@ module RLTK # :nodoc:
 							# symbols.
 							lookahead = lookahead.map { |sym| sym.to_s.split('_').last.to_sym }
 							
-							# Remove the Reduce action from all terminal
-							# symbols that don't appear in the lookahead set.
+							# Here we remove the unnecessary reductions.
+							# If there are error productions we need to
+							# scale back the amount of pruning done.
 							(terms - lookahead).each do |sym|
-								state0.actions[sym].delete(reduction)
+								if not (terms.include?(:ERROR) and not state0.conflict_on?(sym))
+									state0.actions[sym].delete(reduction)
+								end
 							end
 						end
 					end
@@ -1045,7 +1063,7 @@ module RLTK # :nodoc:
 			attr_reader :state_stack
 			
 			# Instantiate a new ParserStack object.
-			def initialize(id, ostack = [], sstack = [0], nstack = [], connections = [], labels = [])
+			def initialize(id, ostack = [], sstack = [0], nstack = [], connections = [], labels = [], positions = [])
 				@id = id
 				
 				@node_stack	= nstack
@@ -1054,20 +1072,32 @@ module RLTK # :nodoc:
 				
 				@connections	= connections
 				@labels		= labels
+				@positions	= positions
 			end
 			
 			# Branch this stack, effectively creating a new copy of its
 			# internal state.
 			def branch(new_id)
-				ParseStack.new(new_id, @output_stack.clone, @state_stack.clone, @node_stack.clone, @connections.clone, @labels.clone)
+				ParseStack.new(new_id, @output_stack.clone, @state_stack.clone, @node_stack.clone,
+					@connections.clone, @labels.clone, @positions.clone)
+			end
+			
+			# Returns the position of the last symbol on the stack.
+			def position
+				if @positions.empty?
+					StreamPosition.new
+				else
+					@positions.last.clone
+				end
 			end
 			
 			# Push new state and other information onto the stack.
-			def push(state, o, node0)
+			def push(state, o, node0, position)
 				@state_stack	<< state
 				@output_stack	<< o
 				@node_stack	<< @labels.length
 				@labels		<< node0
+				@positions	<< position
 				
 				if CFG::is_nonterminal?(node0)
 					@cbuffer.each do |node1|
@@ -1086,7 +1116,7 @@ module RLTK # :nodoc:
 				# pushed onto the stack.
 				@cbuffer = @node_stack.pop(n)
 				
-				@output_stack.pop(n)
+				[@output_stack.pop(n), @positions.pop(n)]
 			end
 			
 			# Fetch the result stored in this ParseStack.  If there is more
@@ -1180,6 +1210,34 @@ module RLTK # :nodoc:
 					if (next_symbol = item.next_symbol) and CFG::is_nonterminal?(next_symbol)
 						productions[next_symbol].each { |p| self << p.to_item }
 					end
+				end
+			end
+			
+			# Checks to see if there is a conflict in this state, given a
+			# input of _sym_.  Returns :SR if a shift/reduce conflict is
+			# detected and :RR if a reduce/reduce conflict is detected.  If
+			# no conflict is detected nil is returned.
+			def conflict_on?(sym)
+				
+				reductions	= 0
+				shifts		= 0
+				
+				@actions[sym].each do |action|
+					if action.is_a?(Reduce)
+						reductions += 1
+						
+					elsif action.is_a?(Shift)
+						shifts += 1
+						
+					end
+				end
+				
+				if shifts == 1 and reductions > 0
+					:SR
+				elsif reductions > 1
+					:RR
+				else
+					nil
 				end
 			end
 			

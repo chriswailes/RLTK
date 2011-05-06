@@ -8,6 +8,7 @@
 ############
 
 # Standard Library
+require 'pp'
 require 'test/unit'
 
 # Ruby Language Toolkit
@@ -52,11 +53,8 @@ class AmbiguousParser < RLTK::Parser
 		clause('NUM') {|n| n}
 		
 		clause('e PLS e') { |e0, _, e1| e0 + e1 }
-		
 		clause('e SUB e') { |e0, _, e1| e0 - e1 }
-		
 		clause('e MUL e') { |e0, _, e1| e0 * e1 }
-		
 		clause('e DIV e') { |e0, _, e1| e0 / e1 }
 	end
 	
@@ -70,11 +68,8 @@ class ArrayCalc < RLTK::Parser
 		clause('NUM') { |v| v[0] }
 		
 		clause('PLS e e') { |v| v[1] + v[2] }
-		
 		clause('SUB e e') { |v| v[1] - v[2] }
-		
 		clause('MUL e e') { |v| v[1] * v[2] }
-		
 		clause('DIV e e') { |v| v[1] / v[2] }
 	end
 	
@@ -89,15 +84,35 @@ class ErrorCalc < RLTK::Parser
 		clause('NUM') {|n| n}
 		
 		clause('e PLS e') { |e0, _, e1| e0 + e1 }
-		
 		clause('e SUB e') { |e0, _, e1| e0 - e1 }
-		
 		clause('e MUL e') { |e0, _, e1| e0 * e1 }
-		
 		clause('e DIV e') { |e0, _, e1| e0 / e1 }
 		
 		clause('e PLS ERROR') { |_, _, _| raise DummyError1 }
 		clause('e SUB ERROR') { |_, _, _| raise DummyError2 }
+	end
+	
+	finalize
+end
+
+class ELLexer < RLTK::Lexer
+	rule(/\n/)	{ :NEWLINE }
+	rule(/;/)		{ :SEMI    }
+	
+	rule(/\s/)
+	
+	rule(/[A-Za-z]+/)	{ |t| [:WORD, t] }
+end
+
+class ErrorLine < RLTK::Parser
+	
+	production(:s, 'line*') { |l| l }
+	
+	production(:line) do
+		clause('NEWLINE') { |_| nil }
+		
+		clause('WORD+ SEMI NEWLINE')	{ |w, _, _| w }
+		clause('WORD+ ERROR NEWLINE')	{ |w, e, _| error(pos(1).line_number); w }
 	end
 	
 	finalize
@@ -108,11 +123,8 @@ class RotatingCalc < RLTK::Parser
 		clause('NUM') {|n| n}
 		
 		clause('PLS e e') { |_, e0, e1| e0.send(get_op(:+), e1) }
-		
 		clause('SUB e e') { |_, e0, e1| e0.send(get_op(:-), e1) }
-		
 		clause('MUL e e') { |_, e0, e1| e0.send(get_op(:*), e1) }
-		
 		clause('DIV e e') { |_, e0, e1| e0.send(get_op(:/), e1) }
 	end
 	
@@ -156,7 +168,7 @@ class ParserTester < Test::Unit::TestCase
 		# APlusBParser #
 		################
 		
-		assert_raise(RLTK::NotInLangauge) { APlusBParser.parse(ABLexer.lex('b')) }
+		assert_raise(RLTK::NotInLanguage) { APlusBParser.parse(ABLexer.lex('b')) }
 		assert_equal(1, APlusBParser.parse(ABLexer.lex('ab')))
 		assert_equal(2, APlusBParser.parse(ABLexer.lex('aab')))
 		assert_equal(3, APlusBParser.parse(ABLexer.lex('aaab')))
@@ -166,7 +178,7 @@ class ParserTester < Test::Unit::TestCase
 		# AQuestionBParser #
 		####################
 		
-		assert_raise(RLTK::NotInLangauge) { AQuestionBParser.parse(ABLexer.lex('aab')) }
+		assert_raise(RLTK::NotInLanguage) { AQuestionBParser.parse(ABLexer.lex('aab')) }
 		assert_nil(AQuestionBParser.parse(ABLexer.lex('b')))
 		assert_not_nil(AQuestionBParser.parse(ABLexer.lex('ab')))
 		
@@ -203,6 +215,19 @@ class ParserTester < Test::Unit::TestCase
 	def test_error_productions
 		assert_raise(DummyError1) { ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 + +')) }
 		assert_raise(DummyError2) { ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 - +')) }
+		
+		test_string  = "first line;\n"
+		test_string += "second line\n"
+		test_string += "third line;\n"
+		test_string += "fourth line\n"
+		
+		assert_raise(RLTK::HandledError) { ErrorLine.parse(ELLexer.lex(test_string)) }
+		
+		begin
+			ErrorLine.parse(ELLexer.lex(test_string))
+		rescue RLTK::HandledError => e
+			assert_equal(e.errors, [2,4])
+		end
 	end
 	
 	def test_infix_calc
@@ -215,7 +240,7 @@ class ParserTester < Test::Unit::TestCase
 		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('(1 + 2) * 3'))
 		assert_equal(9, actual)
 		
-		assert_raise(RLTK::NotInLangauge) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *')) }
+		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *')) }
 	end
 	
 	def test_input
@@ -232,7 +257,7 @@ class ParserTester < Test::Unit::TestCase
 		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *'))
 		assert_equal(9, actual)
 		
-		assert_raise(RLTK::NotInLangauge) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3')) }
+		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3')) }
 	end
 	
 	def test_prefix_calc
@@ -245,6 +270,6 @@ class ParserTester < Test::Unit::TestCase
 		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
 		assert_equal(9, actual)
 		
-		assert_raise(RLTK::NotInLangauge) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
+		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
 	end
 end

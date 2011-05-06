@@ -9,27 +9,43 @@
 
 module RLTK # :nodoc:
 	
+	# The StreamPosition class is used to indicate the position of a token or
+	# other text inside a stream.
+	class StreamPosition
+		attr_accessor :stream_offset
+		attr_accessor :line_number
+		attr_accessor :line_offset
+		attr_accessor :length
+		
+		attr_accessor :file_name
+		
+		alias :start :line_offset
+		
+		# Instantiates a new StreamPosition object with the values specified.
+		def initialize(stream_offset = 0, line_number = 0, line_offset = 0, length = 0, file_name = nil)
+			@stream_offset	= stream_offset
+			@line_number	= line_number
+			@line_offset	= line_offset
+			@length		= length
+			@file_name	= file_name
+		end
+	end
+	
 	# The Token class is used to represent the output of a RLTK::Lexer and the
 	# input of a RLTK::Parser.
 	class Token
 		attr_reader :type
 		attr_reader :value
 		
-		attr_reader :stream_offset
-		attr_reader :line_number
-		attr_reader :line_offset
-		
-		alias :start :line_offset
+		# The StreamPosition object associated with this token.
+		attr_reader :position
 		
 		# Instantiates a new Token object with the values specified.
-		def initialize(type, value = nil, stream_offset = nil, line_number = nil, line_offset = nil, length = nil)
+		def initialize(type, value = nil, position = nil)
 			@type	= type
 			@value	= value
 			
-			@stream_offset	= stream_offset
-			@line_number	= line_number
-			@line_offset	= line_offset
-			@length		= length
+			@position	= position
 		end
 		
 		# Compares one token to another.  This only tests the token's _type_
