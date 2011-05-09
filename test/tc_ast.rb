@@ -9,6 +9,7 @@
 
 # Standard Library
 require 'test/unit'
+require 'pp'
 
 # Ruby Language Toolkit
 require 'rltk/ast'
@@ -18,27 +19,8 @@ require 'rltk/ast'
 #######################
 
 class ANode < RLTK::ASTNode
-	def children
-		@children
-	end
-	
-	def inspect
-		"#{self.class.name}(#{@children.inspect})"
-	end
-	
-	def set_children(children)
-		@children = children
-	end
-	
-	def to_src(indent = 0)
-		src  = "#{"\t" * indent}#{self.class.name}(\n"
-		
-		@children.each do |child|
-			src += child.to_src(indent + 1)
-		end
-		
-		src += "#{"\t" * indent})\n"
-	end
+	child :left, ANode
+	child :right, ANode
 end
 
 class BNode < ANode; end
@@ -48,27 +30,27 @@ class DNode < RLTK::ASTNode; end
 
 class ASTNodeTester < Test::Unit::TestCase
 	def setup
-		@leaf0 = CNode.new
-		@tree0 = ANode.new([BNode.new([@leaf0]), BNode.new])
+		@leaf0 = CNode.new(nil, nil)
+		@tree0 = ANode.new(BNode.new(@leaf0, nil), BNode.new(nil, nil))
 		
-		@tree1 = ANode.new([BNode.new([CNode.new]), BNode.new])
-		@tree2 = ANode.new([BNode.new, BNode.new([CNode.new])])
+		@tree1 = ANode.new(BNode.new(CNode.new(nil, nil), nil), BNode.new(nil, nil))
+		@tree2 = ANode.new(BNode.new(nil, nil), BNode.new(CNode.new(nil, nil), nil))
 	end
 	
 	def test_children
-		node = ANode.new
+		node = ANode.new(nil, nil)
 		
-		assert_equal(node.children, [])
+		assert_equal(node.children, [nil, nil])
 		
-		node.children = (expected_children = [BNode.new, CNode.new])
+		node.children = (expected_children = [BNode.new(nil, nil), CNode.new(nil, nil)])
 		
 		assert_equal(node.children, expected_children)
 		
 		node.map do |child|
 			if child.is_a?(BNode)
-				CNode.new
+				CNode.new(nil, nil)
 			else
-				BNode.new
+				BNode.new(nil, nil)
 			end
 		end
 		
@@ -82,16 +64,11 @@ class ASTNodeTester < Test::Unit::TestCase
 	
 	def test_initialize
 		assert_raise(Exception) { RLTK::ASTNode.new }
-		assert_nothing_raised(Exception) { ANode.new }
-	end
-	
-	def test_inspect
-		assert_raise(RLTK::NotImplementedError) { DNode.new.inspect }
-		assert_nothing_raised(RLTK::NotImplementedError) { ANode.new.inspect }
+		assert_nothing_raised(Exception) { ANode.new(nil, nil) }
 	end
 	
 	def test_notes
-		node = ANode.new
+		node = ANode.new(nil, nil)
 		
 		assert_nil(node[:a])
 		assert_equal(node[:a] = :b, :b)
@@ -104,10 +81,5 @@ class ASTNodeTester < Test::Unit::TestCase
 	def test_root
 		assert_same(@tree0, @tree0.root)
 		assert_same(@tree0, @leaf0.root)
-	end
-	
-	def test_to_src
-		assert_raise(RLTK::NotImplementedError) { DNode.new.to_src }
-		assert_nothing_raised(RLTK::NotImplementedError) { ANode.new.to_src }
 	end
 end
