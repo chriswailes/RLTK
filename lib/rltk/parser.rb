@@ -301,7 +301,6 @@ module RLTK # :nodoc:
 					state.actions.each do |sym, actions|
 						if CFG::is_terminal?(sym)
 							# Here we check actions for terminals.
-							
 							actions.each do |action|
 								if action.is_a?(Accept)
 									if sym != :EOS
@@ -320,7 +319,6 @@ module RLTK # :nodoc:
 							end
 						else
 							# Here we check actions for non-terminals.
-							
 							if actions.length > 1
 								raise ParserConstructionError, "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
 								
