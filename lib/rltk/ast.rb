@@ -72,7 +72,7 @@ module RLTK # :nodoc:
 					end
 					
 					@child_names << name
-					self.define_accessor(name, type)
+					self.define_accessor(name, type, true)
 				end
 				
 				# Returns an array of the names of this node's children.
@@ -82,7 +82,7 @@ module RLTK # :nodoc:
 				
 				# This method defines a type checking accessor named _name_
 				# with type _type_.
-				def self.define_accessor(name, type)
+				def self.define_accessor(name, type, set_parent = false)
 					ivar_name = ('@' + name.to_s).to_sym
 					
 					define_method(name) do
@@ -94,7 +94,7 @@ module RLTK # :nodoc:
 							if value.is_a?(type) or value == nil
 								self.instance_variable_set(ivar_name, value)
 								
-								value.parent = self if value
+								value.parent = self if value and set_parent
 							else
 								raise TypeMismatch.new(type, value.class)
 							end
@@ -107,7 +107,7 @@ module RLTK # :nodoc:
 							if value.inject(true) { |m, o| m and o.is_a?(type) }
 								self.instance_variable_set(ivar_name, value)
 								
-								value.each { |c| c.parent = self }
+								value.each { |c| c.parent = self } if set_parent
 							else
 								raise TypeMismatch.new(type, value.class)
 							end

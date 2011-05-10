@@ -730,12 +730,6 @@ module RLTK # :nodoc:
 						raise BadToken
 					end
 					
-					# If we don't have any active stacks the string
-					# isn't in the language.
-					if processing.length == 0
-						raise NotInLanguage
-					end
-					
 					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
 					
 					# Iterate over the stacks until each one is done.
@@ -889,10 +883,15 @@ module RLTK # :nodoc:
 					processing	= moving_on
 					moving_on		= []
 					
+					# If we don't have any active stacks at this point the
+					# string isn't in the language.
+					raise NotInLanguage if opts[:accept] == :first and processing.length == 0
+					
 					reduction_guard = false
 				end
 				
-				# If we have reached this point we accept all derivations.
+				# If we have reached this point we are accepting all parse
+				# trees.
 				v.puts("Accepting input with #{accepted.length} derivation(s).") if v
 				
 				accepted.each do |stack|
