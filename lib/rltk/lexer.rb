@@ -207,6 +207,8 @@ module RLTK # :nodoc:
 					if state == :ALL then @rules.each_key { |k| @rules[k] << r } else @rules[state] << r end
 				end
 				
+				alias :r :rule
+				
 				# Changes the starting state of the lexer.
 				def start(state)
 					@start_state = state

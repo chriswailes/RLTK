@@ -72,7 +72,7 @@ module RLTK # :nodoc:
 			@nonterms	= Hash.new(false)
 			
 			@firsts	= Hash.new
-			@follows	= Hash.new
+			@follows	= Hash.new { |h,k| h[k] = Array.new }
 		end
 		
 		# Adds _production_ to the appropriate internal data structures.
@@ -224,8 +224,9 @@ module RLTK # :nodoc:
 		# used to avoid infinite recursion when mutually recursive rules are
 		# encountered.
 		def follow_set(sym0, seen_lh_sides = [])
-			# Memoize the result for later.
-			@follows[sym0] ||=
+			
+			# Use the memoized set if possible.
+			return @follows[sym0] if @follows.has_key?(sym0)
 			
 			if @nonterms[sym0]
 				set0 = []
@@ -247,7 +248,12 @@ module RLTK # :nodoc:
 					end
 				end
 				
-				set0
+				if seen_lh_sides.empty? or not set0.empty?
+					# Memoize the result for later.
+					@follows[sym0] |= set0
+				else
+					set0
+				end
 			else
 				[]
 			end

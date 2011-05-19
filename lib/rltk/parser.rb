@@ -382,6 +382,8 @@ module RLTK # :nodoc:
 				@production_precs[production.id] = precedence || production.last_terminal
 			end
 			
+			alias :c :clause
+			
 			# Removes resources that were needed to generate the parser but
 			# aren't needed when actually parsing input.
 			def clean
@@ -540,7 +542,6 @@ module RLTK # :nodoc:
 				
 				# Translate the precedence of productions from tokens to
 				# (associativity, precedence) pairs.
-				
 				@production_precs.each_with_index do |prec, id|
 					@production_precs[id] = @token_precs[prec]
 				end
@@ -885,14 +886,21 @@ module RLTK # :nodoc:
 					
 					# If we don't have any active stacks at this point the
 					# string isn't in the language.
-					raise NotInLanguage if opts[:accept] == :first and processing.length == 0
+					if opts[:accept] == :first and processing.length == 0
+						v.close if v and v != $stdout
+						raise NotInLanguage
+					end
 					
 					reduction_guard = false
 				end
 				
 				# If we have reached this point we are accepting all parse
 				# trees.
-				v.puts("Accepting input with #{accepted.length} derivation(s).") if v
+				if v
+					v.puts("Accepting input with #{accepted.length} derivation(s).")
+					
+					v.close if v != $stdout
+				end
 				
 				accepted.each do |stack|
 					opts[:parse_tree].puts(stack.tree) if opts[:parse_tree]
@@ -934,6 +942,8 @@ module RLTK # :nodoc:
 				@curr_prec		= nil
 			end
 			
+			alias :p :production
+			
 			# This method uses lookahead sets and precedence information to
 			# resolve conflicts and remove unnecessary reduce actions.
 			def prune(do_lookahead, do_precedence)
@@ -955,18 +965,18 @@ module RLTK # :nodoc:
 						reductions.each do |reduction|
 							production = @grammar.productions(:id)[reduction.id]
 							
-							lookahead = []
+							lookahead = Array.new
 							
 							# Build the lookahead set.
 							@states.each do |state1|
 								if self.check_reachability(state1, state0, production.rhs)
-									lookahead += self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym)
+									lookahead |= (var = self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym))
 								end
 							end
 							
 							# Translate the G' follow symbols into G lookahead
 							# symbols.
-							lookahead = lookahead.map { |sym| sym.to_s.split('_').last.to_sym }
+							lookahead = lookahead.map { |sym| sym.to_s.split('_').last.to_sym }.uniq
 							
 							# Here we remove the unnecessary reductions.
 							# If there are error productions we need to

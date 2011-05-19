@@ -284,15 +284,45 @@ The example below for the unit tests shows a very basic usage of error productio
 
 == ASTNode
 
-The RLTK::ASTNode base class is meant to be a good starting point for implementing your own abstract syntax tree nodes.  By subclassing RLTK::ASTNode you automagically get features such as tree comparison, notes, uniform access to child nodes including the +each+ and +map+ functions, the ability to retrieve the root of a tree from any member node, and the ability to print trees using the +to_src+ and +inspect+ methods.
+The RLTK::ASTNode base class is meant to be a good starting point for implementing your own abstract syntax tree nodes.  By subclassing RLTK::ASTNode you automagically get features such as tree comparison, notes, value accessors with type checking, child node accessors and +each+ and +map+ methods (with type checking), and the ability to retrieve the root of a tree from any member node.
 
-When subclassing RLTK::ASTNode be sure to implement the following methods:
+To create your own AST node classes you subclass the RLTK::ASTNode class and then use the RLTK::ASTNode::child and RLTK::ASTNode::value methods.  By declaring the children and values of a node the class will define the appropriate accessors with type checking, know how to pack and unpack a node's children, and know how to handle constructor arguments.
 
-* +children+ - Must return an array of the children of a node.
-* +initialize+ - Make sure to call +super+ and pass it an array of the node's children.
-* +inspect+ - Provides a textual representation of the structure of the AST.
-* +set_children+ - Takes an array of children as input and assigns them to variables appropriately.
-* +to_src+ - Print the AST as source code.
+Here we can see the definition of several AST node classes that might be used to implement binary operations for a language:
+	
+	class Expression < RLTK::ASTNode; end
+	
+	class Number < Expression
+		value :value, Fixnum
+	end
+	
+	class BinOp < Expression
+		value :op, String
+		
+		child :left,  Expression
+		child :right, Expression
+	end
+
+The assignment functions that are generated for the children and values perform type checking to make sure that the AST is well-formed.  The type of a child must be a subclass of the RLTK::ASTNode class, whereas the type of a value must NOT be a subclass of the RLTK::ASTNode class.  While child and value objects are stored as instance variables it is unsafe to assign to these variables directly, and it is strongly recommended to always use the accessor functions.
+
+When instantiating a subclass of RLTK::ASTNode the arguments to the constructor should be the node's values (in order of definition) followed by the node's children (in order of definition).  Example:
+
+	class Foo < RLTK::ASTNode
+		value :a, Fixnum
+		child :b, Bar
+		value :c, String
+		child :d, Bar
+	end
+	
+	Foo.new(1, 'baz', nil, nil)
+
+You may notice that in the above example the children were set to *nil* instead of an instance of the Bar class.  This allows you to specify optional children.
+
+Lastly, the type of a child or value can be defined as an array of objects of a specific type as follows:
+
+	class Foo < RLTK::ASTNode
+		value :strings, [String]
+	end
 
 == Context-Free Grammars
 
