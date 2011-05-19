@@ -1,4 +1,4 @@
-Welcome to the Ruby Language Toolkit, a collection of classes designed to help you work with languages in an easy to use and sensible manner.  The toolkit includes classes representing:
+Welcome to the Ruby Language Toolkit, a collection of classes designed to help programmers work with languages in an easy to use and straightforward manner.  The toolkit includes classes representing:
 
 * Lexers
 * Parsers
@@ -31,7 +31,7 @@ Parse Tree Graphs:: RLTK parsers can print parse trees (in the DOT language) of 
 
 Documentation:: We have it!
 
-I Eat My Own Dog Food:: I'm using RLTK for my own projects so if there is a bug I'll most likely be the first one to know. 
+I Eat My Own Dog Food:: I'm using RLTK for my own projects so if there is a bug I'll most likely be the first one to know.
 
 == Lexers
 

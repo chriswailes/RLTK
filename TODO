@@ -1,4 +1,6 @@
 parser.rb:
+	Per-production action argument type specification.
+	Saving/loading tables.
 	
 lexer.rb:
 
@@ -8,4 +10,3 @@ tokens.rb:
 
 
 Misc:
-	* Re-do documentation for ASTNode in README.
