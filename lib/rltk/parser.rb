@@ -80,6 +80,12 @@ module RLTK # :nodoc:
 					@core.send(method, *args, &proc)
 				end
 				
+				# Alias for RLTK::Parser::ParserCore.p that needs to be
+				# manually connected.
+				def self.p(*args, &proc)
+					@core.p(*args, &proc)
+				end
+				
 				# Parses the given token stream using a newly instantiated
 				# environment.  See ParserCore.parse for a description of
 				# the _opts_ option hash.
@@ -167,6 +173,7 @@ module RLTK # :nodoc:
 				
 				@conflicts	= Hash.new {|h, k| h[k] = Array.new}
 				@grammar		= CFG.new
+				
 				@lh_sides		= Hash.new
 				@procs		= Array.new
 				@states		= Array.new
@@ -263,7 +270,8 @@ module RLTK # :nodoc:
 				{
 					:explain		=> false,
 					:lookahead	=> true,
-					:precedence	=> true
+					:precedence	=> true,
+					:use			=> false
 				}.update(opts)
 			end
 			
@@ -390,8 +398,17 @@ module RLTK # :nodoc:
 				# We've told the developer about conflicts by now.
 				@conflicts = nil
 				
-				# Drop the grammar.
-				@grammar = nil
+				# Drop the grammar and the grammar'.
+				@grammar		= nil
+				@grammar_prime	= nil
+				
+				# Drop precedence and bookkeeping information.
+				@cur_lhs	= nil
+				@cur_prec	= nil
+				
+				@prec_counts		= nil
+				@production_precs	= nil
+				@token_precs		= nil
 				
 				# Drop the items from each of the states.
 				@states.each { |state| state.clean }
@@ -521,12 +538,31 @@ module RLTK # :nodoc:
 			# * :explain - To explain the parser or not.
 			# * :lookahead - To use lookahead info for conflict resolution.
 			# * :precedence - To use precedence info for conflict resolution.
+			# * :use - A file name or object that is used to load/save the parser.
 			# 
 			# No calls to ParserCore.production may appear after the call to
 			# ParserCore.finalize.
 			def finalize(opts = {})
 				
+				# Get the full options hash.
 				opts = self.build_finalize_opts(opts)
+				
+				# Get the name of the file in which the parser is defined.
+				def_file = caller()[2].split(':')[0]
+				
+				# Check to make sure we can load the necessary information
+				# from the specified object.
+				if opts[:use] and (
+					(opts[:use].is_a?(String) and File.exists?(opts[:use]) and File.mtime(opts[:use]) > File.mtime(def_file)) or
+					(opts[:use].is_a?(File) and opts[:use].mtime > File.mtime(def_file))
+					)
+					
+					# Un-marshal our saved data structures.
+					@lh_sides, @states, @symbols = Marshal.load(self.get_io(opts[:use], 'r'))
+					
+					# Remove any un-needed data and return.
+					return self.clean
+				end
 				
 				# Grab all of the symbols that comprise the grammar (besides
 				# the start symbol).
@@ -605,16 +641,19 @@ module RLTK # :nodoc:
 				# Print the table if requested.
 				self.explain(opts[:explain]) if opts[:explain]
 				
-				# Clean the resources we are keeping.
+				# Remove any data that is no longer needed.
 				self.clean
+				
+				# Store the parser's final data structures if requested.
+				Marshal.dump([@lh_sides, @states, @symbols], self.get_io(opts[:use])) if opts[:use]
 			end
 			
 			# Converts an object into an IO object as appropriate.
-			def get_io(o)
+			def get_io(o, mode = 'w')
 				if o.is_a?(TrueClass)
 					$stdout
 				elsif o.is_a?(String)
-					File.open(o, 'w')
+					File.open(o, mode)
 				elsif o.is_a?(IO)
 					o
 				else
@@ -700,6 +739,7 @@ module RLTK # :nodoc:
 			# Additional information for these options can be found in the
 			# main documentation.
 			def parse(tokens, opts = {})
+				# Get the full options hash.
 				opts	= self.build_parse_opts(opts)
 				v	= opts[:verbose]
 				
@@ -903,8 +943,8 @@ module RLTK # :nodoc:
 				end
 				
 				accepted.each do |stack|
-					opts[:parse_tree].puts(stack.tree) if opts[:parse_tree]
-				end
+					opts[:parse_tree].puts(stack.tree)
+				end if opts[:parse_tree]
 				
 				results = accepted.map { |stack| stack.result }
 				

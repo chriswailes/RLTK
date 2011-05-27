@@ -31,7 +31,7 @@ Parse Tree Graphs:: RLTK parsers can print parse trees (in the DOT language) of 
 
 Documentation:: We have it!
 
-I Eat My Own Dog Food:: I'm using RLTK for my own projects so if there is a bug I'll most likely be the first one to know.
+I Eat My Own Dog Food:: I'm using RLTK for my own projects so if there is a bug I'll most likely be the first one to know.  (P.S.  I don't actually eat dog food :-)
 
 == Lexers
 
@@ -231,6 +231,8 @@ explain:: Value should be +true+, +false+, an +IO+ object, or a file name.  Defa
 lookahead:: Either +true+ or +false+.  Default value is +true+.  Specifies whether the parser generator should build an LALR(1) or LR(0) parsing table.  The LALR(1) table may have the same actions as the LR(0) table or fewer reduce actions if it is possible to resolve conflicts using lookahead sets.
 
 precedence:: Either +true+ or +false+.  Default value is +true+.  Specifies whether the parser generator should use precedence and associativity information to solve conflicts.
+
+use:: Value should be +false+, the name of a file, or a file object.  If the file exists and hasn't been modified since the parser definition was RLTK will load the parser definition from the file, saving a bunch of time.  If the file doesn't exist or the parser has been modified since it was last used RLTK will save the parser's data structures to this file.
 
 === Parsing Options
 

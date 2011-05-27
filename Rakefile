@@ -7,7 +7,7 @@
 # Rake Tasks #
 ##############
 
-require 'rake/rdoctask'
+require 'rdoc/task'
 require 'rake/testtask'
 
 task :rdoc do

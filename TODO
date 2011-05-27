@@ -1,6 +1,4 @@
 parser.rb:
-	Per-production action argument type specification.
-	Saving/loading tables.
 	
 lexer.rb:
 
