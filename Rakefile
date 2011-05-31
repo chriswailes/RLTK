@@ -7,19 +7,57 @@
 # Rake Tasks #
 ##############
 
-require 'rdoc/task'
 require 'rake/testtask'
+require 'rubygems'
+require 'rubygems/package_task'
+require 'rdoc/task'
 
-task :rdoc do
-	`rdoc -w 5 -o doc -m README -t "The Ruby Language Toolkit" README lib/*.rb lib/rltk/*.rb lib/rltk/**/*.rb`
+RDoc::Task.new do |t|
+	t.title		= 'The RUby Language Toolkit'
+	t.main		= 'README'
+	t.rdoc_dir	= 'doc'
+	
+	t.rdoc_files.include('README', 'lib/*.rb', 'lib/rltk/*.rb', 'lib/rltk/**/*.rb')
 end
 
 Rake::TestTask.new do |t|
 	t.libs << 'test'
 	t.test_files = FileList['test/ts_rltk.rb']
-	t.verbose = true
 end
 
-task :stats do
-	puts `sloccount .`
+def spec
+	Gem::Specification.new do |s|
+		s.platform = Gem::Platform::RUBY
+		
+		s.name		= 'rltk'
+		s.version		= '1.0.0'
+		s.summary		= 'The Ruby Language Toolkit'
+		s.description	=
+			'The Ruby Language Toolkit provides classes for creating' +
+			'context-free grammars, lexers, parsers, and abstract syntax trees.'
+		
+		s.files = [
+				'LICENSE',
+				'AUTHORS',
+				'README',
+				'Rakefile',
+				] +
+				Dir.glob('lib/rltk.rb') +
+				Dir.glob('lib/rltk/*.rb') +
+				Dir.glob('lib/rltk/**/*.rb')
+				
+				
+		s.require_path	= 'lib'
+		
+		s.author		= 'Chris Wailes'
+		s.email		= 'chris.wailes@gmail.com'
+		s.homepage	= 'http://launchpad.net/rltk'
+		s.license		= 'University of Illinois/NCSA Open Source License'
+		
+		s.test_files	= Dir.glob('test/tc_*.rb')
+	end
+end
+
+Gem::PackageTask.new(spec) do |t|
+	t.need_tar = true
 end

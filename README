@@ -23,6 +23,8 @@ Feature Rich Lexing and Parsing:: Often, lexer and parser generators will try an
 
 LALR(1)/GLR Parsing:: RLTK parsers use the LALR(1)/GLR parsing algorithms, which means you get both speed and the ability to handle *any* context-free grammar.
 
+Parser Serialization:: RLTK parsers can be serialized and saved after they are generated for faster loading the next time they are required.
+
 Error Productions:: RLKT parsers can use error productions to recover from, and report on, errors.
 
 Fast Prototyping:: If you need to change your lexer/parser you don't have to re-run the lexer and parser generation tools, simply make the changes and be on your way.
