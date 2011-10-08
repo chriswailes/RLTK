@@ -42,8 +42,6 @@ def spec
 				'README',
 				'Rakefile',
 				] +
-				Dir.glob('lib/rltk.rb') +
-				Dir.glob('lib/rltk/*.rb') +
 				Dir.glob('lib/rltk/**/*.rb')
 				
 				
