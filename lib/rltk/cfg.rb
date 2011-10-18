@@ -32,7 +32,7 @@ module RLTK # :nodoc:
 		attr_reader :start_symbol
 		
 		# The current left-hand side symbol.  This is used by the
-		# CFG.production method to wrapp CFG.clause calls.
+		# CFG.production method to wrap CFG.clause calls.
 		attr_accessor :curr_lhs
 		
 		#################

@@ -426,7 +426,7 @@ module RLTK # :nodoc:
 					# Print the productions.
 					@grammar.productions.each do |sym, productions|
 						productions.each do |production|
-							io.print("\Production #{production.id}: #{production.to_s}")
+							io.print("\tProduction #{production.id}: #{production.to_s}")
 							
 							if (prec = @production_precs[production.id])
 								io.print(" : (#{prec.first} , #{prec.last})")
