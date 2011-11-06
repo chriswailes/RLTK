@@ -222,10 +222,6 @@ module RLTK # :nodoc:
 		# were declared) and then the children as the remaining arguments (in
 		# the order they were declared).
 		def initialize(*objects)
-			#~puts "Instantiating a #{self.class.name}."
-			#~puts "#{objects.length} object(s) given to initialize."
-			#~puts "#{self.class.value_names.length} value(s) and #{self.class.child_names.length} child/children expected."
-			
 			if self.class == RLTK::ASTNode
 				raise Exception, 'Attempting to instantiate the RLTK::ASTNode class.'
 			else
@@ -257,7 +253,7 @@ module RLTK # :nodoc:
 		# Assigns an array of objects as the values of this node.
 		def values=(values)
 			if values.length != self.class.value_names.length
-				raise Exception, 'Wrong number of children specified.'
+				raise Exception, 'Wrong number of values specified.'
 			end
 			
 			self.class.value_names.each_with_index do |name, i|
