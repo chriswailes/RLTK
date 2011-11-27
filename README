@@ -334,7 +334,7 @@ The RLTK::CFG class provides an abstraction for context-free grammars.  For the 
 
 === Defining Grammars
 
-A grammar is defined by first instantiating the RLTK::CFG class.  The RLTK::CFG.production and RLTK::CFG.clause methods may then be used to define the productions of the grammar.  The +production+ method can take a Symbol denoting the left-hand side of the production and a string describing the left-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the +clause+ method, each call producing a new production with the same left-hand side but different right-hand sides.  RLTK::CFG.clause may not be called outside of RLTK::CFG.production.  Bellow we see a grammar definition that uses both methods:
+A grammar is defined by first instantiating the RLTK::CFG class.  The RLTK::CFG.production and RLTK::CFG.clause methods may then be used to define the productions of the grammar.  The +production+ method can take a Symbol denoting the left-hand side of the production and a string describing the right-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the +clause+ method, each call producing a new production with the same left-hand side but different right-hand sides.  RLTK::CFG.clause may not be called outside of RLTK::CFG.production.  Bellow we see a grammar definition that uses both methods:
 
 	grammar = RLTK::CFG.new
 	
