@@ -36,7 +36,7 @@ def spec
 		s.platform = Gem::Platform::RUBY
 		
 		s.name		= 'rltk'
-		s.version		= '1.0.1'
+		s.version		= '1.1.0'
 		s.summary		= 'The Ruby Language Toolkit'
 		s.description	=
 			'The Ruby Language Toolkit provides classes for creating' +
