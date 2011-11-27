@@ -55,7 +55,7 @@ def spec
 		
 		s.author		= 'Chris Wailes'
 		s.email		= 'chris.wailes@gmail.com'
-		s.homepage	= 'http://launchpad.net/rltk'
+		s.homepage	= 'http://github.com/chriswailes/RLTK'
 		s.license		= 'University of Illinois/NCSA Open Source License'
 		
 		s.test_files	= Dir.glob('test/tc_*.rb')
