@@ -90,26 +90,50 @@ module RLTK # :nodoc:
 					end
 					
 					if type.is_a?(Class)
-						define_method((name.to_s + '=').to_sym) do |value|
-							if value.is_a?(type) or value == nil
-								self.instance_variable_set(ivar_name, value)
+						if set_parent
+							define_method((name.to_s + '=').to_sym) do |value|
+								if value.is_a?(type) or value == nil
+									self.instance_variable_set(ivar_name, value)
 								
-								value.parent = self if value and set_parent
-							else
-								raise TypeMismatch.new(type, value.class)
+									value.parent = self if value
+								else
+									raise TypeMismatch.new(type, value.class)
+								end
+							end
+							
+						else
+							define_method((name.to_s + '=').to_sym) do |value|
+								if value.is_a?(type) or value == nil
+									self.instance_variable_set(ivar_name, value)
+									
+								else
+									raise TypeMismatch.new(type, value.class)
+								end
 							end
 						end
 						
 					else
 						type = type.first
 						
-						define_method((name.to_s + '=').to_sym) do |value|
-							if value.inject(true) { |m, o| m and o.is_a?(type) }
-								self.instance_variable_set(ivar_name, value)
+						if set_parent
+							define_method((name.to_s + '=').to_sym) do |value|
+								if value.inject(true) { |m, o| m and o.is_a?(type) }
+									self.instance_variable_set(ivar_name, value)
 								
-								value.each { |c| c.parent = self } if set_parent
-							else
-								raise TypeMismatch.new(type, value.class)
+									value.each { |c| c.parent = self }
+								else
+									raise TypeMismatch.new(type, value.class)
+								end
+							end
+							
+						else
+							define_method((name.to_s + '=').to_sym) do |value|
+								if value.inject(true) { |m, o| m and o.is_a?(type) }
+									self.instance_variable_set(ivar_name, value)
+									
+								else
+									raise TypeMismatch.new(type, value.class)
+								end
 							end
 						end
 						

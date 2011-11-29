@@ -39,7 +39,7 @@ def spec
 		s.version		= '1.1.0'
 		s.summary		= 'The Ruby Language Toolkit'
 		s.description	=
-			'The Ruby Language Toolkit provides classes for creating' +
+			'The Ruby Language Toolkit provides classes for creating ' +
 			'context-free grammars, lexers, parsers, and abstract syntax trees.'
 		
 		s.files = [
