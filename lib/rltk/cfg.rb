@@ -1,10 +1,10 @@
+# encoding: utf-8
+
 # Author:		Chris Wailes <chris.wailes@gmail.com>
 # Project: 	Ruby Language Toolkit
 # Date:		2011/03/24
 # Description:	This file contains the a class representing a context-free
 #			grammar.
-
-# encoding: utf-8
 
 ############
 # Requires #
