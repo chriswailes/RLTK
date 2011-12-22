@@ -548,7 +548,7 @@ module RLTK # :nodoc:
 				opts = self.build_finalize_opts(opts)
 				
 				# Get the name of the file in which the parser is defined.
-				def_file = caller()[2].split(':')[0]
+				def_file = caller()[2].match("(.*):([0-9]+):.*")[1]
 				
 				# Check to make sure we can load the necessary information
 				# from the specified object.
