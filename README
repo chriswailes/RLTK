@@ -222,7 +222,7 @@ The parsing environment is the context in which the proc objects associated with
 
 === Instantiating Parsers
 
-In addition to using the RLTK::Parser::parse class method you may also instantiate parser objects.  The only difference then is that the parsing environment used between subsequent calls to +object.lex+ is the same object, and therefor allows you to keep persistent state.
+In addition to using the RLTK::Parser::parse class method you may also instantiate parser objects.  The only difference then is that the parsing environment used between subsequent calls to +object.parse+ is the same object, and therefor allows you to keep persistent state.
 
 === Finalization Options
 
