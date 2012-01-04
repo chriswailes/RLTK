@@ -1010,7 +1010,7 @@ module RLTK # :nodoc:
 							# Build the lookahead set.
 							@states.each do |state1|
 								if self.check_reachability(state1, state0, production.rhs)
-									lookahead |= (var = self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym))
+									lookahead |= self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym)
 								end
 							end
 							
