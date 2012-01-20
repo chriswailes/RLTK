@@ -132,6 +132,10 @@ A RLTK::Lexer may be told to select either the first substring that is found to 
 		...
 	end
 
+=== Match Data
+
+Because it isn't RLTK's job to tell you how to write lexers and parsers, the MatchData object from a pattern match is available inside the Lexer::Environment object via the +match+ accessor.
+
 == Parsers
 
 To create a parser using RLTK simply subclass RLTK::Parser, define the productions of the grammar you wish to parse, and call +finalize+.  During finalization RLTK will build an LALR(1) parsing table, which may contain conflicts that can't be resolved with LALR(1) lookahead sets or precedence/associativity information.  Traditionally, when parser generators such as *YACC* encounter conflicts during parsing table generation they will resolve shift/reduce conflicts in favor of shifts and reduce/reduce conflicts in favor of the production that was defined first.  This means that the generated parsers can't handle ambiguous grammars.
