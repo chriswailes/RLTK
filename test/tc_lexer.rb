@@ -70,6 +70,10 @@ class StateLexer < RLTK::Lexer
 	rule(/./,    :comment)
 end
 
+class MatchDataLexer < RLTK::Lexer
+	rule(/a(b*)(c+)/) { [:FOO, match[1,2]] }
+end
+
 class LexerTester < Test::Unit::TestCase
 	def test_calc
 		expected =
@@ -196,6 +200,13 @@ class LexerTester < Test::Unit::TestCase
 			]
 		
 		actual = ABLongest.lex('aaabbb')
+		
+		assert_equal(expected, actual)
+	end
+	
+	def test_match_data
+		expected	= [RLTK::Token.new(:FOO, ['', 'ccc']), RLTK::Token.new(:EOS)]
+		actual	= MatchDataLexer.lex('accc')
 		
 		assert_equal(expected, actual)
 	end
