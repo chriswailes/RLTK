@@ -19,16 +19,10 @@ RDoc::Task.new do |t|
 	t.rdoc_files.include('README', 'lib/*.rb', 'lib/rltk/*.rb', 'lib/rltk/**/*.rb')
 end
 
-#Rake::TestTask.new do |t|
-#	t.libs << 'test'
-#	t.test_files = FileList['test/ts_rltk.rb']
-#end
-
-# This workaround is here because the Rake::DSL module gets auto-loaded into
-# the Object class, and therefor any object that defines conflicting methods
-# get over-ridden.
-task :test do
-	exec "ruby -C \"test\" -e \"require 'ts_rltk.rb'\""
+Rake::TestTask.new do |t|
+	t.libs << 'test'
+	t.loader = :testrb
+	t.test_files = FileList['test/ts_rltk.rb']
 end
 
 def spec
