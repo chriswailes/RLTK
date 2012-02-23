@@ -548,12 +548,7 @@ module RLTK # :nodoc:
 				opts = self.build_finalize_opts(opts)
 				
 				# Get the name of the file in which the parser is defined.
-				if RUBY_PLATFORM.downcase.include?("mswin")
-					def_file = caller()[2].match("(.*):([0-9]+):.*")[1]
-				
-				else
-					def_file = caller()[2].split(':')[0]
-				end
+				def_file = caller()[2].split(':')[0]
 				
 				# Check to make sure we can load the necessary information
 				# from the specified object.
