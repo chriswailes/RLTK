@@ -178,7 +178,7 @@ module RLTK # :nodoc:
 			
 			# A wrapper function that calls ParserCore.lex on the
 			# contents of a file.
-			def lex_file(file_name, evn)
+			def lex_file(file_name, env)
 				File.open(file_name, 'r') { |f| lex(f.read, env, file_name) }
 			end
 			
