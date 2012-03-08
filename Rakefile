@@ -8,7 +8,7 @@
 ##############
 
 require 'rake/testtask'
-require 'rubygems/package_task'
+require 'bundler'
 
 begin
 	require 'rdoc/task'
@@ -44,36 +44,4 @@ Rake::TestTask.new do |t|
 	t.test_files = FileList['test/ts_rltk.rb']
 end
 
-spec =
-Gem::Specification.new do |s|
-	s.platform = Gem::Platform::RUBY
-	
-	s.name		= 'rltk'
-	s.version		= '1.1.0'
-	s.summary		= 'The Ruby Language Toolkit'
-	s.description	=
-		'The Ruby Language Toolkit provides classes for creating ' +
-		'context-free grammars, lexers, parsers, and abstract syntax trees.'
-	
-	s.files = [
-			'LICENSE',
-			'AUTHORS',
-			'README',
-			'Rakefile',
-			] +
-			Dir.glob('lib/rltk/**/*.rb')
-			
-			
-	s.require_path	= 'lib'
-	
-	s.author		= 'Chris Wailes'
-	s.email		= 'chris.wailes@gmail.com'
-	s.homepage	= 'http://github.com/chriswailes/RLTK'
-	s.license		= 'University of Illinois/NCSA Open Source License'
-	
-	s.test_files	= Dir.glob('test/tc_*.rb')
-end
-
-Gem::PackageTask.new(spec) do |t|
-	t.need_tar = true
-end
+Bundler::GemHelper.install_tasks
