@@ -645,7 +645,13 @@ module RLTK # :nodoc:
 				self.clean
 				
 				# Store the parser's final data structures if requested.
-				Marshal.dump([@lh_sides, @states, @symbols], self.get_io(opts[:use])) if opts[:use]
+                                if opts[:use]
+                                        file = self.get_io(opts[:use])
+                                        file.flock(File::LOCK_EX)
+                                        Marshal.dump([@lh_sides, @states, @symbols], file)
+                                        file.flock(File::LOCK_UN)
+                                        file.close
+                                end
 			end
 			
 			# Converts an object into an IO object as appropriate.
