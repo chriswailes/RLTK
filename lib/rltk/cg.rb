@@ -4,6 +4,12 @@
 # Description:	This file adds some autoload features for the RLTK code
 #			generation.
 
-module RLTK::CG
-	autoload :Bindings, 'rltk/cg/bindings'
+#######################
+# Classes and Modules #
+#######################
+
+module RLTK
+	module CG
+		autoload :Bindings, 'rltk/cg/bindings'
+	end
 end
