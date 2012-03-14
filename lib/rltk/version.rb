@@ -4,5 +4,6 @@
 # Description:	This file specifies the version number of RLTK.
 
 module RLTK
-	VERSION = "1.2.0"
+	LLVM_TARGET_VERSION	= '3.0'
+	VERSION			= '1.2.0'
 end
