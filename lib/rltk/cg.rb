@@ -11,5 +11,6 @@
 module RLTK
 	module CG
 		autoload :Bindings, 'rltk/cg/bindings'
+		autoload :LLVM    , 'rltk/cg/llvm'
 	end
 end

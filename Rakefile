@@ -151,7 +151,7 @@ task :check_bindings, :verbose do |_, args|
 		puts "Extended LLVM C Bindings:"
 		puts "Bound Functions: #{bound.length}"
 		puts "Unbound Functions: #{unbound.length}"
-		puts "Completeness: #{((bound.length / libsyms.length.to_f) * 100).to_i}%"
+		puts "Completeness: #{((bound.length / ecbsyms.length.to_f) * 100).to_i}%"
 		puts
 		
 		if args[:verbose]
