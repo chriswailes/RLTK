@@ -271,8 +271,8 @@ If the input (including the +ERROR+ token) can be reduced immediately the associ
 
 The example below for the unit tests shows a very basic usage of error productions:
 
-	class AfterPlsError < Exception; end
-	class AfterSubError < Exception; end
+	class AfterPlsError < StandardError; end
+	class AfterSubError < StandardError; end
 
 	class ErrorCalc < RLTK::Parser
 		production(:e) do

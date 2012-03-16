@@ -63,8 +63,8 @@ class ASTNodeTester < Test::Unit::TestCase
 	end
 	
 	def test_initialize
-		assert_raise(Exception) { RLTK::ASTNode.new }
-		assert_nothing_raised(Exception) { ANode.new(nil, nil) }
+		assert_raise(RuntimeError) { RLTK::ASTNode.new }
+		assert_nothing_raised(RuntimeError) { ANode.new(nil, nil) }
 	end
 	
 	def test_notes
