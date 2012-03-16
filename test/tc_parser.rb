@@ -76,8 +76,8 @@ class ArrayCalc < RLTK::Parser
 	finalize
 end
 
-class DummyError1 < Exception; end
-class DummyError2 < Exception; end
+class DummyError1 < StandardError; end
+class DummyError2 < StandardError; end
 
 class ErrorCalc < RLTK::Parser
 	production(:e) do

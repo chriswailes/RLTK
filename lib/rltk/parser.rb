@@ -18,7 +18,7 @@ module RLTK # :nodoc:
 	
 	# A BadToken exception indicates that a token was observed in the input
 	# stream that wasn't used in the grammar's definition.
-	class BadToken < Exception
+	class BadToken < StandardError
 		def to_s
 			'Unexpected token.  Token not present in grammar definition.'
 		end
@@ -27,7 +27,7 @@ module RLTK # :nodoc:
 	# A NotInLanguage exception is raised whenever there is no valid parse tree
 	# for a given token stream.  In other words, the input string is not in the
 	# defined language.
-	class NotInLanguage < Exception
+	class NotInLanguage < StandardError
 		def to_s
 			'String not in language.'
 		end
@@ -35,7 +35,7 @@ module RLTK # :nodoc:
 	
 	# An exception of this type is raised when the parser encountered a error
 	# that was handled by an error production.
-	class HandledError < Exception
+	class HandledError < StandardError
 		
 		# The errors as reported by the parser.
 		attr_reader :errors
@@ -51,11 +51,11 @@ module RLTK # :nodoc:
 	end
 	
 	# Used for errors that occure during parser construction.
-	class ParserConstructionError < Exception; end
+	class ParserConstructionError < StandardError; end
 	
 	# Used for runtime errors that are the parsers fault.  These should never
 	# be observed in the wild.
-	class InternalParserError < Exception; end
+	class InternalParserError < StandardError; end
 	
 	# The Parser class may be sub-classed to produce new parsers.  These
 	# parsers have a lot of features, and are described in the main
