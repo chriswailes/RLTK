@@ -16,15 +16,15 @@ require 'rltk/cfg'
 
 module RLTK # :nodoc:
 	
-	# A BadToken exception indicates that a token was observed in the input
-	# stream that wasn't used in the grammar's definition.
+	# A BadToken error indicates that a token was observed in the input stream
+	# that wasn't used in the grammar's definition.
 	class BadToken < StandardError
 		def to_s
 			'Unexpected token.  Token not present in grammar definition.'
 		end
 	end
 	
-	# A NotInLanguage exception is raised whenever there is no valid parse tree
+	# A NotInLanguage error is raised whenever there is no valid parse tree
 	# for a given token stream.  In other words, the input string is not in the
 	# defined language.
 	class NotInLanguage < StandardError
@@ -33,8 +33,8 @@ module RLTK # :nodoc:
 		end
 	end
 	
-	# An exception of this type is raised when the parser encountered a error
-	# that was handled by an error production.
+	# An error of this type is raised when the parser encountered a error that
+	# was handled by an error production.
 	class HandledError < StandardError
 		
 		# The errors as reported by the parser.
@@ -50,12 +50,12 @@ module RLTK # :nodoc:
 		end
 	end
 	
-	# Used for errors that occure during parser construction.
-	class ParserConstructionError < StandardError; end
+	# Used for exceptions that occure during parser construction.
+	class ParserConstructionException < Exception; end
 	
-	# Used for runtime errors that are the parsers fault.  These should never
-	# be observed in the wild.
-	class InternalParserError < StandardError; end
+	# Used for runtime exceptions that are the parsers fault.  These should
+	# never be observed in the wild.
+	class InternalParserException < Exception; end
 	
 	# The Parser class may be sub-classed to produce new parsers.  These
 	# parsers have a lot of features, and are described in the main
@@ -294,13 +294,13 @@ module RLTK # :nodoc:
 			# used in the grammar definition appear on the left-hand side of
 			# one or more productions, and that none of the parser's states
 			# have invalid actions.  If a problem is encountered a
-			# ParserConstructionError is raised.
+			# ParserConstructionException is raised.
 			def check_sanity
 				# Check to make sure all non-terminals appear on the
 				# left-hand side of some production.
 				@grammar.nonterms.each do |sym|
 					if not @lh_sides.values.include?(sym)
-						raise ParserConstructionError, "Non-terminal #{sym} does not appear on the left-hand side of any production."
+						raise ParserConstructionException, "Non-terminal #{sym} does not appear on the left-hand side of any production."
 					end
 				end
 				
@@ -312,11 +312,11 @@ module RLTK # :nodoc:
 							actions.each do |action|
 								if action.is_a?(Accept)
 									if sym != :EOS
-										raise ParserConstructionError, "Accept action found for terminal #{sym} in state #{state.id}."
+										raise ParserConstructionException, "Accept action found for terminal #{sym} in state #{state.id}."
 									end
 										
 								elsif not (action.is_a?(GoTo) or action.is_a?(Reduce) or action.is_a?(Shift))
-									raise ParserConstructionError, "Object of type #{action.class} found in actions for terminal " +
+									raise ParserConstructionException, "Object of type #{action.class} found in actions for terminal " +
 										"#{sym} in state #{state.id}."
 									
 								end
@@ -328,10 +328,10 @@ module RLTK # :nodoc:
 						else
 							# Here we check actions for non-terminals.
 							if actions.length > 1
-								raise ParserConstructionError, "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
+								raise ParserConstructionException, "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
 								
 							elsif actions.length == 1 and not actions.first.is_a?(GoTo)
-								raise ParserConstructionError, "State #{state.id} has non-GoTo action for non-terminal #{sym}."
+								raise ParserConstructionException, "State #{state.id} has non-GoTo action for non-terminal #{sym}."
 								
 							end
 						end
@@ -378,7 +378,7 @@ module RLTK # :nodoc:
 				# Check to make sure the action's arity matches the number
 				# of symbols on the right-hand side.
 				if @args == :splat and action.arity != production.rhs.length
-					raise ParserConstructionError, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
+					raise ParserConstructionException, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
 						'terminals and non-terminals in the clause.'
 				end
 				
@@ -524,7 +524,7 @@ module RLTK # :nodoc:
 					# Close any IO objects that aren't $stdout.
 					io.close if io.is_a?(IO) and io != $stdout
 				else
-					raise ParserConstructionError, 'Parser.explain called outside of finalize.'
+					raise ParserConstructionException, 'Parser.explain called outside of finalize.'
 				end
 			end
 			
@@ -858,7 +858,7 @@ module RLTK # :nodoc:
 								production_proc, pop_size = @procs[action.id]
 								
 								if not production_proc
-									raise InternalParserError, "No production #{action.id} found."
+									raise InternalParserException, "No production #{action.id} found."
 								end
 								
 								args, positions = stack.pop(pop_size)
@@ -895,7 +895,7 @@ module RLTK # :nodoc:
 									
 									stack.push(goto.id, result, @lh_sides[action.id], pos0)
 								else
-									raise InternalParserError, "No GoTo action found in state #{stack.state} " +
+									raise InternalParserException, "No GoTo action found in state #{stack.state} " +
 										"after reducing by production #{action.id}"
 								end
 								
@@ -966,7 +966,7 @@ module RLTK # :nodoc:
 				
 				# Check the symbol.
 				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or not CFG::is_nonterminal?(symbol)
-					riase ParserConstructionError, 'Production symbols must be Strings or Symbols and be in all lowercase.'
+					riase ParserConstructionException, 'Production symbols must be Strings or Symbols and be in all lowercase.'
 				end
 				
 				@grammar.curr_lhs	= symbol.to_sym
@@ -1073,7 +1073,7 @@ module RLTK # :nodoc:
 										selected_action	= a
 										
 									elsif prec == max_prec and assoc == :nonassoc
-										raise ParserConstructionError, 'Non-associative token found during conflict resolution.'
+										raise ParserConstructionException, 'Non-associative token found during conflict resolution.'
 										
 									end
 								end
@@ -1172,7 +1172,7 @@ module RLTK # :nodoc:
 				if @output_stack.length == 1
 					return @output_stack.last
 				else
-					raise InternalParserError, "The parsing stack should have 1 element on the output stack, not #{@output_stack.length}."
+					raise InternalParserException, "The parsing stack should have 1 element on the output stack, not #{@output_stack.length}."
 				end
 			end
 			
@@ -1298,7 +1298,7 @@ module RLTK # :nodoc:
 				if @actions.key?(symbol)
 					@actions[symbol] << action
 				else
-					raise ParserConstructionError, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
+					raise ParserConstructionException, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
 				end
 			end
 			

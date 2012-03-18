@@ -4,7 +4,7 @@
 # Description:	This file provides a base Node class for ASTs.
 
 module RLTK # :nodoc:
-	# A TypeMismatch is thrown when an object being set as a child or value of
+	# A TypeMismatch is raised when an object being set as a child or value of
 	# an ASTNode is of the wrong type.
 	class TypeMismatch < StandardError
 		
