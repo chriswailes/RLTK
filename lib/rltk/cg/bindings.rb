@@ -22,6 +22,10 @@ require 'rltk/cg'
 module RLTK::CG::Bindings
 	class LibraryMismatch < Exception; end
 	
+	# Build library names.
+	LLVM_LIB     = "LLVM-#{RLTK::LLVM_TARGET_VERSION}"
+	LLVM_ECB_LIB = "LLVM-ECB-#{RLTK::LLVM_TARGET_VERSION}"
+	
 	# Bindings for the CG::LLVM module.
 	module LLVM
 		# Extend this module with the FFI::Library module.
@@ -37,7 +41,7 @@ module RLTK::CG::Bindings
 		
 		begin
 			# Load the LLVM Extended C Bindings library.
-			ffi_lib("libLLVM-ECB-#{RLTK::LLVM_TARGET_VERSION}")
+			ffi_lib(LLVM_ECB_LIB)
 			
 			@@ecb = true
 		
@@ -69,13 +73,19 @@ module RLTK::CG::Bindings
 		extend FFI::Library
 		
 		if LLVM.extended_bindings?
-			ffi_lib("libLLVM-ECB-#{RLTK::LLVM_TARGET_VERSION}")
+			ffi_lib(LLVM_ECB_LIB)
 		
 			attach_function :LLVMLoadLibraryPermanently, [:string], :int
 			private :LLVMLoadLibraryPermanently
 		end
 	end
 	
-	# Load the LLVM shared library.
-	#ffi_lib(["LLVM-#{RLTK::LLVM_TARGET_VERSION}", "libLLVM-#{RLTK::LLVM_TARGET_VERSION}"])
+	# Bindings for the CG::ExecutionEngine class.
+	module ExecutionEngine
+		# Extend this module with the FFI::Library module.
+		extend FFI::Library
+		
+		# Load the LLVM library.
+		ffi_lib(LLVM_LIB)
+	end
 end
