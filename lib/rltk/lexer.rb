@@ -21,7 +21,7 @@ module RLTK # :nodoc:
 	
 	# A LexingError exception is raised when an input stream contains a
 	# substring that isn't matched by any of a lexer's rules.
-	class LexingError < Exception
+	class LexingError < StandardError
 		def initialize(stream_offset, line_number, line_offset, remainder)
 			@stream_offset	= stream_offset
 			@line_number	= line_number

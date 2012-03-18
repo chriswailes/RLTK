@@ -6,7 +6,7 @@
 module RLTK # :nodoc:
 	# A TypeMismatch is thrown when an object being set as a child or value of
 	# an ASTNode is of the wrong type.
-	class TypeMismatch < Exception
+	class TypeMismatch < StandardError
 		
 		# Instantiates a new TypeMismatch object.  The first argument is the
 		# expected type and the second argument is the actual type of the
@@ -62,13 +62,13 @@ module RLTK # :nodoc:
 						t = type
 						
 					else
-						raise Exception, 'Child and Value types must be a class name or an array with a single class name element.'
+						raise 'Child and Value types must be a class name or an array with a single class name element.'
 					end
 					
 					# Check to make sure that type is a subclass of
 					# ASTNode.
 					if not RLTK::subclass_of?(t, ASTNode)
-						raise Exception, "A child's type specification must be a subclass of ASTNode."
+						raise "A child's type specification must be a subclass of ASTNode."
 					end
 					
 					@child_names << name
@@ -152,13 +152,13 @@ module RLTK # :nodoc:
 						t = type
 						
 					else
-						raise Exception, 'Child and Value types must be a class name or an array with a single class name element.'
+						raise 'Child and Value types must be a class name or an array with a single class name element.'
 					end
 					
 					# Check to make sure that type is NOT a subclass of
 					# ASTNode.
 					if RLTK::subclass_of?(t, ASTNode)
-						raise Exception, "A value's type specification must NOT be a subclass of ASTNode."
+						raise "A value's type specification must NOT be a subclass of ASTNode."
 					end
 					
 					@value_names << name
@@ -201,7 +201,7 @@ module RLTK # :nodoc:
 		# Assigns an array of AST nodes as the children of this node.
 		def children=(children)
 			if children.length != self.class.child_names.length
-				raise Exception, 'Wrong number of children specified.'
+				raise 'Wrong number of children specified.'
 			end
 			
 			self.class.child_names.each_with_index do |name, i|
@@ -247,7 +247,7 @@ module RLTK # :nodoc:
 		# the order they were declared).
 		def initialize(*objects)
 			if self.class == RLTK::ASTNode
-				raise Exception, 'Attempting to instantiate the RLTK::ASTNode class.'
+				raise 'Attempting to instantiate the RLTK::ASTNode class.'
 			else
 				@notes	= Hash.new()
 				@parent	= nil
@@ -277,7 +277,7 @@ module RLTK # :nodoc:
 		# Assigns an array of objects as the values of this node.
 		def values=(values)
 			if values.length != self.class.value_names.length
-				raise Exception, 'Wrong number of values specified.'
+				raise 'Wrong number of values specified.'
 			end
 			
 			self.class.value_names.each_with_index do |name, i|
