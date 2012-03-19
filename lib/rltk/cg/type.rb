@@ -1,7 +1,7 @@
 # Author:		Chris Wailes <chris.wailes@gmail.com>
 # Project: 	Ruby Language Toolkit
-# Date:		2012/03/15
-# Description:	This file defines the Support module.
+# Date:		2012/03/18
+# Description:	This file defines the various LLVM Types.
 
 ############
 # Requires #
@@ -14,10 +14,9 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG::Support
-	extend RLTK::CG::Bindings::Support
-	
-	def self.load_library(lib)
-		load_library_permanently(lib) == 1 ? true : false
+module RLTK::CG
+	class Type
+		exted RLTK::CG::Bindings::Type
+		
 	end
 end

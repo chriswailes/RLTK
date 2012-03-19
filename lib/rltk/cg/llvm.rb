@@ -9,7 +9,6 @@
 
 # Ruby Language Toolkit
 require 'rltk/version'
-require 'rltk/cg'
 require 'rltk/cg/bindings'
 
 #######################
@@ -17,11 +16,25 @@ require 'rltk/cg/bindings'
 #######################
 
 module RLTK::CG::LLVM
-	extend RLTK::CG::Bindings::LLVM
+	include RLTK::CG::Bindings::LLVM
 	
-	class << self
-		def version
-			RLTK::LLVM_TARGET_VERSION
+	# Pull the ARCHS constant from the Bindings::LLVM module.
+	ARCHS = RLTK::CG::Bindings::LLVM::ARCHS
+	
+	def self.init(arch)
+		if ARCHS.include?(arch)
+			self.send("initialize_#{arch.to_s.downcase}_target".to_sym)
+			self.send("initialize_#{arch.to_s.downcase}_target_info".to_sym)
+			self.send("initialize_#{arch.to_s.downcase}_target_mc".to_sym)
+			
+			true
+			
+		else
+			raise "Unsupported architecture specified: #{arch}"
 		end
+	end
+	
+	def self.version
+		RLTK::LLVM_TARGET_VERSION
 	end
 end

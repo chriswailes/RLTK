@@ -4,8 +4,6 @@
 # Description:	This file specifies the version number of RLTK.
 
 module RLTK
-	if not RLTK::const_defined?(:VERSION)
-		VERSION			= '1.2.0'
-		LLVM_TARGET_VERSION	= '3.0'
-	end
+	VERSION			= '1.2.0'
+	LLVM_TARGET_VERSION	= '3.0'
 end

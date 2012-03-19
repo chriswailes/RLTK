@@ -27,19 +27,6 @@ rescue LoadError
 	warn 'RDoc is not installed.'
 end
 
-begin
-	require 'rcov/rcovtask'
-	
-	Rcov::RcovTask.new do |t|
-		t.libs		<< 'test'
-		t.rcov_opts	<< '--exclude gems,ruby'
-		t.test_files	= FileList['test/tc_*.rb']
-	end
-	
-rescue LoadError
-	warn 'Rcov not installed.'
-end
-
 Rake::TestTask.new do |t|
 	t.libs << 'test'
 	t.loader = :testrb
@@ -48,7 +35,68 @@ end
 
 Bundler::GemHelper.install_tasks
 
-desc "Check the current bindings in RLTK against the LLVM and LLVM-ECB shared libraries"
+desc 'Generate the bindings for LLVM'
+task :gen_bindings do
+	require 'ffi_gen'
+	
+	# Generate the standard LLVM bindings.
+	
+	blacklist = [
+		'LLVMGetMDNodeOperand',
+		'LLVMGetMDNodeNumOperands',
+		'LLVMInitializeAllTargetInfos',
+		'LLVMInitializeAllTargets',
+		'LLVMInitializeNativeTarget'
+	]
+	
+	headers = [
+		'llvm-c/Core.h',
+		
+		'llvm-c/Analysis.h',
+		'llvm-c/BitReader.h',
+		'llvm-c/BitWriter.h',
+		'llvm-c/Disassembler.h',
+		'llvm-c/ExecutionEngine.h',
+		'llvm-c/Initialization.h',
+		'llvm-c/Object.h',
+		'llvm-c/Target.h',
+		
+		'llvm-c/Transforms/IPO.h',
+		'llvm-c/Transforms/Scalar.h'
+	]
+	
+	FFIGen.generate(
+		:ruby_module => 'RLTK::CG::Bindings',
+		:ffi_lib     => "LLVM-#{RLTK::LLVM_TARGET_VERSION}",
+		:headers     => headers,
+		:cflags      => `llvm-config --cflags`.split,
+		:prefixes    => ['LLVM'],
+		:blacklist   => blacklist,
+		:output      => 'lib/rltk/cg/generated_bindings.rb'
+	)
+	
+	# Generate the extended LLVM bindings.
+	
+	headers = [
+		'llvm-ecb.h',
+		
+		'llvm-ecb/support.h'
+	]
+	
+	begin
+		FFIGen.generate(
+			:ruby_module => 'RLTK::CG::Bindings',
+			:ffi_lib     => "LLVM-ECB-#{RLTK::LLVM_TARGET_VERSION}",
+			:headers     => headers,
+			:cflags      => `llvm-config --cflags`.split,
+			:prefixes    => ['LLVM'],
+			:output      => 'lib/rltk/cg/generated_extended_bindings.rb'
+		)
+	rescue
+	end
+end
+
+desc 'Check the current bindings in RLTK against the LLVM and LLVM-ECB shared libraries'
 task :check_bindings, :verbose do |_, args|
 	(args = args.to_hash)[:verbose] = (args[:verbose] == 'true')
 	
