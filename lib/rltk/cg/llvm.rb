@@ -15,26 +15,25 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG::LLVM
-	include RLTK::CG::Bindings::LLVM
-	
-	# Pull the ARCHS constant from the Bindings::LLVM module.
-	ARCHS = RLTK::CG::Bindings::LLVM::ARCHS
-	
-	def self.init(arch)
-		if ARCHS.include?(arch)
-			self.send("initialize_#{arch.to_s.downcase}_target".to_sym)
-			self.send("initialize_#{arch.to_s.downcase}_target_info".to_sym)
-			self.send("initialize_#{arch.to_s.downcase}_target_mc".to_sym)
+module RLTK::CG
+	module LLVM
+		def self.init(arch)
+			if Bindings::ARCHS.include?(arch)
+				arch = Bindings.get_bname(arch)
+				
+				Bindings.send("initialize_#{arch}_target".to_sym)
+				Bindings.send("initialize_#{arch}_target_info".to_sym)
+				Bindings.send("initialize_#{arch}_target_mc".to_sym)
 			
-			true
+				true
 			
-		else
-			raise "Unsupported architecture specified: #{arch}"
+			else
+				raise "Unsupported architecture specified: #{arch}"
+			end
 		end
-	end
 	
-	def self.version
-		RLTK::LLVM_TARGET_VERSION
+		def self.version
+			RLTK::LLVM_TARGET_VERSION
+		end
 	end
 end

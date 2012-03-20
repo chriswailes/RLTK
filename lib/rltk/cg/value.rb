@@ -16,8 +16,6 @@ require 'rltk/cg/bindings'
 
 module RLTK::CG
 	class Value
-		extend RLTK::CG::Bindings::Value
-		
 		def initialize(ptr)
 			if not ptr.is_a?(FFI::Pointer)
 				raise 'Argument to new should be of class FFI::Pointer'

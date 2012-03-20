@@ -16,7 +16,6 @@ require 'rltk/cg/bindings'
 
 module RLTK::CG
 	class Type
-		exted RLTK::CG::Bindings::Type
 		
 	end
 end

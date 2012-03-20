@@ -17,10 +17,8 @@ require 'rltk/cg/bindings'
 
 module RLTK::CG
 	class ExecutionEngine
-		extend RLTK::CG::Bindings::ExecutionEngine
-		
 		def initialize(mod, &block)
-			block = Proc.new { create_execution_engine_for_module(ptr, mod, error) } if block == nil
+			block = Proc.new { Bindings.create_execution_engine_for_module(ptr, mod, error) } if block == nil
 			
 			ptr   = FFI::MemoryPointer.new(FFI.type_size(:pointer))
 			error = FFI::MemoryPointer.new(FFI.type_size(:pointer))
@@ -36,7 +34,7 @@ module RLTK::CG
 				
 				error.autorelease = false
 				
-				dispose_message(error)
+				Bindings.dispose_message(error)
 				
 				raise "Error creating execution engine: #{message}"
 			end
@@ -44,21 +42,17 @@ module RLTK::CG
 	end
 	
 	class Interpreter < ExecutionEngine
-		extend RLTK::CG::Bindings::Interpreter
-		
 		def initialize(mod)
 			super do |ptr, error|
-				create_interpreter_for_module(ptr, mod, error)
+				Bindings.create_interpreter_for_module(ptr, mod, error)
 			end
 		end
 	end
 	
 	class JITCompiler < ExecutionEngine
-		extend RLTK::CG::Bindings::JITCompiler
-		
 		def initialize(mod, opt_level = 3)
 			super do |ptr, error|
-				create_jit_compiler_for_module(ptr, mod, opt_level, error)
+				Bindings.create_jit_compiler_for_module(ptr, mod, opt_level, error)
 			end
 		end
 	end

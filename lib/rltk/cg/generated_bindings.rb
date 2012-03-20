@@ -4641,14 +4641,6 @@ module RLTK::CG::Bindings
   # @scope class
   attach_function :create_function_pass_manager_for_module, :LLVMCreateFunctionPassManagerForModule, [OpaqueModule], OpaquePassManager
   
-  # Deprecated: Use LLVMCreateFunctionPassManagerForModule instead.
-  # 
-  # @method create_function_pass_manager(mp)
-  # @param [OpaqueModuleProvider] mp 
-  # @return [OpaquePassManager] 
-  # @scope class
-  attach_function :create_function_pass_manager, :LLVMCreateFunctionPassManager, [OpaqueModuleProvider], OpaquePassManager
-  
   # Initializes, executes on the provided module, and finalizes all of the
   #     passes scheduled in the pass manager. Returns 1 if any of the passes
   #     modified the module, 0 otherwise. See llvm::PassManager::run(Module&).
@@ -4806,27 +4798,6 @@ module RLTK::CG::Bindings
   # @scope class
   attach_function :get_bitcode_module, :LLVMGetBitcodeModule, [OpaqueMemoryBuffer, :pointer, :pointer], :int
   
-  # Deprecated: Use LLVMGetBitcodeModuleInContext instead.
-  # 
-  # @method get_bitcode_module_provider_in_context(context_ref, mem_buf, out_mp, out_message)
-  # @param [OpaqueContext] context_ref 
-  # @param [OpaqueMemoryBuffer] mem_buf 
-  # @param [FFI::Pointer(*ModuleProviderRef)] out_mp 
-  # @param [FFI::Pointer(**Char_S)] out_message 
-  # @return [Integer] 
-  # @scope class
-  attach_function :get_bitcode_module_provider_in_context, :LLVMGetBitcodeModuleProviderInContext, [OpaqueContext, OpaqueMemoryBuffer, :pointer, :pointer], :int
-  
-  # Deprecated: Use LLVMGetBitcodeModule instead.
-  # 
-  # @method get_bitcode_module_provider(mem_buf, out_mp, out_message)
-  # @param [OpaqueMemoryBuffer] mem_buf 
-  # @param [FFI::Pointer(*ModuleProviderRef)] out_mp 
-  # @param [FFI::Pointer(**Char_S)] out_message 
-  # @return [Integer] 
-  # @scope class
-  attach_function :get_bitcode_module_provider, :LLVMGetBitcodeModuleProvider, [OpaqueMemoryBuffer, :pointer, :pointer], :int
-  
   # (Not documented)
   # 
   # @method write_bitcode_to_file(m, path)
@@ -4846,16 +4817,6 @@ module RLTK::CG::Bindings
   # @return [Integer] 
   # @scope class
   attach_function :write_bitcode_to_fd, :LLVMWriteBitcodeToFD, [OpaqueModule, :int, :int, :int], :int
-  
-  # Deprecated for LLVMWriteBitcodeToFD. Writes a module to an open file
-  #     descriptor. Returns 0 on success. Closes the Handle.
-  # 
-  # @method write_bitcode_to_file_handle(m, handle)
-  # @param [OpaqueModule] m 
-  # @param [Integer] handle 
-  # @return [Integer] 
-  # @scope class
-  attach_function :write_bitcode_to_file_handle, :LLVMWriteBitcodeToFileHandle, [OpaqueModule, :int], :int
   
   # The type for the operand information call back function.  This is called to
   # get the symbolic information for an operand of an instruction.  Typically
@@ -5323,37 +5284,6 @@ module RLTK::CG::Bindings
   # @scope class
   attach_function :create_jit_compiler_for_module, :LLVMCreateJITCompilerForModule, [:pointer, OpaqueModule, :uint, :pointer], :int
   
-  # Deprecated: Use LLVMCreateExecutionEngineForModule instead.
-  # 
-  # @method create_execution_engine(out_ee, mp, out_error)
-  # @param [FFI::Pointer(*ExecutionEngineRef)] out_ee 
-  # @param [OpaqueModuleProvider] mp 
-  # @param [FFI::Pointer(**Char_S)] out_error 
-  # @return [Integer] 
-  # @scope class
-  attach_function :create_execution_engine, :LLVMCreateExecutionEngine, [:pointer, OpaqueModuleProvider, :pointer], :int
-  
-  # Deprecated: Use LLVMCreateInterpreterForModule instead.
-  # 
-  # @method create_interpreter(out_interp, mp, out_error)
-  # @param [FFI::Pointer(*ExecutionEngineRef)] out_interp 
-  # @param [OpaqueModuleProvider] mp 
-  # @param [FFI::Pointer(**Char_S)] out_error 
-  # @return [Integer] 
-  # @scope class
-  attach_function :create_interpreter, :LLVMCreateInterpreter, [:pointer, OpaqueModuleProvider, :pointer], :int
-  
-  # Deprecated: Use LLVMCreateJITCompilerForModule instead.
-  # 
-  # @method create_jit_compiler(out_jit, mp, opt_level, out_error)
-  # @param [FFI::Pointer(*ExecutionEngineRef)] out_jit 
-  # @param [OpaqueModuleProvider] mp 
-  # @param [Integer] opt_level 
-  # @param [FFI::Pointer(**Char_S)] out_error 
-  # @return [Integer] 
-  # @scope class
-  attach_function :create_jit_compiler, :LLVMCreateJITCompiler, [:pointer, OpaqueModuleProvider, :uint, :pointer], :int
-  
   # (Not documented)
   # 
   # @method dispose_execution_engine(ee)
@@ -5419,15 +5349,6 @@ module RLTK::CG::Bindings
   # @scope class
   attach_function :add_module, :LLVMAddModule, [OpaqueExecutionEngine, OpaqueModule], :void
   
-  # Deprecated: Use LLVMAddModule instead.
-  # 
-  # @method add_module_provider(ee, mp)
-  # @param [OpaqueExecutionEngine] ee 
-  # @param [OpaqueModuleProvider] mp 
-  # @return [nil] 
-  # @scope class
-  attach_function :add_module_provider, :LLVMAddModuleProvider, [OpaqueExecutionEngine, OpaqueModuleProvider], :void
-  
   # (Not documented)
   # 
   # @method remove_module(ee, m, out_mod, out_error)
@@ -5438,17 +5359,6 @@ module RLTK::CG::Bindings
   # @return [Integer] 
   # @scope class
   attach_function :remove_module, :LLVMRemoveModule, [OpaqueExecutionEngine, OpaqueModule, :pointer, :pointer], :int
-  
-  # Deprecated: Use LLVMRemoveModule instead.
-  # 
-  # @method remove_module_provider(ee, mp, out_mod, out_error)
-  # @param [OpaqueExecutionEngine] ee 
-  # @param [OpaqueModuleProvider] mp 
-  # @param [FFI::Pointer(*ModuleRef)] out_mod 
-  # @param [FFI::Pointer(**Char_S)] out_error 
-  # @return [Integer] 
-  # @scope class
-  attach_function :remove_module_provider, :LLVMRemoveModuleProvider, [OpaqueExecutionEngine, OpaqueModuleProvider, :pointer, :pointer], :int
   
   # (Not documented)
   # 

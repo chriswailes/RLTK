@@ -7,7 +7,7 @@
 # Requires #
 ############
 
-# Ruby Gems
+# Gems
 require 'rubygems'
 require 'ffi'
 
@@ -20,6 +20,9 @@ require 'rltk/cg'
 #######################
 
 module RLTK::CG::Bindings
+	extend FFI::Library
+	ffi_lib("LLVM-#{RLTK::LLVM_TARGET_VERSION}")
+	
 	class LibraryMismatch < Exception; end
 	
 	# Require the generated bindings files while handeling errors.
@@ -69,5 +72,26 @@ module RLTK::CG::Bindings
 	
 	def self.ecb?
 		@ecb
+	end
+	
+	def self.get_bname(name)
+		name.to_s.
+			gsub(/([A-Z\d]+)([A-Z][a-z])/,'\1_\2').
+			gsub(/([a-z\d])([A-Z])/,'\1_\2').
+			downcase.to_sym
+	end
+	
+	def self.add_binding(func, args, returns)
+		attach_function(get_bname(func.to_s[4..-1]), func, args, returns)
+	end
+	
+	####################
+	# Missing Bindings #
+	####################
+	
+	ARCHS.each do |arch|
+		add_binding("LLVMInitialize#{arch}Target", [], :void)
+		add_binding("LLVMInitialize#{arch}TargetInfo", [], :void)
+		add_binding("LLVMInitialize#{arch}TargetMC", [], :void)
 	end
 end

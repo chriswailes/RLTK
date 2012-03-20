@@ -14,10 +14,10 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG::Support
-	extend RLTK::CG::Bindings::Support
-	
-	def self.load_library(lib)
-		load_library_permanently(lib) == 1 ? true : false
+module RLTK::CG
+	module Support
+		def self.load_library(lib)
+			not Bindings.load_library_permanently(lib).zero?
+		end
 	end
 end
