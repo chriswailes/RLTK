@@ -557,8 +557,15 @@ module RLTK # :nodoc:
 					(opts[:use].is_a?(File) and opts[:use].mtime > File.mtime(def_file))
 					)
 					
+					file = self.get_io(opts[:use], 'r')
+					
 					# Un-marshal our saved data structures.
-					@lh_sides, @states, @symbols = Marshal.load(self.get_io(opts[:use], 'r'))
+					file.flock(LOCK_SH)
+					@lh_sides, @states, @symbols = Marshal.load(file, 'r')
+					file.flock(LOCK_UN)
+					
+					# Close the file if we opened it.
+					file.close if opts[:use].is_a?(String)
 					
 					# Remove any un-needed data and return.
 					return self.clean
@@ -645,13 +652,16 @@ module RLTK # :nodoc:
 				self.clean
 				
 				# Store the parser's final data structures if requested.
-                                if opts[:use]
-                                        file = self.get_io(opts[:use])
-                                        file.flock(File::LOCK_EX)
-                                        Marshal.dump([@lh_sides, @states, @symbols], file)
-                                        file.flock(File::LOCK_UN)
-                                        file.close
-                                end
+				if opts[:use]
+					io = self.get_io(opts[:use])
+					
+					io.flock(File::LOCK_EX) if io.is_a?(File)
+					Marshal.dump([@lh_sides, @states, @symbols], io)
+					io.flock(File::LOCK_UN) if io.is_a?(File)
+					
+					# Close the IO object if we opened it.
+					io.close if opts[:use].is_a?(String)
+				end
 			end
 			
 			# Converts an object into an IO object as appropriate.
