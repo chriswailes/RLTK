@@ -115,3 +115,30 @@ task :gen_bindings do
 	end
 end
 
+desc 'Find LLVM bindings with a substring'
+task :find_bind, :part do |t, args|
+	
+	# Get the task argument.
+	part = args[:part]
+	
+	# Require the Bindings module.
+	require 'rltk/cg/bindings'
+	
+	syms =
+	Symbol.all_symbols.select do |sym|
+		sym = sym.to_s.downcase
+		
+		sym[0..3] == 'llvm' and sym.include?(part)
+	end
+	
+	puts
+	if not syms.empty?
+		puts 'Matching bindings:'
+		syms.each { |sym| puts "\t#{sym}" }
+	
+	else
+		puts 'No matching bindings.'
+	end
+	puts
+end
+
