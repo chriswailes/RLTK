@@ -560,9 +560,9 @@ module RLTK # :nodoc:
 					file = self.get_io(opts[:use], 'r')
 					
 					# Un-marshal our saved data structures.
-					file.flock(LOCK_SH)
-					@lh_sides, @states, @symbols = Marshal.load(file, 'r')
-					file.flock(LOCK_UN)
+					file.flock(File::LOCK_SH)
+					@lh_sides, @states, @symbols = Marshal.load(file)
+					file.flock(File::LOCK_UN)
 					
 					# Close the file if we opened it.
 					file.close if opts[:use].is_a?(String)

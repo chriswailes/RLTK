@@ -33,7 +33,7 @@ Gem::Specification.new do |s|
 	
 	s.add_development_dependency("builder")
 	s.add_development_dependency("rake")
-	s.add_development_dependency("rcov")
+	s.add_development_dependency("simplecov")
 	s.add_development_dependency("rdoc")
 	
 	s.test_files	= Dir.glob('test/tc_*.rb')
