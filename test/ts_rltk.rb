@@ -8,6 +8,9 @@
 # Requires #
 ############
 
+require 'simplecov'
+SimpleCov.start
+
 # Ruby Language Toolkit
 require 'tc_token'
 require 'tc_ast'
