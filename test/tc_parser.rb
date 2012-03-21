@@ -8,8 +8,8 @@
 ############
 
 # Standard Library
-require 'pp'
 require 'test/unit'
+require 'tmpdir'
 
 # Ruby Language Toolkit
 require 'rltk/lexer'
@@ -271,5 +271,31 @@ class ParserTester < Test::Unit::TestCase
 		assert_equal(9, actual)
 		
 		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
+	end
+	
+	def test_use
+		tmpfile = File.join(Dir.tmpdir, 'usetest')
+		
+		parser0 = Class.new(RLTK::Parser) do
+			production(:a, 'A+') { |a| a.length }
+			
+			finalize :use => tmpfile
+		end
+		
+		result0 = parser0.parse(ABLexer.lex('a'))
+		
+		assert(File.exist?(tmpfile), 'Serialized parser file not found.')
+		
+		parser1 = Class.new(RLTK::Parser) do
+			production(:a, 'A+') { |a| a.length }
+			
+			finalize :use => tmpfile
+		end
+		
+		result1 = parser1.parse(ABLexer.lex('a'))
+		
+		assert_equal(result0, result1)
+		
+		File.unlink(tmpfile)
 	end
 end
