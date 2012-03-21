@@ -561,7 +561,7 @@ module RLTK # :nodoc:
 					
 					# Un-marshal our saved data structures.
 					file.flock(File::LOCK_SH)
-					@lh_sides, @states, @symbols = Marshal.load(file, 'r')
+					@lh_sides, @states, @symbols = Marshal.load(file)
 					file.flock(File::LOCK_UN)
 					
 					# Close the file if we opened it.
