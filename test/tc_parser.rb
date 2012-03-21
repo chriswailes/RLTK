@@ -9,6 +9,7 @@
 
 # Standard Library
 require 'pp'
+require 'tempdir'
 require 'test/unit'
 
 # Ruby Language Toolkit
@@ -272,4 +273,17 @@ class ParserTester < Test::Unit::TestCase
 		
 		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
 	end
+
+        def test_serialization_to_file
+          tempfile = File.join(Dir.tmpdir, 'parser_serialization_test')
+
+          parser = Class.new(RLTK::Parser) do
+            production(:a, 'A') { |a| a }
+            finalize :use => tempfile
+          end
+          puts parser.parse(ABLexer.lex('a'))
+          assert(File.exist?(tempfile), "Serialized parser file does not exist")
+          File.unlink(tempfile)
+        end
+
 end
