@@ -33,6 +33,23 @@ Rake::TestTask.new do |t|
 	t.test_files = FileList['test/ts_rltk.rb']
 end
 
+if RUBY_VERSION.match(/1\.8/)
+	begin
+		require 'rcov/rcovtask'
+		
+		Rcov::RcovTask.new do |t|
+			t.libs      << 'test'
+			t.rcov_opts << '--exclude gems,ruby'
+			
+			t.test_files = FileList['test/tc_*.rb']
+		end
+		
+	rescue LoadError
+		warn 'Rcov not installed.'
+	end
+end
+
+# Bundler tasks.
 Bundler::GemHelper.install_tasks
 
 desc 'Generate the bindings for LLVM'
@@ -115,7 +132,7 @@ task :gen_bindings do
 	end
 end
 
-desc 'Find LLVM bindings with a substring'
+desc 'Find LLVM bindings with a substring.'
 task :find_bind, :part do |t, args|
 	
 	# Get the task argument.

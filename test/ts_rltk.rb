@@ -8,8 +8,17 @@
 # Requires #
 ############
 
-require 'simplecov'
-SimpleCov.start
+if RUBY_VERSION.match(/1\.9/)
+	begin
+		require 'simplecov'
+		SimpleCov.start do
+			add_filter 'tc_*'
+		end
+		
+	rescue LoadError
+		puts 'SimpleCov not installed.  Continuing without it.'
+	end
+end
 
 # Ruby Language Toolkit
 require 'tc_token'
