@@ -136,7 +136,7 @@ desc 'Find LLVM bindings with a substring.'
 task :find_bind, :part do |t, args|
 	
 	# Get the task argument.
-	part = args[:part]
+	part = args[:part].downcase
 	
 	# Require the Bindings module.
 	require 'rltk/cg/bindings'
