@@ -72,9 +72,6 @@ module RLTK::CG
 	class GlobalValue < Constant
 	end
 	
-	class Function < GlobalValue
-	end
-	
 	class GlobalAlias < GlobalValue
 	end
 	
