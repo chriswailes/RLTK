@@ -67,6 +67,16 @@ module RLTK::CG::Bindings
 	]
 	
 	###########
+	# Classes #
+	###########
+	
+	module BindingClass
+		def to_ptr
+			@ptr
+		end
+	end
+	
+	###########
 	# Methods #
 	###########
 	
@@ -94,4 +104,6 @@ module RLTK::CG::Bindings
 		add_binding("LLVMInitialize#{arch}TargetInfo", [], :void)
 		add_binding("LLVMInitialize#{arch}TargetMC", [], :void)
 	end
+	
+	add_binding(:LLVMDisposeMessage, [:pointer], :void)
 end

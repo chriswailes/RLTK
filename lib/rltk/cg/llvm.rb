@@ -25,7 +25,7 @@ module RLTK::CG
 				Bindings.send("initialize_#{arch}_target_info".to_sym)
 				Bindings.send("initialize_#{arch}_target_mc".to_sym)
 			
-				true
+				return true
 			
 			else
 				raise "Unsupported architecture specified: #{arch}"
