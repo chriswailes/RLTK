@@ -7,6 +7,7 @@
 # Rake Tasks #
 ##############
 
+# Gems
 require 'rake/testtask'
 require 'bundler'
 
@@ -136,7 +137,7 @@ desc 'Find LLVM bindings with a substring.'
 task :find_bind, :part do |t, args|
 	
 	# Get the task argument.
-	part = args[:part].downcase
+	part = Regexp.new(args[:part])
 	
 	# Require the Bindings module.
 	require 'rltk/cg/bindings'
@@ -145,8 +146,8 @@ task :find_bind, :part do |t, args|
 	Symbol.all_symbols.select do |sym|
 		sym = sym.to_s.downcase
 		
-		sym[0..3] == 'llvm' and sym.include?(part)
-	end
+		sym[0..3] == 'llvm' and sym[4..-1] =~ part
+	end.sort
 	
 	puts
 	if not syms.empty?
