@@ -21,14 +21,6 @@ require 'rltk/cg/value'
 
 module RLTK::CG
 	class Type < BindingClass
-		def ==(other)
-			if other.instance_of?(Type)
-				other.ptr_eql?(ptr)
-			else
-				false
-			end
-		end
-		
 		def allignment
 			Int64.from_ptr(Bindings.align_of(@ptr))
 		end
@@ -37,17 +29,8 @@ module RLTK::CG
 			@ptr.address.hash
 		end
 		
-		def eql?(other)
-			other.class == self.class and self == other
-		end
-		
 		def size
 			Int64.from_ptr(Bindings.size_of(@ptr)
-		end
-		
-		protected
-		def ptr_eql?(ptr)
-			@ptr == ptr
 		end
 	end
 	
@@ -94,9 +77,7 @@ module RLTK::CG
 		def initialize(return_type, arg_types, varargs = false)
 			# Check the types of the return_type value and the arg_types
 			# contents.
-			if not return_type.is_a?(Type)
-				raise 'The return_type parameter must be an instance of the RLTK::CG::Type class.'
-			end
+			raise 'The return_type parameter must be an instance of the RLTK::CG::Type class.' if not return_type.is_a?(Type)
 			
 			if not arg_types.inject(true) { |memo, o| memo and o.is_a?(Type) }
 				raise 'The elements of the arg_types parameter must be instances of the RLTK::CG::Type class.'
@@ -108,7 +89,7 @@ module RLTK::CG
 			arg_types_ptr = FFI::MemoryPointer.new(FFI.type_size(:pointer) * arg_types.length)
 			arg_types_ptr.write_array_of_pointer(arg_types)
 			
-			@ptr = Bindings.function_type(result_type, arg_types_ptr, arg_types.length, varargs ? 0 : 1)
+			@ptr = Bindings.function_type(result_type, arg_types_ptr, arg_types.length, varargs.to_i)
 		end
 	end
 	
@@ -125,6 +106,8 @@ module RLTK::CG
 	end
 	
 	class Int64Type < IntType
+		include Singleton
+		
 		def initialize
 			@ptr = Bindings.int64_type
 		end
@@ -139,7 +122,7 @@ module RLTK::CG
 	class StructType < Type
 		def initialize(el_types, packed, name = nil)
 			# Check the types of the elements of the el_types parameter.
-			if not el_types.inject(true) { |memeo, o| memo and o.is_a?(Type) }
+			if not el_types.inject(true) { |memo, o| memo and o.is_a?(Type) }
 				raise 'The elements of the el_types parameter must be instances of the RLTK::CG::Type class.'
 			end
 			
@@ -147,15 +130,13 @@ module RLTK::CG
 			el_types_ptr.write_array_of_pointer(el_types)
 			
 			if name
-				if not name.instance_of?(String)
-					raise 'The name parameter must be an instance of the String class.'
-				end
+				raise 'The name parameter must be an instance of the String class.' if not name.instance_of?(String)
 				
 				@ptr = Bindings.struct_create_named(Context.global, name)
 				
-				Bindings.struct_set_body(@ptr, elt_types_ptr, elt_types.size, is_packed ? 1 : 0) unless el_types.empty?
+				Bindings.struct_set_body(@ptr, elt_types_ptr, elt_types.size, is_packed.to_i) unless el_types.empty?
 			else
-				@ptr = Bindings.struct_type(el_types_ptr, el_types.length, is_packed ? 1 : 0)
+				@ptr = Bindings.struct_type(el_types_ptr, el_types.length, is_packed.to_i)
 			end
 		end
 	end
