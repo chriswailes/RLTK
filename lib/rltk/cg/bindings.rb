@@ -12,6 +12,7 @@ require 'rubygems'
 require 'ffi'
 
 # Ruby Language Toolkit
+require 'rltk/monkeys'
 require 'rltk/version'
 require 'rltk/cg'
 
@@ -71,8 +72,11 @@ module RLTK::CG::Bindings
 	###########
 	
 	module BindingClass
-		def to_ptr
-			@ptr
+		attr_accessor :ptr
+		alias :to_ptr :ptr
+		
+		def ==(other)
+			self.class == other.class and @ptr == other.to_ptr
 		end
 	end
 	
