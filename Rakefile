@@ -151,7 +151,7 @@ task :find_bind, :part do |t, args|
 	
 	puts
 	if not syms.empty?
-		puts 'Matching bindings:'
+		puts "Matching bindings [#{syms.length}]:"
 		syms.each { |sym| puts "\t#{sym}" }
 	
 	else
