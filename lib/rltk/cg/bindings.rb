@@ -76,7 +76,7 @@ module RLTK::CG::Bindings
 		alias :to_ptr :ptr
 		
 		def ==(other)
-			self.class == other.class and @ptr == other.to_ptr
+			self.class == other.class and @ptr == other.ptr
 		end
 	end
 	

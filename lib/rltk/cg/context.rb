@@ -33,7 +33,7 @@ module RLTK::CG
 		end
 		
 		def dispose
-			if not @ptr.nil?
+			if @ptr
 				Bindings.context_dispose(@ptr)
 				@ptr = nil
 			end
