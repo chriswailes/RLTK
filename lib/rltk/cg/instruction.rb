@@ -57,7 +57,7 @@ module RLTK::CG
 				if el.is_a?(Symbol)
 					RLTK::CG.const_get("#{el}Inst".to_sym), Bindings.get_bname("IsA#{el}Inst")
 					
-				elsif el.is_a?(Array)
+				else
 					RLTK::CG.const_get("#{el.first}Inst".to_sym), Bindings.get_bname("IsA#{el.last}Inst")
 				end
 				
@@ -76,27 +76,15 @@ module RLTK::CG
 		end
 		
 		def next
-			if (next_ptr = Bindings.get_next_instruction(@ptr)).null?
-				nil
-			else
-				Instruction.from_ptr(next_ptr)
-			end
+			if (ptr = Bindings.get_next_instruction(@ptr)).null? then nil else Instruction.from_ptr(ptr) end
 		end
 		
 		def parent
-			if (parent_ptr = Bindings.get_instruction_parent(@ptr)).null?
-				nil
-			else
-				BasicBlock.new(parent_ptr)
-			end
+			if (ptr = Bindings.get_instruction_parent(@ptr)).null? then nil else BasicBlock.new(ptr) end
 		end
 		
 		def previous
-			if (prev_ptr = Bindings.get_previous_instruction(@ptr)).null?
-				nil
-			else
-				Instruction.from_ptr(prev_ptr)
-			end
+			if (ptr = Bindings.get_previous_instruction(@ptr)).null? then nil else Instruction.from_ptr(ptr) end
 		end
 		
 		##########################################
