@@ -7,9 +7,6 @@
 # Requires #
 ############
 
-# Standard Library
-require 'singleton'
-
 # Ruby Language Toolkit
 require 'rltk/cg/bindings'
 require 'rltk/cg/context'
@@ -20,9 +17,57 @@ require 'rltk/cg/value'
 #######################
 
 module RLTK::CG
+	module TypeChecker
+		def check_type(type, type_class = Type)
+			if type.is_a?(type_class)
+				type
+			else
+				raise 'The type parameter must be an instance of the RLTK::CG::Type class.'
+			end
+		end
+	end
+	
 	class Type < BindingClass
+		include TypeChecker
+		
+		# FIXME Hopefully this can be removed at some point.
+		def self.from_ptr(ptr)
+			case Bindings.get_type_kind(ptr)
+			when :array		then ArrayType.new(ptr)
+			when :double		then DoubleType.new
+			when :float		then FloatType.new
+			when :function		then FunctionType.new(ptr)
+			when :fp128		then FP128Type.new
+			when :integer		then IntType.new
+			when :label		then LabelType.new
+			when :metadata		then raise "Can't generate a Type object for objects of type Metadata."
+			when :pointer		then PointerType.new(ptr)
+			when :ppc_fp128	then PPCFP128Type.new
+			when :struct		then StructType.new(ptr)
+			when :vector		then VectorType.new(ptr)
+			when :void		then VoidType.new
+			when :x86_fp80		then X86FP80Type.new
+			when :x86_mmx		then X86MMXType.new
+			end
+		end
+		
+		def initialize(context = nil)
+			bname = Bindings.get_bname(self.class.name.split('::').last)
+			
+			@ptr =
+			if context
+				Bindings.send(bname)
+			else
+				Bindings.send((bname.to_s + '_in_context').to_sym, context)
+			end
+		end
+		
 		def allignment
-			Int64.from_ptr(Bindings.align_of(@ptr))
+			Bindings.align_of(@ptr)
+		end
+		
+		def context
+			Context.new(Bindings.get_type_context(@ptr))
 		end
 		
 		def hash
@@ -30,45 +75,79 @@ module RLTK::CG
 		end
 		
 		def size
-			Int64.from_ptr(Bindings.size_of(@ptr)
+			Bindings.size_of(@ptr)
 		end
 	end
 	
-	class ContainerType < Type
-		attr_reader :element_type
-		
-		def initialize(element_type)
-			if element_type.is_a?(Type)
-				@element_type = element_type
-				
-				@ptr = yield
+	class NumberType < Type; end
+	
+	# Never instantiate this class.
+	class BasicIntType < NumberType
+		def width
+			@width ||= Bindings.get_int_type_width(@ptr)
+		end
+	end
+	
+	class IntType < BasicIntType
+		def initialize(width, context = nil)
+			if width > 0
+				@ptr =
+				if context
+					Bindings.get_int_type_in_context(width, context)
+				else
+					Bidnings.get_int_type(width)
+				end
 			else
-				raise 'The element_type parameter must be an instance of the RLTK::CG::Type class.'
+				raise 'The width parameter must be greater then 0.'
 			end
 		end
 	end
 	
-	class ArrayType < ContainerType
-		def initialize(element_type, size = 0)
-			super(element_type) { Bindings.array_type(@element_type, size) }
+	class SimpleIntType < BasicIntType
+		include Singleton
+	end
+	
+	class RealType < NumberType
+		include Singleton
+	end
+	
+	class SimpleType < Type
+		include Singleton
+	end
+	
+	class Int1Type		< SimpleIntType; end
+	class Int8Type		< SimpleIntType; end
+	class Int16Type	< SimpleIntType; end
+	class Int32Type	< SimpleIntType; end
+	class Int64Type	< SimpleIntType; end
+	
+	NativeIntType = const_get("Int#{FFI.type_size(:int) * 8}Type")
+	
+	class DoubleType	< RealType; end
+	class FloatType	< RealType; end
+	class FP128Type	< RealType; end
+	class PPCFP128Type	< RealType; end
+	class X86FP80Type	< RealType; end
+	
+	class X86MMXType	< SimpleType; end
+	
+	class VoidType		< SimpleType; end
+	class LabelType	< SimpleType; end
+	
+	class ContainerType < Type
+		attr_reader :element_type
+		
+		def initialize(type, size_or_address_space = 0)
+			raise 'The ContainerType class may not be instantiated directly.' if self.class == ContainerType
+			
+			@element_type	= check_type(type)
+			@ptr			= Bindings.send(Bindings.get_bname(self.class.name.split('::').last), type, size_or_address_space)
 		end
 	end
 	
-	class DoubleType < Type
-		include Singleton
-		
-		def initialize
-			@ptr = Bindings.double_type
-		end
-	end
-	
-	class FloatType < Type
-		include Singleton
-		
-		def initialize
-			@ptr = Bindings.float_type
-		end
-	end
+	class ArrayType	< ContainerType; end
+	class PointerType	< ContainerType; end
+	class VectorType	< ContainerType; end
 	
 	class FunctionType < Type
 		attr_reader :return_type
@@ -93,34 +172,8 @@ module RLTK::CG
 		end
 	end
 	
-	class IntType < Type
-		include Singleton
-		
-		def initialize
-			@ptr = Bindings.int_type
-		end
-		
-		def width
-			Bindings.get_int_type_width(@ptr)
-		end
-	end
-	
-	class Int64Type < IntType
-		include Singleton
-		
-		def initialize
-			@ptr = Bindings.int64_type
-		end
-	end
-	
-	class PointerType < ContainerType
-		def initialize(element_type, address_space = 0)
-			super(element_type) { Bindings.pointer_type(@element_type, address_space) }
-		end
-	end
-	
 	class StructType < Type
-		def initialize(el_types, packed, name = nil)
+		def initialize(el_types, packed = false, name = nil, context = nil)
 			# Check the types of the elements of the el_types parameter.
 			if not el_types.inject(true) { |memo, o| memo and o.is_a?(Type) }
 				raise 'The elements of the el_types parameter must be instances of the RLTK::CG::Type class.'
@@ -129,29 +182,22 @@ module RLTK::CG
 			el_types_pointer = FFI::MemoryPointer.new(FFI.type_size(:ponter) * el_types.length)
 			el_types_ptr.write_array_of_pointer(el_types)
 			
+			@ptr =
 			if name
 				raise 'The name parameter must be an instance of the String class.' if not name.instance_of?(String)
 				
-				@ptr = Bindings.struct_create_named(Context.global, name)
+				returning Bindings.struct_create_named(Context.global, name) do |ptr|
+					Bindings.struct_set_body(ptr, elt_types_ptr, elt_types.size, is_packed.to_i) unless el_types.empty?
+				end
 				
-				Bindings.struct_set_body(@ptr, elt_types_ptr, elt_types.size, is_packed.to_i) unless el_types.empty?
+			elsif context
+				raise 'The context parameter must be an instance of the RLTK::CG::Context class.' if not context.is_a?(Context)
+				
+				Bindings.struct_type_in_context(context, el_types_ptr, el_types.length, is_packed.to_i)
+				
 			else
-				@ptr = Bindings.struct_type(el_types_ptr, el_types.length, is_packed.to_i)
+				Bindings.struct_type(el_types_ptr, el_types.length, is_packed.to_i)
 			end
-		end
-	end
-	
-	class VectorType < ContainerType
-		def initialize(element_type, size = 0)
-			super(element_type) { Bindings.vector_type(@element_type, size) }
-		end
-	end
-	
-	class VoidType < Type
-		include Singleton
-		
-		def initialize
-			@ptr = Bindings.void_type
 		end
 	end
 end
