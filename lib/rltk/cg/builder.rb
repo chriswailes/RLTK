@@ -16,29 +16,33 @@ require 'rltk/cg/bindings'
 
 module RLTK::CG
 	class Builder < BindingClass
-		def initialize
+		include TypeChecker
+		
+		def self.global
+			@@global_builder ||= Builder.new
+		end
+		
+		def initialize(block = nil)
 			@ptr = Bindings.create_builder
+			
+			position_at_end(block) if block
 		end
 		
 		def dispose
-			if not @ptr.nil?
+			if @ptr
 				Bindings.dispose_builder(@ptr)
 				@ptr = nil
 			end
 		end
 		
-		def build(inst, *args)
+		# Create an alias to instance_exec to facilitate building lots of
+		# instructions easily.
+		alias :build :instance_exec
+		
+		def build_inst(inst, *args)
 			self.send(inst.to_sym, *args)
 		end
-		alias :'<<' :build
-		
-		def check_type(type)
-			if type.is_a?(Type)
-				return type
-			else
-				raise 'The type parameter must be an instance of the RLTK::CG::Type class.'
-			end
-		end
+		alias :'<<' :build_inst
 		
 		def position(block, instruction)
 			raise 'Block must not be nil.' if block.nil?
@@ -70,9 +74,10 @@ module RLTK::CG
 		# Miscellaneous #
 		#################
 		
-		def basic_block
+		def current_block
 			BasicBlock.new(Bindings.get_insert_block(@ptr))
 		end
+		alias :insertion_block :current_block
 		
 		def unreachable
 			UnreachableInst.new(Bindings.build_unreachable(@ptr))
@@ -277,11 +282,9 @@ module RLTK::CG
 		######################
 		
 		def shift(dir, lhs, rhs, mode = :arithmatic, name = '')
-			if dir == :left
-				shift_left(lhs, rhs, name)
-				
-			elsif dir == :right
-				shift_right(lhs, rhs, mode, name)
+			case dir
+			when :left	then shift_left(lhs, rhs, name)
+			when :right	then shift_right(lhs, rhs, mode, name)
 			end
 		end
 		
