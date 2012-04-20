@@ -12,7 +12,7 @@ require 'rubygems'
 require 'ffi'
 
 # Ruby Language Toolkit
-require 'rltk/monkeys'
+require 'rltk/util/monkeys'
 require 'rltk/version'
 require 'rltk/cg'
 
