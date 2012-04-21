@@ -161,9 +161,9 @@ module RLTK::CG
 	end
 	
 	class Constant < User
+		include AbstractClass
+		
 		def initialize(overloaded)
-			raise 'The Constant class may not be instantiated directly.' if self.class == Constant
-			
 			@ptr =
 			if overloaded.is_a?(Type)
 				Bindings.send(@@initializer, overloaded)
@@ -225,7 +225,7 @@ module RLTK::CG
 		@@initializer = :get_undef
 	end
 	
-	class ConstantContainer < Constant
+	class ConstantAggregate < Constant
 		def make_ptr_to_elements(size_or_values, &block)
 			values =
 			if size_or_values.is_a?(Fixnum)
@@ -248,7 +248,7 @@ module RLTK::CG
 		end
 	end
 	
-	class ConstantArray < ConstantContainer
+	class ConstantArray < ConstantAggregate
 		def initialize(element_type, size_or_values, &block)
 			vals_ptr	= make_ptr_to_elements(size_or_values, &block)
 			@ptr		= Bindings.const_array(check_type(element_type), vals_ptr, vals_ptr.size / vals_ptr.type_size)
@@ -266,7 +266,7 @@ module RLTK::CG
 		end
 	end
 	
-	class ConstantVector < ConstantContainer
+	class ConstantVector < ConstantAggregate
 		def initialize(size_or_values, &block)
 			@ptr =
 			if size_or_values.is_a?(FFI::Pointer)
@@ -323,11 +323,11 @@ module RLTK::CG
 	end
 	
 	class Integer < ConstantNumber
+		include AbstractClass
+		
 		attr_reader :signed
 		
 		def initialize(overloaded0 = nil, overloaded1 = nil, size = nil)
-			raise 'The Integer class may not be instantiated directly.' if self.class == Integer
-			
 			@ptr, @signed =
 			if overloaded0.is_a?(FFI::Pointer)
 				overloaded0, nil

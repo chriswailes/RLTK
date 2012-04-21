@@ -8,6 +8,7 @@
 ############
 
 # Ruby Language Toolkit
+require 'rltk/util/abstract_class'
 require 'rltk/cg/bindings'
 require 'rltk/cg/context'
 require 'rltk/cg/value'
@@ -79,10 +80,14 @@ module RLTK::CG
 		end
 	end
 	
-	class NumberType < Type; end
+	class NumberType < Type
+		include AbstractClass
+	end
 	
 	# Never instantiate this class.
 	class BasicIntType < NumberType
+		include AbstractClass
+		
 		def width
 			@width ||= Bindings.get_int_type_width(@ptr)
 		end
@@ -104,14 +109,17 @@ module RLTK::CG
 	end
 	
 	class SimpleIntType < BasicIntType
+		include AbstractClass
 		include Singleton
 	end
 	
 	class RealType < NumberType
+		include AbstractClass
 		include Singleton
 	end
 	
 	class SimpleType < Type
+		include AbstractClass
 		include Singleton
 	end
 	
@@ -134,20 +142,20 @@ module RLTK::CG
 	class VoidType		< SimpleType; end
 	class LabelType	< SimpleType; end
 	
-	class ContainerType < Type
+	class AggregateType < Type
+		include AbstractClass
+		
 		attr_reader :element_type
 		
 		def initialize(type, size_or_address_space = 0)
-			raise 'The ContainerType class may not be instantiated directly.' if self.class == ContainerType
-			
 			@element_type	= check_type(type)
 			@ptr			= Bindings.send(Bindings.get_bname(self.class.name.split('::').last), type, size_or_address_space)
 		end
 	end
 	
-	class ArrayType	< ContainerType; end
-	class PointerType	< ContainerType; end
-	class VectorType	< ContainerType; end
+	class ArrayType	< AggregateType; end
+	class PointerType	< AggregateType; end
+	class VectorType	< AggregateType; end
 	
 	class FunctionType < Type
 		attr_reader :return_type
