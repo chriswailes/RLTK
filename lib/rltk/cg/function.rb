@@ -19,9 +19,22 @@ module RLTK::CG
 	class Function < GlobalValue
 		attr_reader :type
 		
-		# FIXME Needs to handle overloading
-		def initialize(mod, *type_info)
-			# See Module::FunctionCollection.add
+		def initialize(overloaded, name = '', *type_info)
+			@ptr =
+			case overloaded
+			when FFI::Pointer
+				overloaded
+			
+			when RLTK::CG::Module
+				type = if args.first.is_a?(FunctionType) then args.first else FunctionType.new(*type_info) end
+				
+				Bindings.add_function(overloaded, name, type)
+				
+			else
+				raise 'The first argument to Function.new must be either a pointer or an instance of RLTK::CG::Module.'
+			end
+			
+			yield self, self.params.to_a if block_given?
 		end
 		
 		def attributes
@@ -118,6 +131,10 @@ module RLTK::CG
 			
 			def size
 				Bindings.count_params(@fun)
+			end
+			
+			def to_a
+				self.size.times.to_a.inject([]) { |params, index| params << self[index] }
 			end
 		end
 	end
