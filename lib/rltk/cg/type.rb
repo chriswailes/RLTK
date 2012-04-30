@@ -18,42 +18,56 @@ require 'rltk/cg/value'
 #######################
 
 module RLTK::CG
-	module TypeChecker
-		def check_type(type, type_class = Type)
-			if type.is_a?(type_class)
-				type
+	def check_cg_type(o, type = Type, blame = 'type', strict = false)
+		if o.is_a?(Class)
+			type_ok = if strict then o == type else o.subclass_of?(type) end 
+			
+			if type_ok
+				if o.includes_module?(Singleton)
+					o.instance
+				else
+					raise "The #{o.name} class (passed as parameter #{blame}) must be instantiated directly."
+				end
 			else
-				raise 'The type parameter must be an instance of the RLTK::CG::Type class.'
+				raise "The #{o.name} class (passed as parameter #{blame} does not inherit from the #{type.name} class." 
+			end
+		else
+			check_type(o, type, blame, strict)
+		end
+	end
+	
+	def check_cg_array_type(array, type = Type, blame = 'el_types', strict = false)
+		array.map do |o|
+			if o.is_a?(Class)
+				type_ok = if strict then o == type else o.subclass_of?(type) end
+				
+				if type_ok
+					if o.includes_module?(Singletone)
+						o.instance
+					else
+						raise "The #{o.name} class (passed in parameter #{blame}) must be instantiated directly."
+					end
+				else
+					raise "The #{o.name} class (passed in parameter #{blame}) does not inherit from the #{type.name} class."
+				end
+				
+			else
+				type_ok = if strict then o.instance_of(type) else o.is_a?(type) end
+				
+				if type_ok
+					o
+				else
+					raise "Parameter #{blame} must contain instances of the #{type.name} class."
+				end
 			end
 		end
 	end
 	
 	class Type < BindingClass
-		include TypeChecker
-		
-		# FIXME Hopefully this can be removed at some point.
-		def self.from_ptr(ptr)
-			case Bindings.get_type_kind(ptr)
-			when :array		then ArrayType.new(ptr)
-			when :double		then DoubleType.new
-			when :float		then FloatType.new
-			when :function		then FunctionType.new(ptr)
-			when :fp128		then FP128Type.new
-			when :integer		then IntType.new
-			when :label		then LabelType.new
-			when :metadata		then raise "Can't generate a Type object for objects of type Metadata."
-			when :pointer		then PointerType.new(ptr)
-			when :ppc_fp128	then PPCFP128Type.new
-			when :struct		then StructType.new(ptr)
-			when :vector		then VectorType.new(ptr)
-			when :void		then VoidType.new
-			when :x86_fp80		then X86FP80Type.new
-			when :x86_mmx		then X86MMXType.new
-			end
-		end
+		include AbstractClass
 		
 		def initialize(context = nil)
-			bname = Bindings.get_bname(self.class.name.split('::').last)
+			bname = Bindings.get_bname(self.class.short_name)
 			
 			@ptr =
 			if context
@@ -82,6 +96,19 @@ module RLTK::CG
 	
 	class NumberType < Type
 		include AbstractClass
+		
+		def self.value_class
+			begin
+				RLTK::CG.const_get(self.name.match(/::(.+)Type$/).captures.last.to_sym)
+				
+			rescue
+				raise "#{self.name} has no value class."
+			end
+		end
+		
+		def value_class
+			self.class.value_class
+		end
 	end
 	
 	# Never instantiate this class.
@@ -105,6 +132,10 @@ module RLTK::CG
 			else
 				raise 'The width parameter must be greater then 0.'
 			end
+		end
+		
+		def value_class
+			raise 'The RLKT::CG::IntType class has no value class.'
 		end
 	end
 	
@@ -147,9 +178,17 @@ module RLTK::CG
 		
 		attr_reader :element_type
 		
-		def initialize(type, size_or_address_space = 0)
-			@element_type	= check_type(type)
-			@ptr			= Bindings.send(Bindings.get_bname(self.class.name.split('::').last), type, size_or_address_space)
+		def initialize(overloaded, size_or_address_space = 0)
+			@ptr =
+			case overloaded
+			when FFI::Pointer
+				overloaded, nil
+			else
+				@element_type	= check_cg_type(overloaded, Type, 'overloaded')
+				bname		= Bindings.get_bname(self.class.short_name)
+				
+				Bindings.send(bname, @element_type, size_or_address_space)
+			end
 		end
 	end
 	
@@ -158,53 +197,58 @@ module RLTK::CG
 	class VectorType	< AggregateType; end
 	
 	class FunctionType < Type
-		attr_reader :return_type
 		attr_reader :arg_types
+		attr_reader :return_type
 		
-		def initialize(return_type, arg_types, varargs = false)
-			# Check the types of the return_type value and the arg_types
-			# contents.
-			raise 'The return_type parameter must be an instance of the RLTK::CG::Type class.' if not return_type.is_a?(Type)
-			
-			if not arg_types.inject(true) { |memo, o| memo and o.is_a?(Type) }
-				raise 'The elements of the arg_types parameter must be instances of the RLTK::CG::Type class.'
+		def initialize(overloaded, arg_types = nil, varargs = false)
+			@ptr =
+			case overloaded
+			when FFIP::Pointer
+				overloaded
+			else
+				@return_type	= check_cg_type(overloaded, Type, 'return_type')
+				@arg_types	= check_cg_array_type(arg_types, Type, 'arg_types').freeze
+				
+				FFI::MemoryPointer.new(FFI.type_size(:pointer) * @arg_types.length) do |arg_types_ptr|
+					arg_types_ptr.write_array_of_pointer(@arg_types)
+					
+					Bindings.function_type(@return_type, arg_types_ptr, @arg_types.length, varargs.to_i)
+				end
 			end
-			
-			@return_type	= return_type
-			@arg_types	= arg_types.clone.freeze
-			
-			arg_types_ptr = FFI::MemoryPointer.new(FFI.type_size(:pointer) * arg_types.length)
-			arg_types_ptr.write_array_of_pointer(arg_types)
-			
-			@ptr = Bindings.function_type(result_type, arg_types_ptr, arg_types.length, varargs.to_i)
 		end
 	end
 	
 	class StructType < Type
-		def initialize(el_types, packed = false, name = nil, context = nil)
-			# Check the types of the elements of the el_types parameter.
-			if not el_types.inject(true) { |memo, o| memo and o.is_a?(Type) }
-				raise 'The elements of the el_types parameter must be instances of the RLTK::CG::Type class.'
-			end
-			
-			el_types_pointer = FFI::MemoryPointer.new(FFI.type_size(:ponter) * el_types.length)
-			el_types_ptr.write_array_of_pointer(el_types)
-			
+		attr_reader :element_types
+		
+		def initialize(overloaded, packed = false, name = nil, context = nil)
 			@ptr =
-			if name
-				raise 'The name parameter must be an instance of the String class.' if not name.instance_of?(String)
-				
-				returning Bindings.struct_create_named(Context.global, name) do |ptr|
-					Bindings.struct_set_body(ptr, elt_types_ptr, elt_types.size, is_packed.to_i) unless el_types.empty?
-				end
-				
-			elsif context
-				raise 'The context parameter must be an instance of the RLTK::CG::Context class.' if not context.is_a?(Context)
-				
-				Bindings.struct_type_in_context(context, el_types_ptr, el_types.length, is_packed.to_i)
-				
+			case overloaded
+			when FFI::Pointer
+				overloaded
 			else
-				Bindings.struct_type(el_types_ptr, el_types.length, is_packed.to_i)
+				# Check the types of the elements of the overloaded parameter.
+				@element_types = check_cg_array_type(overloaded, Type, 'overloaded')
+				
+				FFI::MemoryPointer.new(FFI.type_size(:pointer) * @element_types.length) do |el_types_pointer|
+					el_types_ptr.write_array_of_pointer(@element_types)
+				
+					if name
+						check_type(name, String, 'name')
+				
+						returning Bindings.struct_create_named(Context.global, name) do |ptr|
+							Bindings.struct_set_body(ptr, elt_types_ptr, @element_types.length, is_packed.to_i) unless @element_types.empty?
+						end
+				
+					elsif context
+						check_type(context, Context, 'context')
+				
+						Bindings.struct_type_in_context(context, el_types_ptr, @element_types.length, is_packed.to_i)
+				
+					else
+						Bindings.struct_type(el_types_ptr, @element_types.length, is_packed.to_i)
+					end
+				end
 			end
 		end
 	end

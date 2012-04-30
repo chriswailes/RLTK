@@ -16,8 +16,6 @@ require 'rltk/cg/bindings'
 
 module RLTK::CG
 	class Builder < BindingClass
-		include TypeChecker
-		
 		def self.global
 			@@global_builder ||= Builder.new
 		end

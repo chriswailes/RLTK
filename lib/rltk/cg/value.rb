@@ -17,8 +17,6 @@ require 'rltk/cg/type'
 
 module RLTK::CG
 	class Value < BindingClass
-		include TypeChecker
-		
 		def initialize(ptr)
 			@ptr = ptr
 		end
@@ -72,8 +70,26 @@ module RLTK::CG
 			ConstExpr.new(Bindings.const_trunc_or_bit_cast(check_type(type)))
 		end
 		
+		# FIXME: Get each class to return its own type.  Persist when necessary.
 		def type
-			Type.from_ptr(Bindings.type_of(self))
+			type_ptr = Bindings.type_of(@ptr)
+			
+			case Bindings.get_type_kind(type_ptr)
+			when :array		then ArrayType.new(type_ptr)
+			when :double		then DoubleType.new
+			when :float		then FloatType.new
+			when :function		then FunctionType.new(type_ptr)
+			when :fp128		then FP128Type.new
+			when :integer		then IntType.new
+			when :label		then LabelType.new
+			when :metadata		then raise "Can't generate a Type object for objects of type Metadata."
+			when :pointer		then PointerType.new(type_ptr)
+			when :ppc_fp128	then PPCFP128Type.new
+			when :struct		then StructType.new(type_ptr)
+			when :vector		then VectorType.new(type_ptr)
+			when :void		then VoidType.new
+			when :x86_fp80		then X86FP80Type.new
+			when :x86_mmx		then X86MMXType.new
 		end
 		
 		def undefined?
