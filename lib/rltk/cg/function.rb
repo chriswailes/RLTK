@@ -26,7 +26,7 @@ module RLTK::CG
 				overloaded
 			
 			when RLTK::CG::Module
-				type = if args.first.is_a?(FunctionType) then args.first else FunctionType.new(*type_info) end
+				@type = if args.first.is_a?(FunctionType) then args.first else FunctionType.new(*type_info) end
 				
 				Bindings.add_function(overloaded, name, type)
 				
@@ -38,12 +38,12 @@ module RLTK::CG
 		end
 		
 		def attributes
-			@attributes ||= FunctionAttrCollection.new(@ptr)
+			@attributes ||= FunctionAttrCollection.new(self)
 		end
 		alias :attrs :attributes
 		
 		def basic_blocks
-			@basic_blocks ||= BasicBlockCollection.new(@ptr)
+			@basic_blocks ||= BasicBlockCollection.new(self)
 		end
 		alias :blocks :basic_blocks
 		

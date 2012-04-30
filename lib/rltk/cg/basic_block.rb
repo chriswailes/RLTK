@@ -62,16 +62,15 @@ module RLTK::CG
 		end
 		
 		def next
-			if (bb = Bindings.get_next_basic_block(@ptr)).null? then nil else BasicBlock.new(bb) end 
-			BasicBlock.new(bb) unless bb.null?
+			if (ptr = Bindings.get_next_basic_block(@ptr)).null? then nil else BasicBlock.new(ptr) end
 		end
 		
 		def parent
-			if (fp = Bindings.get_basic_block_parent(@ptr)).null? then nil else Function.new(fp) end
+			if (ptr = Bindings.get_basic_block_parent(@ptr)).null? then nil else Function.new(ptr) end
 		end
 		
 		def previous
-			if (bb = Bindings.get_previous_basic_block(@ptr)).null? then nil else BasicBlock.new(bb) end
+			if (ptr = Bindings.get_previous_basic_block(@ptr)).null? then nil else BasicBlock.new(ptr) end
 		end
 		
 		class InstructionCollection
@@ -84,7 +83,7 @@ module RLTK::CG
 			def each
 				return to_enum(:each) unless block_given?
 				
-				inst, last = self.first, self.last
+				inst = self.first
 				
 				while inst
 					yield inst

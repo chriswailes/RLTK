@@ -23,24 +23,25 @@ module RLTK::CG
 		def initialize(mod, &block)
 			block = Proc.new { Bindings.create_execution_engine_for_module(ptr, mod, error) } if block == nil
 			
-			ptr   = FFI::MemoryPointer.new(FFI.type_size(:pointer))
-			error = FFI::MemoryPointer.new(FFI.type_size(:pointer))
-			
-			status = block.call(ptr, error)
-			
-			if status.zero?
-				@ptr		= ptr.read_pointer
-				@module	= mod
+			FFI::MemoryPointer.new(FFI.type_size(:pointer)) do |ptr|
+				FFI::MemoryPointer.new(FFI.type_size(:pointer)) do |error|
+					status = block.call(ptr, error)
+					
+					if status.zero?
+						@ptr		= ptr.read_pointer
+						@module	= mod
 				
-			else
-				errorp  = error.read_pointer
-				message = errorp.null? ? 'Unknown' : errorp.read_string
+					else
+						errorp  = error.read_pointer
+						message = errorp.null? ? 'Unknown' : errorp.read_string
 				
-				error.autorelease = false
+						error.autorelease = false
 				
-				Bindings.dispose_message(error)
+						Bindings.dispose_message(error)
 				
-				raise "Error creating execution engine: #{message}"
+						raise "Error creating execution engine: #{message}"
+					end
+				end
 			end
 		end
 		

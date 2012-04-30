@@ -129,7 +129,7 @@ module RLTK::CG
 			end
 			
 			def named(name)
-				Fundtion.new(Bindings.get_named_function(@module, name))
+				Function.new(Bindings.get_named_function(@module, name))
 			end
 			
 			def next(fun)
@@ -155,6 +155,7 @@ module RLTK::CG
 					
 				when Integer
 					(1...key).inject(self.first) { |global| if global then self.next(global) else break end }
+				end
 			end
 			
 			def add(type, name)

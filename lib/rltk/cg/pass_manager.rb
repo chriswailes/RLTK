@@ -101,6 +101,9 @@ module RLTK::CG
 				Bindings.send("add_#{bname}_pass", @ptr)
 				
 				@enabled << PASSES.key(bname)
+				
+			else
+				raise "Unknown pass: #{name}"
 			end
 			
 			self

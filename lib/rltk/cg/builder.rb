@@ -356,9 +356,7 @@ module RLTK::CG
 		end
 		
 		def get_element_ptr(ptr, indices, name = '')
-			if not indices.inject(true) { |memo, o| memo and o.is_a?(Value) }
-				raise 'The elements of the indices parameter must be instances of the RLTK::CG::Value class.'
-			end
+			check_array_type(indices, Value, 'indices')
 			
 			FFI::MemoryPointer.new(FFI.type_size(:pointer) * indices.length) do |indices_ptr|
 				indices_ptr.write_array_of_pointer(indices)
@@ -369,9 +367,7 @@ module RLTK::CG
 		alias :gep :get_element_ptr
 		
 		def get_element_ptr_in_bounds(ptr, indices, name = '')
-			if not indices.inject(true) { |memo, o| memo and o.is_a?(Value) }
-				raise 'The elements of the indices parameter must be instances of the RLTK::CG::Value class.'
-			end
+			check_array_type(indices, Value, 'indices')
 			
 			FFI::MemoryPointer.new(FFI.type_size(:pointer) * indices.length) do |indices_ptr|
 				indices_ptr.write_array_of_pointer(indices)

@@ -18,14 +18,15 @@ module RLTK::CG
 	class MemoryBuffer < BindingClass
 		def initialize(overloaded = nil)
 			@ptr =
-			if overloaded.is_a?(FFI::Pointer)
-				@ptr
-			
+			case overloaded
+			when FFI::Pointer
+				overloaded
 			else
 				FFI::MemoryPointer.new(:pointer) do |buf_ptr|
 					FFI::MemoryPointer.new(:pointer) do |msg_ptr|
 						status =
-						if overloaded.is_a?(String)
+						case overloaded
+						when String
 							Bindings.create_memory_buffer_with_contents_of_file(overloaded, buf_ptr, msg_ptr)
 						else
 							Bindings.create_memory_buffer_with_stdin(buf_ptr, msg_ptr)

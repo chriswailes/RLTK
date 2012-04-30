@@ -17,7 +17,6 @@ require 'rltk/cg/value'
 
 module RLTK::CG
 	class Instruction < User
-		
 		TESTABLE = [
 			:Alloca,
 			:BitCast,
@@ -70,9 +69,7 @@ module RLTK::CG
 		# You should never instantiate Instruction object directly.  Use the
 		# builder class to add new instructions.
 		def initialize(ptr)
-			raise 'The ptr argument must be an instance of the FFI::Pointer class.' if not ptr.is_a?(FFP::Pointer)
-			
-			@ptr = ptr
+			@ptr = check_type(ptr, FFI::Pointer, 'ptr')
 		end
 		
 		def next

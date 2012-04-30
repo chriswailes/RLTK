@@ -24,7 +24,7 @@ module RLTK::CG
 			when FFI::Pointer
 				Bindings.create_generic_value_of_pointer(ruby_val), nil
 				
-			when Fixnum
+			when Integer
 				type ||= NativeIntType
 				
 				Bindings.create_generic_value_of_int(type, ruby_val, signed.to_i), type
@@ -51,9 +51,9 @@ module RLTK::CG
 	end
 	
 	def to_i(signed = true)
-		val  = Bindings.generic_value_to_int(@ptr, signed.to_i)
-		val -= 2**64 if signed and v >= 2**63
-		val
+		val = Bindings.generic_value_to_int(@ptr, signed.to_i)
+		
+		if signed and val >= 2**63 then val - 2**64 else val
 	end
 	
 	def to_f(type)
