@@ -63,7 +63,8 @@ module RLTK::CG
 		end
 	end
 	
-	class Type < BindingClass
+	class Type
+		include BindingClass
 		include AbstractClass
 		
 		def initialize(context = nil)

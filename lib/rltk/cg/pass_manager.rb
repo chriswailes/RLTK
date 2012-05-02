@@ -15,7 +15,9 @@ require 'rltk/cg/bindings'
 #######################
 
 module RLTK::CG
-	class PassManager < BindingClass
+	class PassManager
+		include BindingClass
+		
 		
 		# A list of passes that are available to be added to the pass
 		# manager via the PassManager::add method.  They may either be

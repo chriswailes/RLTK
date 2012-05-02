@@ -17,7 +17,9 @@ require 'rltk/cg/pass_manager'
 #######################
 
 module RLTK::CG
-	class ExecutionEngine < BindingClass
+	class ExecutionEngine
+		include BindingClass
+		
 		attr_reader :module
 		
 		def initialize(mod, &block)

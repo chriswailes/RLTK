@@ -8,6 +8,7 @@
 ############
 
 # Ruby Language Toolkit
+require 'rltk/util/abstract_class'
 require 'rltk/cg/bindings'
 require 'rltk/cg/type'
 
@@ -16,7 +17,9 @@ require 'rltk/cg/type'
 #######################
 
 module RLTK::CG
-	class Value < BindingClass
+	class Value
+		include BindingClass
+		
 		def initialize(ptr)
 			@ptr = ptr
 		end
@@ -234,7 +237,7 @@ module RLTK::CG
 	end
 	
 	class ConstantNullPtr < Constant
-		@@initializer = :const_pointer_nulll
+		@@initializer = :const_pointer_null
 	end
 	
 	class ConstantUndef < Constant

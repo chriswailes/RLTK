@@ -15,7 +15,9 @@ require 'rltk/cg/bindings'
 #######################
 
 module RLTK::CG
-	class GenericValue < BindingClass
+	class GenericValue
+		include BindingClass
+		
 		attr_reader :type
 		
 		def initialize(ruby_val, type = nil, signed = true)

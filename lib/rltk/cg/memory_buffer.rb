@@ -15,7 +15,9 @@ require 'rltk/cg/bindings'
 #######################
 
 module RLTK::CG
-	class MemoryBuffer < BindingClass
+	class MemoryBuffer
+		include BindingClass
+		
 		def initialize(overloaded = nil)
 			@ptr =
 			case overloaded

@@ -15,7 +15,9 @@ require 'rltk/cg/bindings'
 #######################
 
 module RLTK::CG
-	class Module < BindingClass
+	class Module
+		include BindingClass
+		
 		def self.read_bitcode(overloaded)
 			buffer = if overloaded.is_a?(MemoryBuffer) then overloaded else MemoryBuffer.new(overloaded) end
 			
@@ -176,15 +178,15 @@ module RLTK::CG
 			end
 			
 			def first
-				GlobalVariable.new(Bindings.get_first_global(@module))
+				GlobalValue.new(Bindings.get_first_global(@module))
 			end
 			
 			def last
-				GlobalVariable.new(Bindings.get_last_global(@module))
+				GlobalValue.new(Bindings.get_last_global(@module))
 			end
 			
 			def named(name)
-				GlobalVariable.new(Bindings.get_named_global(@module, name))
+				GlobalValue.new(Bindings.get_named_global(@module, name))
 			end
 			
 			def next(global)

@@ -15,7 +15,9 @@ require 'rltk/cg/bindings'
 #######################
 
 module RLTK::CG
-	class Builder < BindingClass
+	class Builder
+		include BindingClass
+		
 		def self.global
 			@@global_builder ||= Builder.new
 		end
