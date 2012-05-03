@@ -67,6 +67,26 @@ module RLTK::CG
 		include BindingClass
 		include AbstractClass
 		
+		def self.from_ptr(ptr)
+			case Bindings.get_type_kind(ptr)
+			when :array		then ArrayType.new(ptr)
+			when :double		then DoubleType.new
+			when :float		then FloatType.new
+			when :function		then FunctionType.new(ptr)
+			when :fp128		then FP128Type.new
+			when :integer		then IntType.new
+			when :label		then LabelType.new
+			when :metadata		then raise "Can't generate a Type object for objects of type Metadata."
+			when :pointer		then PointerType.new(ptr)
+			when :ppc_fp128	then PPCFP128Type.new
+			when :struct		then StructType.new(ptr)
+			when :vector		then VectorType.new(ptr)
+			when :void		then VoidType.new
+			when :x86_fp80		then X86FP80Type.new
+			when :x86_mmx		then X86MMXType.new
+			end
+		end
+		
 		def initialize(context = nil)
 			bname = Bindings.get_bname(self.class.short_name)
 			
@@ -112,7 +132,6 @@ module RLTK::CG
 		end
 	end
 	
-	# Never instantiate this class.
 	class BasicIntType < NumberType
 		include AbstractClass
 		
@@ -177,13 +196,11 @@ module RLTK::CG
 	class AggregateType < Type
 		include AbstractClass
 		
-		attr_reader :element_type
-		
 		def initialize(overloaded, size_or_address_space = 0)
 			@ptr =
 			case overloaded
 			when FFI::Pointer
-				overloaded, nil
+				overloaded
 			else
 				@element_type	= check_cg_type(overloaded, Type, 'overloaded')
 				bname		= Bindings.get_bname(self.class.short_name)
@@ -191,15 +208,34 @@ module RLTK::CG
 				Bindings.send(bname, @element_type, size_or_address_space)
 			end
 		end
+		
+		def element_type
+			@element_type ||= Type.from_ptr(Bindings.get_element_type(@ptr))
+		end
 	end
 	
-	class ArrayType	< AggregateType; end
-	class PointerType	< AggregateType; end
-	class VectorType	< AggregateType; end
+	class ArrayType < AggregateType
+		def size
+			Bindings.get_array_length(@ptr)
+		end
+		alias :length :size
+	end
+	
+	class PointerType < AggregateType
+		def address_space
+			Bindings.get_pointer_address_space(@ptr)
+		end
+	end
+	
+	class VectorType < AggregateType
+		def size
+			Bindings.get_vector_size(@ptr)
+		end
+		alias :length :size
+	end
 	
 	class FunctionType < Type
 		attr_reader :arg_types
-		attr_reader :return_type
 		
 		def initialize(overloaded, arg_types = nil, varargs = false)
 			@ptr =
@@ -210,18 +246,36 @@ module RLTK::CG
 				@return_type	= check_cg_type(overloaded, Type, 'return_type')
 				@arg_types	= check_cg_array_type(arg_types, Type, 'arg_types').freeze
 				
-				FFI::MemoryPointer.new(FFI.type_size(:pointer) * @arg_types.length) do |arg_types_ptr|
+				FFI::MemoryPointer.new(:pointer, @arg_types.length) do |arg_types_ptr|
 					arg_types_ptr.write_array_of_pointer(@arg_types)
 					
 					Bindings.function_type(@return_type, arg_types_ptr, @arg_types.length, varargs.to_i)
 				end
 			end
 		end
+		
+		def argument_types
+			@arg_types ||=
+			begin
+				num_elements = Bindings.count_param_types(@ptr)
+				
+				FFI::MemoryPointer.new(:pointer) do |ret_ptr|
+					Bindings.get_param_types(@ptr, ret_ptr)
+					
+					types_ptr = ret_ptr.get_pointer(0)
+					
+					types_ptr.get_array_of_pointer(0, num_elements).map { |ptr| Type.from_ptr(ptr) }
+				end
+			end
+		end
+		alias :arg_types :argument_types
+		
+		def return_type
+			@return_type ||= Type.from_ptr(Bindings.get_return_type(@ptr))
+		end
 	end
 	
 	class StructType < Type
-		attr_reader :element_types
-		
 		def initialize(overloaded, packed = false, name = nil, context = nil)
 			@ptr =
 			case overloaded
@@ -231,7 +285,7 @@ module RLTK::CG
 				# Check the types of the elements of the overloaded parameter.
 				@element_types = check_cg_array_type(overloaded, Type, 'overloaded')
 				
-				FFI::MemoryPointer.new(FFI.type_size(:pointer) * @element_types.length) do |el_types_pointer|
+				FFI::MemoryPointer.new(:pointer, @element_types.length) do |el_types_pointer|
 					el_types_ptr.write_array_of_pointer(@element_types)
 				
 					if name
@@ -249,6 +303,21 @@ module RLTK::CG
 					else
 						Bindings.struct_type(el_types_ptr, @element_types.length, is_packed.to_i)
 					end
+				end
+			end
+		end
+		
+		def element_types
+			@element_types ||=
+			begin
+				num_elements = Bindings.count_struct_element_types(@ptr)
+				
+				FFI::MemoryPointer.new(:pointer) do |ret_ptr|
+					Bindings.get_struct_element_types(@ptr, ret_ptr)
+					
+					types_ptr = ret_ptr.get_pointer(0)
+					
+					types_ptr.get_array_of_pointer(0, num_elements).map { |ptr| Type.from_ptr(ptr) }
 				end
 			end
 		end
