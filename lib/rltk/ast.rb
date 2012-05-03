@@ -3,6 +3,17 @@
 # Date:		2011/01/19
 # Description:	This file provides a base Node class for ASTs.
 
+############
+# Requires #
+############
+
+# Ruby Language Toolkit
+require 'rltk/util/monkeys'
+
+#######################
+# Classes and Modules #
+#######################
+
 module RLTK # :nodoc:
 	# A TypeMismatch is thrown when an object being set as a child or value of
 	# an ASTNode is of the wrong type.
@@ -20,15 +31,6 @@ module RLTK # :nodoc:
 		def to_s
 			"Type Mismatch: Expected #{@expected} but received #{@actual}."
 		end
-	end
-	
-	# Returns true if klass0 is a subclass of klass1; false otherwise.
-	def self.subclass_of?(klass0, klass1)
-		begin
-			return true if klass0 == klass1
-		end while klass0 = klass0.superclass
-		
-		return false
 	end
 	
 	# This class is a good start for all your abstract syntax tree node needs.
@@ -67,7 +69,7 @@ module RLTK # :nodoc:
 					
 					# Check to make sure that type is a subclass of
 					# ASTNode.
-					if not RLTK::subclass_of?(t, ASTNode)
+					if not t.subclass_of?(ASTNode)
 						raise Exception, "A child's type specification must be a subclass of ASTNode."
 					end
 					
@@ -157,7 +159,7 @@ module RLTK # :nodoc:
 					
 					# Check to make sure that type is NOT a subclass of
 					# ASTNode.
-					if RLTK::subclass_of?(t, ASTNode)
+					if t.subclass_of?(ASTNode)
 						raise Exception, "A value's type specification must NOT be a subclass of ASTNode."
 					end
 					
