@@ -98,7 +98,7 @@ module RLTK::CG
 		def ret_aggregate(*vals)
 			vals = vals.first if vals.length == 1 and vals.first.instance_of?(::Array)
 			
-			FFI::MemoryPointer.new(FFI.type_size(:pointer) * vals.length) do |vals_ptr|
+			FFI::MemoryPointer.new(:pointer, vals.length) do |vals_ptr|
 				vals_ptr.write_array_of_pointers(vals)
 				
 				ReturnAggregateInst.new(Bindings.build_aggregate_ret(@ptr, vals_ptr, vals.length))
@@ -117,7 +117,7 @@ module RLTK::CG
 		def call(fun, *args)
 			name = if args.last.is_a?(String) then args.pop else '' end
 			
-			FFI::MemoryPointer.new(FFI.type_size(:pointer) * args.length) do |args_ptr|
+			FFI::MemoryPointer.new(:pointer, args.length) do |args_ptr|
 				args_ptr.write_array_of_pointers(args)
 				
 				CallInst.new(Bindings.build_call(@ptr, fun, args_ptr, args.length, name))
@@ -360,7 +360,7 @@ module RLTK::CG
 		def get_element_ptr(ptr, indices, name = '')
 			check_array_type(indices, Value, 'indices')
 			
-			FFI::MemoryPointer.new(FFI.type_size(:pointer) * indices.length) do |indices_ptr|
+			FFI::MemoryPointer.new(:pointer, indices.length) do |indices_ptr|
 				indices_ptr.write_array_of_pointer(indices)
 				
 				GEPInst.new(Bindings.build_gep(@ptr, ptr, indices_ptr, indices.length, name))
@@ -371,7 +371,7 @@ module RLTK::CG
 		def get_element_ptr_in_bounds(ptr, indices, name = '')
 			check_array_type(indices, Value, 'indices')
 			
-			FFI::MemoryPointer.new(FFI.type_size(:pointer) * indices.length) do |indices_ptr|
+			FFI::MemoryPointer.new(:pointer, indices.length) do |indices_ptr|
 				indices_ptr.write_array_of_pointer(indices)
 				
 				InBoundsGEPInst.new(Bindings.build_in_bounds_gep(@ptr, ptr, indices_ptr, indices.length, name))

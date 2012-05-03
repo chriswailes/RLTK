@@ -144,11 +144,11 @@ module RLTK::CG
 					end
 				end
 				
-				FFI::MemoryPointer.new(FFI.type_size(:pointer) * incoming.size) do |vals_ptr|
+				FFI::MemoryPointer.new(:pointer, incoming.size) do |vals_ptr|
 				
 					vals_ptr.write_array_of_pointers(vals)
 				
-					FFI::MemoryPointer.new(FFI.type_size(:pointer) * incoming.size) do |blks_ptr|
+					FFI::MemoryPointer.new(:pointer, incoming.size) do |blks_ptr|
 						blks_ptr.write_array_of_pointers(blks)
 					
 						Bindings.add_incoming(@ptr, vals_ptr, blks_ptr, vals.length)

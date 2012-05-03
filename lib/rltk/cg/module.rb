@@ -21,7 +21,7 @@ module RLTK::CG
 		def self.read_bitcode(overloaded)
 			buffer = if overloaded.is_a?(MemoryBuffer) then overloaded else MemoryBuffer.new(overloaded) end
 			
-			FFI::MemoryPonter.new(:pointer) do |mod_ptr|
+			FFI::MemoryPointer.new(:pointer) do |mod_ptr|
 				FFI::MemoryPointer.new(:pointer) do |msg_ptr|
 					status = Bindings.parse_bitcode(buffer, mod_ptr, msg_ptr)
 					

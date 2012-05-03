@@ -25,8 +25,8 @@ module RLTK::CG
 		def initialize(mod, &block)
 			block = Proc.new { Bindings.create_execution_engine_for_module(ptr, mod, error) } if block == nil
 			
-			FFI::MemoryPointer.new(FFI.type_size(:pointer)) do |ptr|
-				FFI::MemoryPointer.new(FFI.type_size(:pointer)) do |error|
+			FFI::MemoryPointer.new(:pointer) do |ptr|
+				FFI::MemoryPointer.new(:pointer) do |error|
 					status = block.call(ptr, error)
 					
 					if status.zero?
@@ -86,7 +86,7 @@ module RLTK::CG
 		end
 		
 		def run_function(fun, *args)
-			FFI::MemoryPointer.new(FFI.type_size(:pointer) * args.length) do |args_ptr|
+			FFI::MemoryPointer.new(:pointer, args.length) do |args_ptr|
 				new_values = Array.new
 				
 				new_args =
