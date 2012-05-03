@@ -113,22 +113,71 @@ module RLTK::CG
 	end
 	
 	class PhiInst < Instruction
-		def add_incoming(incoming)
-			blks = incoming.keys
-			vals = incoming.values_at(*blks)
+		def incoming
+			@incoming_collection ||= IncomingCollection.new(self)
+		end
+		
+		class IncomingCollection
+			include Enumerable
 			
-			FFI::MemoryPointer.new(FFI.type_size(:pointer) * incoming.size) do |vals_ptr|
+			def initialize(phi)
+				@phi = phi
+			end
+			
+			def [](index)
+				limit = if index < 0 then self.size + index else self.size end
 				
-				vals_ptr.write_array_of_pointers(vals)
-				
-				FFI::MemoryPointer.new(FFI.type_size(:pointer) * incoming.size) do |blks_ptr|
-					blks_ptr.write_array_of_pointers(blks)
-					
-					Bindings.add_incoming(@ptr, vals_ptr, blks_ptr, vals.length)
+				if 0 <= index and index < limit
+					[self.block(index), self.value(index)]
 				end
 			end
 			
-			nil
+			def add(overloaded, value = nil)
+				blks, vals =
+				if overloaded.is_a?(BasicBlock) and check_type(value, Value, 'value')
+					overloaded, value
+				else
+					if RUBY_VERSION[0..2] == "1.9"
+						overloaded.keys, overloaded.values
+					else
+						(keys = overloaded.keys), overloaded.values_at(*keys)
+					end
+				end
+				
+				FFI::MemoryPointer.new(FFI.type_size(:pointer) * incoming.size) do |vals_ptr|
+				
+					vals_ptr.write_array_of_pointers(vals)
+				
+					FFI::MemoryPointer.new(FFI.type_size(:pointer) * incoming.size) do |blks_ptr|
+						blks_ptr.write_array_of_pointers(blks)
+					
+						Bindings.add_incoming(@ptr, vals_ptr, blks_ptr, vals.length)
+					end
+				end
+			
+				nil
+			end
+			alias :<< :add
+			
+			def block(index)
+				limit = if index < 0 then self.size + index else self.size end
+				
+				if 0 <= index and index < limit
+					BasicBlock.new(Bindings.get_incoming_block(@phi, index))
+				end
+			end
+			
+			def size
+				Bindings.count_incoming(@phi)
+			end
+			
+			def value(index)
+				limit = if index < 0 then self.size + index else self.size end
+				
+				if 0 <= index and index < limit
+					Value.new(Bindings.get_incoming_value(@phi, index))
+				end
+			end
 		end
 	end
 	
