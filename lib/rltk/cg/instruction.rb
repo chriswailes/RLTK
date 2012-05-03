@@ -167,6 +167,14 @@ module RLTK::CG
 				end
 			end
 			
+			def each
+				return to_enum(:each) unless block_given?
+				
+				self.size.times { |index| yield self[index] }
+				
+				self
+			end
+			
 			def size
 				Bindings.count_incoming(@phi)
 			end
