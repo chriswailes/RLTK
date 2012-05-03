@@ -110,7 +110,7 @@ module RLTK::CG
 			
 			self
 		end
-		alias :add :<<
+		alias :<< :add
 		
 		def enabled
 			@enabled.clone

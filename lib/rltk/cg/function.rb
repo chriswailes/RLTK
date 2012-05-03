@@ -58,7 +58,7 @@ module RLTK::CG
 		end
 		
 		def parameters
-			@parameters ||= ParametersCollection
+			@parameters ||= ParameterCollection.new
 		end
 		alias :params :parameters
 		
@@ -106,7 +106,7 @@ module RLTK::CG
 			@@del_method = :remove_function_attr
 		end
 		
-		class ParametersCollection
+		class ParameterCollection
 			include Enumerable
 			
 			def initialize(fun)
@@ -124,7 +124,7 @@ module RLTK::CG
 			def each
 				return to_enum :each unless block_given?
 				
-				self.size.times { |i| yield self[i] }
+				self.size.times { |index| yield self[index] }
 				
 				self
 			end
