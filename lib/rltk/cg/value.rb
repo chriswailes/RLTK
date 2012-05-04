@@ -268,7 +268,7 @@ module RLTK::CG
 			
 			@ptr =
 			if context
-				Bindings.const_string_in_context(context, string, string.length, null_terminate.to_i)
+				Bindings.const_string_in_context(check_type(context, Context, 'context'), string, string.length, null_terminate.to_i)
 			else
 				Bindings.const_string(string, string.length, null_terminate.to_i)
 			end
@@ -281,7 +281,7 @@ module RLTK::CG
 			
 			@ptr =
 			if context
-				Bindings.const_struct_in_context(context, vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
+				Bindings.const_struct_in_context(check_type(context, Context, 'context'), vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
 			else
 				Bindings.const_struct(vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
 			end

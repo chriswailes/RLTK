@@ -9,6 +9,7 @@
 
 # Ruby Language Toolkit
 require 'rltk/cg/bindings'
+require 'rltk/cg/context'
 require 'rltk/cg/value'
 
 #######################
@@ -18,6 +19,8 @@ require 'rltk/cg/value'
 module RLTK::CG
 	class BasicBlock < Value
 		def initialize(overloaded, name = '', context = nil)
+			check_type(context, Context, 'context') if context
+			
 			@ptr =
 			case overloaded
 			when FFI::Pointer

@@ -9,6 +9,7 @@
 
 # Ruby Language Toolkit
 require 'rltk/cg/bindings'
+require 'rltk/cg/context'
 
 #######################
 # Classes and Modules #
@@ -40,7 +41,7 @@ module RLTK::CG
 				
 			when String
 				if context
-					Bindings.module_create_with_name_in_context(name, context)
+					Bindings.module_create_with_name_in_context(name, check_type(context, Context, 'context'))
 				else
 					Bindings.module_create_with_name(name)
 				end

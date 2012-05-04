@@ -92,9 +92,9 @@ module RLTK::CG
 			
 			@ptr =
 			if context
-				Bindings.send(bname)
+				Bindings.send((bname.to_s + '_in_context').to_sym, check_type(context, Context, 'context'))
 			else
-				Bindings.send((bname.to_s + '_in_context').to_sym, context)
+				Bindings.send(bname)
 			end
 		end
 		
@@ -145,7 +145,7 @@ module RLTK::CG
 			if width > 0
 				@ptr =
 				if context
-					Bindings.get_int_type_in_context(width, context)
+					Bindings.get_int_type_in_context(width, check_type(context, Context, 'context'))
 				else
 					Bidnings.get_int_type(width)
 				end
