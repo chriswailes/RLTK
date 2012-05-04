@@ -17,11 +17,25 @@ require 'rltk/cg/type'
 #######################
 
 module RLTK::CG
+	def make_ptr_to_elements(size_or_values, &block)
+		values =
+		case
+		when Integer
+			raise ArgumentError, 'Block not given.' if not block_given?
+			
+			::Array.new(size_or_values, &block)
+		else
+			size_or_values
+		end
+		
+		FFI::MemoryPointer.new(:pointer, values.size).write_array_of_pointers(values)
+	end
+	
 	class Value
 		include BindingClass
 		
 		def initialize(ptr)
-			@ptr = ptr
+			@ptr = check_type(ptr, FFI::Pointer, 'ptr')
 		end
 		
 		def ==(other)
@@ -73,26 +87,8 @@ module RLTK::CG
 			ConstExpr.new(Bindings.const_trunc_or_bit_cast(check_type(type)))
 		end
 		
-		# FIXME: Get each class to return its own type.  Persist when necessary.
 		def type
-			type_ptr = Bindings.type_of(@ptr)
-			
-			case Bindings.get_type_kind(type_ptr)
-			when :array		then ArrayType.new(type_ptr)
-			when :double		then DoubleType.new
-			when :float		then FloatType.new
-			when :function		then FunctionType.new(type_ptr)
-			when :fp128		then FP128Type.new
-			when :integer		then IntType.new
-			when :label		then LabelType.new
-			when :metadata		then raise "Can't generate a Type object for objects of type Metadata."
-			when :pointer		then PointerType.new(type_ptr)
-			when :ppc_fp128	then PPCFP128Type.new
-			when :struct		then StructType.new(type_ptr)
-			when :vector		then VectorType.new(type_ptr)
-			when :void		then VoidType.new
-			when :x86_fp80		then X86FP80Type.new
-			when :x86_mmx		then X86MMXType.new
+			@type ||= Type.from_ptr(Bindings.type_of(@ptr))
 		end
 		
 		def undefined?
@@ -145,6 +141,8 @@ module RLTK::CG
 	class Argument < Value; end
 	
 	class User < Value
+		include AbstractClass
+		
 		def operands
 			@operands ||= OperandCollection.new(self)
 		end
@@ -184,14 +182,14 @@ module RLTK::CG
 		
 		def initialize(overloaded)
 			@ptr =
-			if overloaded.is_a?(Type)
-				Bindings.send(@@initializer, overloaded)
-				
-			elsif overloaded.is_a?(FFI::Pointer)
+			case overloaded
+			when FFI::Pointer
 				overloaded
-			
+				
+			when Type
+				Bindings.send(@@initializer, @type = overloaded)
 			else
-				raise 'New must be passed either a Type or a FFI::Ponter.'
+				raise 'New must be passed either a Type or a FFI::Pointer.'
 			end
 		end
 		
@@ -200,7 +198,7 @@ module RLTK::CG
 		end
 		
 		def get_element_ptr(*indices)
-			FFI::MemoryPointer.new(FFI.type_size(:pointer) * indices.length) do |indices_ptr|
+			FFI::MemoryPointer.new(:pointer, indices.length) do |indices_ptr|
 				indices_ptr.write_array_of_pointers(indices)
 				
 				ConstantExpr.new(Bindings.const_gep(@ptr, indices_ptr, indices.length))
@@ -209,7 +207,7 @@ module RLTK::CG
 		alias :gep :get_element_ptr
 		
 		def get_element_ptr_in_bounds(*indices)
-			FFI::MemoryPointer.new(FFI.type_size(:pointer) * indices.length) do |indices_ptr|
+			FFI::MemoryPointer.new(:pointer, indices.length) do |indices_ptr|
 				indices_ptr.write_array_of_pointers(indices)
 				
 				ConstantExpr.new(Bindings.const_in_bounds_gep(@ptr, indices_ptr, indices.length))
@@ -218,17 +216,9 @@ module RLTK::CG
 		alias :inbounds_gep :get_element_ptr_in_bounds
 	end
 	
-	class ConstantExpr < Constant; end
-	
-	class Pointer < Constant
-		def cast(type)
-			Pointer.new(Bindings.const_pointer_cast(@ptr, check_type(type)))
-		end
-		
-		def to_int(type)
-			klass = const_get(check_type(type, NumberType).class.name.match(/::(.+)Type$/).captures.last.to_sym)
-			
-			klass.new(Bindings.const_ptr_to_int(@ptr, type))
+	class ConstantExpr < Constant
+		def initialize(ptr)
+			@ptr = type_check(ptr, FFI::Pointer, 'ptr')
 		end
 	end
 	
@@ -245,37 +235,37 @@ module RLTK::CG
 	end
 	
 	class ConstantAggregate < Constant
-		def make_ptr_to_elements(size_or_values, &block)
-			values =
-			if size_or_values.is_a?(Fixnum)
-				raise ArgumentError, 'Block not given.' if not block_given?
+		include AbstractClass
+		
+		def extract(indices)
+			FFI::MemoryPointer.new(:uint, indices.length) do |indices_ptr|
+				indices_ptr.write_array_of_pointer(indices)
 				
-				Array.new(size_or_values, &block)
-			else
-				size_or_values
+				ConstantExpr.new(Bindings.const_extract_value(@ptr, indices_ptr, indices.length))
 			end
-			
-			FFI::MemoryPointer.new(:pointer, values.size).write_array_of_pointers(values)
 		end
 		
-		def extract(index)
-			ConstExpr.new(Bindings.const_extract_value(@ptr, index))
-		end
-		
-		def insert(value, index)
-			ConstExpr.new(Bindings.const_insert_value(@ptr, value, index))
+		def insert(value, indices)
+			FFI::MemoryPointer.new(:uint, indices.length) do |indices_ptr|
+				indices_ptr.write_array_of_pointer(indices)
+				
+				ConstantExpr.new(Bindings.const_insert_value(@ptr, value, indices_ptr, inicies.length))
+			end
 		end
 	end
 	
 	class ConstantArray < ConstantAggregate
 		def initialize(element_type, size_or_values, &block)
 			vals_ptr	= make_ptr_to_elements(size_or_values, &block)
-			@ptr		= Bindings.const_array(check_type(element_type), vals_ptr, vals_ptr.size / vals_ptr.type_size)
+			@type	= ArrayType.new(element_type)
+			@ptr		= Bindings.const_array(element_type, vals_ptr, vals_ptr.size / vals_ptr.type_size)
 		end
 	end
 	
 	class ConstantString < ConstantArray
 		def initialize(string, null_terminate = true, context = nil)
+			@type = ArrayType.new(Int8Type)
+			
 			@ptr =
 			if context
 				Bindings.const_string_in_context(context, string, string.length, null_terminate.to_i)
@@ -285,7 +275,20 @@ module RLTK::CG
 		end
 	end
 	
-	class ConstantVector < ConstantAggregate
+	class ConstantStruct < ConstantAggregate
+		def initialize(size_or_values, packed = false, context = nil, &block)
+			vals_ptr = make_ptr_to_elements(size_or_values, &block)
+			
+			@ptr =
+			if context
+				Bindings.const_struct_in_context(context, vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
+			else
+				Bindings.const_struct(vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
+			end
+		end
+	end
+	
+	class ConstantVector < Constant
 		def initialize(size_or_values, &block)
 			@ptr =
 			if size_or_values.is_a?(FFI::Pointer)
@@ -310,30 +313,11 @@ module RLTK::CG
 		end
 	end
 	
-	class ConstantStruct < Constant
-		def initialize(size_or_values, packed = false, context = nil, &block)
-			vals_ptr = make_ptr_to_elements(size_or_values, &block)
-			
-			@ptr =
-			if context
-				Bindings.const_struct_in_context(context, vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
-			else
-				Bindings.const_struct(vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
-			end
-		end
-	end
-	
 	class ConstantNumber < Constant
-		# FIXME Check to see if this could be done a better way, and if not
-		# ensure that this way is correct.
-		def self.type
-			klass = const_get(self.class.name.split('::').last + 'Type')
-			
-			if klass.is_a?(Singleton) then klass.instance else klass.new end
-		end
+		include AbstractClass
 		
-		def initialize(ptr)
-			@ptr = ptr
+		def self.type
+			@type ||= RLTK::CG.const_get(self.short_name + 'Type').instance
 		end
 		
 		def type
@@ -341,30 +325,34 @@ module RLTK::CG
 		end
 	end
 	
-	class Integer < ConstantNumber
+	class ConstantInteger < ConstantNumber
 		include AbstractClass
 		
 		attr_reader :signed
 		
 		def initialize(overloaded0 = nil, overloaded1 = nil, size = nil)
-			@ptr, @signed =
-			if overloaded0.is_a?(FFI::Pointer)
-				overloaded0, nil
+			@ptr =
+			case overloaded0
+			when FFI::Pointer
+				overloaded0
 				
-			if overloaded0.is_a?(Fixnum)
-				signed = if overloaded1 then overloaded1 else true end
+			when Integer
+				@signed = overloaded1 or true
 				
-				Bindings.const_int(self.type, overloaded0, signed.to_i), signed
+				Bindings.const_int(self.type, overloaded0, @signed.to_i)
 				
-			elsif overloaded0.is_a?(String)
+			when String
+				base = overloaded1 or 10
+				
 				if size
-					Bindings.const_int_of_string_and_size(self.type, overloaded0, size, overloaded1 ? overloaded1 : 10)
+					Bindings.const_int_of_string_and_size(self.type, overloaded0, size, base)
 				else
-					Bindings.const_int_of_string(self.type, overloaded0, overloaded1 ? overloaded1 : 10)
-				end, true
-				
+					Bindings.const_int_of_string(self.type, overloaded0, base)
+				end
 			else
-				Bindings.const_all_ones(self.type), true
+				@signed = true
+				
+				Bindings.const_all_ones(self.type)
 			end
 		end
 		
@@ -467,7 +455,7 @@ module RLTK::CG
 			self.class.new(Bindings.const_shl(@ptr, bits))
 		end
 		alias :shl :shift_left
-		alias :'<<' :shift_left
+		alias :<< :shift_left
 		
 		def shift_right(bits, mode = :arithmatic)
 			case mode
@@ -479,7 +467,7 @@ module RLTK::CG
 		def ashr(bits)
 			self.class.new(Bindings.const_a_shr(@ptr, bits))
 		end
-		alias :'>>' :ashr
+		alias :>> :ashr
 		
 		def lshr(bits)
 			self.class.new(Bindings.const_l_shr(@ptr, bits))
@@ -505,11 +493,8 @@ module RLTK::CG
 		# Miscellaneous #
 		#################
 		
-		# FIXME Could this be prettier?
 		def cast(type, signed = true)
-			klass = const_get(check_type(type, NumberType).class.name.match(/::(.+)Type$/).captures.last.to_sym)
-			
-			klass.new(Bindings.const_int_cast(@ptr, type, signed))
+			check_cg_type(type, NumberType).value_class.new(Bindings.const_int_cast(@ptr, type, signed.to_i))
 		end
 		
 		def cmp(pred, rhs)
@@ -544,18 +529,22 @@ module RLTK::CG
 	class Int32	< Integer; end
 	class Int64	< Integer; end
 	
-	NativeInt = const_get("Int#{FFI.type_size(:int) * 8}")
+	NativeInt = RLTK::CG.const_get("Int#{FFI.type_size(:int) * 8}")
 	
 	TRUE		= Int1.new(-1)
 	FALSE	= Int1.new( 0)
 	
 	class ConstantReal < ConstantNumber
+		include Abstractclass
+		
 		def initialize(num_or_string, size = nil)
 			@ptr =
 			if num_or_string.is_a?(Float)
 				Bindings.const_real(self.type, num_or_string)
+				
 			elsif size
 				Bindings.cosnt_real_of_string_and_size(self.type, num_or_string, size)
+				
 			else
 				Bindings.cosnt_real_of_string(self.type, num_or_string)
 			end
@@ -590,33 +579,19 @@ module RLTK::CG
 		end
 		
 		def cast(type)
-			klass = const_get(check_type(type, NumberType).class.name.match(/::(.+)Type$/).captures.last.to_sym)
-			
-			klass.new(Bindings.const_fp_cast(@ptr, type))
+			check_cg_type(type, NumberType).value_class.new(Bindings.const_fp_cast(@ptr, type))
 		end
 		
-		def to_i(type, signed = true)
-			check_type(type, BasicIntType)
-			
-			klass = const_get(check_type(type, BasicIntType).class.name.match(/::(.+)Type$/).captures.first)
-			
-			if signed
-				klass.new(Bindings.const_fp_to_si(@ptr, type))
-			else
-				klass.new(Bindings.const_fp_to_ui(@ptr, type))
-			end
+		def to_i(type = NativeIntType, signed = true)
+			check_cg_type(type, BasicIntType).value_class.new(Bindings.send(signed ? :const_fp_to_si : :const_fp_to_ui, @ptr, type))
 		end
 		
 		def extend(type)
-			klass = const_get(check_type(type, NumberType).class.name.match(/::(.+)Type$/).captures.last.to_sym)
-			
-			klass.new(Bindings.const_fp_ext(@ptr, type))
+			check_cg_type(type, NumberType).value_class.new(Bindings.const_fp_ext(@ptr, type))
 		end
 		
 		def truncate(type)
-			klass = const_get(check_type(type, NumberType).class.name.match(/::(.+)Type$/).captures.last.to_sym)
-			
-			klass.new(Bindings.const_fp_trunc(@ptr, type))
+			check_cg_type(type, NumberType).value_class.new(Bindings.const_fp_trunc(@ptr, type))
 		end
 	end
 	
@@ -627,6 +602,10 @@ module RLTK::CG
 	class X86FP80	< ConstantReal; end
 	
 	class GlobalValue < Constant
+		def initialize(ptr)
+			@ptr = check_type(ptr, FFI::Pointer, 'ptr')
+		end
+		
 		def alignment
 			Bindings.get_alignment(@ptr)
 		end
@@ -647,10 +626,12 @@ module RLTK::CG
 			Bindings.set_global_constant(@ptr, flag)
 		end
 		
+		def initializer
+			Value.new(Bindings.get_initializer(@ptr))
+		end
+		
 		def initializer=(val)
-			raise 'The val parameter must be of type RLTK::CG::Value.' if not val.is_a?(Value)
-			
-			Bidnings.set_initializer(@ptr, val)
+			Bidnings.set_initializer(@ptr, check_type(val, Value, 'val'))
 		end
 		
 		def linkage

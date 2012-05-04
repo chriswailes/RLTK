@@ -180,7 +180,7 @@ module RLTK::CG
 	class Int32Type	< SimpleIntType; end
 	class Int64Type	< SimpleIntType; end
 	
-	NativeIntType = const_get("Int#{FFI.type_size(:int) * 8}Type")
+	NativeIntType = RLTK::CG.const_get("Int#{FFI.type_size(:int) * 8}Type")
 	
 	class DoubleType	< RealType; end
 	class FloatType	< RealType; end
@@ -194,6 +194,10 @@ module RLTK::CG
 	class LabelType	< SimpleType; end
 	
 	class AggregateType < Type
+		include AbstractClass
+	end
+	
+	class SimpleAggregateType < AggregateType
 		include AbstractClass
 		
 		def initialize(overloaded, size_or_address_space = 0)
@@ -214,20 +218,21 @@ module RLTK::CG
 		end
 	end
 	
-	class ArrayType < AggregateType
+	class ArrayType < SimpleAggregateType
 		def size
 			Bindings.get_array_length(@ptr)
 		end
 		alias :length :size
 	end
 	
-	class PointerType < AggregateType
+	class PointerType < SimpleAggregateType
 		def address_space
 			Bindings.get_pointer_address_space(@ptr)
 		end
 	end
 	
-	class VectorType < AggregateType
+	# Not actually an aggregate type in the LLVM world, but that is kind of stupid so...
+	class VectorType < SimpleAggregateType
 		def size
 			Bindings.get_vector_size(@ptr)
 		end
@@ -275,7 +280,7 @@ module RLTK::CG
 		end
 	end
 	
-	class StructType < Type
+	class StructType < AggregateType
 		def initialize(overloaded, packed = false, name = nil, context = nil)
 			@ptr =
 			case overloaded
