@@ -18,17 +18,17 @@ require 'rltk/ast'
 # Classes and Modules #
 #######################
 
-class ANode < RLTK::ASTNode
-	child :left, ANode
-	child :right, ANode
-end
-
-class BNode < ANode; end
-class CNode < ANode; end
-
-class DNode < RLTK::ASTNode; end
-
 class ASTNodeTester < Test::Unit::TestCase
+	class ANode < RLTK::ASTNode
+		child :left, ANode
+		child :right, ANode
+	end
+
+	class BNode < ANode; end
+	class CNode < ANode; end
+
+	class DNode < RLTK::ASTNode; end
+	
 	def setup
 		@leaf0 = CNode.new(nil, nil)
 		@tree0 = ANode.new(BNode.new(@leaf0, nil), BNode.new(nil, nil))

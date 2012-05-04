@@ -133,7 +133,7 @@ task :gen_bindings do
 	end
 end
 
-desc 'Find LLVM bindings with a substring.'
+desc 'Find LLVM bindings with a regular expression.'
 task :find_bind, :part do |t, args|
 	
 	# Get the task argument.

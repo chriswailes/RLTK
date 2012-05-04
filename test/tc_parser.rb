@@ -23,130 +23,130 @@ require 'rltk/parsers/postfix_calc'
 # Classes and Modules #
 #######################
 
-class ABLexer < RLTK::Lexer
-	rule(/a/) { [:A, 1] }
-	rule(/b/) { [:B, 2] }
-	
-	rule(/\s/)
-end
-
-class APlusBParser < RLTK::Parser
-	production(:a, 'A+ B') { |a, _| a.length }
-	
-	finalize
-end
-
-class AQuestionBParser < RLTK::Parser
-	production(:a, 'A? B') { |a, _| a }
-	
-	finalize
-end
-
-class AStarBParser < RLTK::Parser
-	production(:a, 'A* B') { |a, _| a.length }
-	
-	finalize
-end
-
-class AmbiguousParser < RLTK::Parser
-	production(:e) do
-		clause('NUM') {|n| n}
-		
-		clause('e PLS e') { |e0, _, e1| e0 + e1 }
-		clause('e SUB e') { |e0, _, e1| e0 - e1 }
-		clause('e MUL e') { |e0, _, e1| e0 * e1 }
-		clause('e DIV e') { |e0, _, e1| e0 / e1 }
-	end
-	
-	finalize
-end
-
-class ArrayCalc < RLTK::Parser
-	array_args
-	
-	production(:e) do
-		clause('NUM') { |v| v[0] }
-		
-		clause('PLS e e') { |v| v[1] + v[2] }
-		clause('SUB e e') { |v| v[1] - v[2] }
-		clause('MUL e e') { |v| v[1] * v[2] }
-		clause('DIV e e') { |v| v[1] / v[2] }
-	end
-	
-	finalize
-end
-
-class DummyError1 < Exception; end
-class DummyError2 < Exception; end
-
-class ErrorCalc < RLTK::Parser
-	production(:e) do
-		clause('NUM') {|n| n}
-		
-		clause('e PLS e') { |e0, _, e1| e0 + e1 }
-		clause('e SUB e') { |e0, _, e1| e0 - e1 }
-		clause('e MUL e') { |e0, _, e1| e0 * e1 }
-		clause('e DIV e') { |e0, _, e1| e0 / e1 }
-		
-		clause('e PLS ERROR') { |_, _, _| raise DummyError1 }
-		clause('e SUB ERROR') { |_, _, _| raise DummyError2 }
-	end
-	
-	finalize
-end
-
-class ELLexer < RLTK::Lexer
-	rule(/\n/)	{ :NEWLINE }
-	rule(/;/)		{ :SEMI    }
-	
-	rule(/\s/)
-	
-	rule(/[A-Za-z]+/)	{ |t| [:WORD, t] }
-end
-
-class ErrorLine < RLTK::Parser
-	
-	production(:s, 'line*') { |l| l }
-	
-	production(:line) do
-		clause('NEWLINE') { |_| nil }
-		
-		clause('WORD+ SEMI NEWLINE')	{ |w, _, _| w }
-		clause('WORD+ ERROR NEWLINE')	{ |w, e, _| error(pos(1).line_number); w }
-	end
-	
-	finalize
-end
-
-class RotatingCalc < RLTK::Parser
-	production(:e) do
-		clause('NUM') {|n| n}
-		
-		clause('PLS e e') { |_, e0, e1| e0.send(get_op(:+), e1) }
-		clause('SUB e e') { |_, e0, e1| e0.send(get_op(:-), e1) }
-		clause('MUL e e') { |_, e0, e1| e0.send(get_op(:*), e1) }
-		clause('DIV e e') { |_, e0, e1| e0.send(get_op(:/), e1) }
-	end
-	
-	class Environment < Environment
-		def initialize
-			@map = { :+ => 0, :- => 1, :* => 2, :/ => 3 }
-			@ops = [ :+, :-, :*, :/ ]
-		end
-		
-		def get_op(orig_op)
-			new_op = @ops[@map[orig_op]]
-			
-			@ops = @ops[1..-1] << @ops[0]
-			
-			new_op
-		end
-	end
-	
-	finalize
-end
-
 class ParserTester < Test::Unit::TestCase
+	class ABLexer < RLTK::Lexer
+		rule(/a/) { [:A, 1] }
+		rule(/b/) { [:B, 2] }
+	
+		rule(/\s/)
+	end
+
+	class APlusBParser < RLTK::Parser
+		production(:a, 'A+ B') { |a, _| a.length }
+	
+		finalize
+	end
+
+	class AQuestionBParser < RLTK::Parser
+		production(:a, 'A? B') { |a, _| a }
+	
+		finalize
+	end
+
+	class AStarBParser < RLTK::Parser
+		production(:a, 'A* B') { |a, _| a.length }
+	
+		finalize
+	end
+
+	class AmbiguousParser < RLTK::Parser
+		production(:e) do
+			clause('NUM') {|n| n}
+		
+			clause('e PLS e') { |e0, _, e1| e0 + e1 }
+			clause('e SUB e') { |e0, _, e1| e0 - e1 }
+			clause('e MUL e') { |e0, _, e1| e0 * e1 }
+			clause('e DIV e') { |e0, _, e1| e0 / e1 }
+		end
+	
+		finalize
+	end
+
+	class ArrayCalc < RLTK::Parser
+		array_args
+	
+		production(:e) do
+			clause('NUM') { |v| v[0] }
+		
+			clause('PLS e e') { |v| v[1] + v[2] }
+			clause('SUB e e') { |v| v[1] - v[2] }
+			clause('MUL e e') { |v| v[1] * v[2] }
+			clause('DIV e e') { |v| v[1] / v[2] }
+		end
+	
+		finalize
+	end
+
+	class DummyError1 < Exception; end
+	class DummyError2 < Exception; end
+
+	class ErrorCalc < RLTK::Parser
+		production(:e) do
+			clause('NUM') {|n| n}
+		
+			clause('e PLS e') { |e0, _, e1| e0 + e1 }
+			clause('e SUB e') { |e0, _, e1| e0 - e1 }
+			clause('e MUL e') { |e0, _, e1| e0 * e1 }
+			clause('e DIV e') { |e0, _, e1| e0 / e1 }
+		
+			clause('e PLS ERROR') { |_, _, _| raise DummyError1 }
+			clause('e SUB ERROR') { |_, _, _| raise DummyError2 }
+		end
+	
+		finalize
+	end
+
+	class ELLexer < RLTK::Lexer
+		rule(/\n/)	{ :NEWLINE }
+		rule(/;/)		{ :SEMI    }
+	
+		rule(/\s/)
+	
+		rule(/[A-Za-z]+/)	{ |t| [:WORD, t] }
+	end
+
+	class ErrorLine < RLTK::Parser
+	
+		production(:s, 'line*') { |l| l }
+	
+		production(:line) do
+			clause('NEWLINE') { |_| nil }
+		
+			clause('WORD+ SEMI NEWLINE')	{ |w, _, _| w }
+			clause('WORD+ ERROR NEWLINE')	{ |w, e, _| error(pos(1).line_number); w }
+		end
+	
+		finalize
+	end
+
+	class RotatingCalc < RLTK::Parser
+		production(:e) do
+			clause('NUM') {|n| n}
+		
+			clause('PLS e e') { |_, e0, e1| e0.send(get_op(:+), e1) }
+			clause('SUB e e') { |_, e0, e1| e0.send(get_op(:-), e1) }
+			clause('MUL e e') { |_, e0, e1| e0.send(get_op(:*), e1) }
+			clause('DIV e e') { |_, e0, e1| e0.send(get_op(:/), e1) }
+		end
+	
+		class Environment < Environment
+			def initialize
+				@map = { :+ => 0, :- => 1, :* => 2, :/ => 3 }
+				@ops = [ :+, :-, :*, :/ ]
+			end
+		
+			def get_op(orig_op)
+				new_op = @ops[@map[orig_op]]
+			
+				@ops = @ops[1..-1] << @ops[0]
+			
+				new_op
+			end
+		end
+	
+		finalize
+	end
+	
 	def test_ambiguous_grammar
 		actual = AmbiguousParser.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'), {:accept => :all})
 		assert_equal([7, 9], actual.sort)

@@ -12,7 +12,7 @@
 ###########
 
 def check_type(o, type, blame = nil, strict = false)
-	type_ok = if strict then o.isntance_of?(type) else o.is_a?(type) end
+	type_ok = if strict then o.instance_of?(type) else o.is_a?(type) end
 	
 	if type_ok
 		o
@@ -70,7 +70,7 @@ class Class
 	end
 end
 
-class Fixnum
+class Integer
 	def to_bool
 		self != 0
 	end

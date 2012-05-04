@@ -18,7 +18,6 @@ module RLTK::CG
 	class PassManager
 		include BindingClass
 		
-		
 		# A list of passes that are available to be added to the pass
 		# manager via the PassManager::add method.  They may either be
 		# specified via the keys for this hash or any string that will be
@@ -61,7 +60,7 @@ module RLTK::CG
 			:Reassociate		=> 'reassociate',
 			:SCCP			=> 'sccp',
 			:ScalarRepl		=> 'scalar_repl_aggregates_pass',
-			:SimplifyLibCalls	=> 'simplify_lib_calls'
+			:SimplifyLibCalls	=> 'simplify_lib_calls',
 			:StripDeadProtos	=> 'strip_dead_prototypes',
 			:StripSymbols		=> 'strip_symbols',
 			:TailCallElim		=> 'tail_call_elimination',
