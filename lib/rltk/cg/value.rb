@@ -530,14 +530,14 @@ module RLTK::CG
 		
 		def initialize(num_or_string, size = nil)
 			@ptr =
-			if num_or_string.is_a?(Float)
+			if num_or_string.is_a?(::Float)
 				Bindings.const_real(self.type, num_or_string)
 				
 			elsif size
-				Bindings.cosnt_real_of_string_and_size(self.type, num_or_string, size)
+				Bindings.const_real_of_string_and_size(self.type, num_or_string, size)
 				
 			else
-				Bindings.cosnt_real_of_string(self.type, num_or_string)
+				Bindings.const_real_of_string(self.type, num_or_string)
 			end
 		end
 		

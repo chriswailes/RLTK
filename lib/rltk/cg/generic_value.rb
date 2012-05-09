@@ -9,6 +9,7 @@
 
 # Ruby Language Toolkit
 require 'rltk/cg/bindings'
+require 'rltk/cg/type'
 
 #######################
 # Classes and Modules #
@@ -26,13 +27,13 @@ module RLTK::CG
 			when FFI::Pointer
 				[ruby_val, nil]
 				
-			when Integer
-				type ||= NativeIntType
+			when ::Integer
+				type = if type then check_cg_type(type, IntType) else NativeIntType.instance end
 				
 				[Bindings.create_generic_value_of_int(type, ruby_val, signed.to_i), type]
 				
-			when Float
-				type ||= FloatType
+			when ::Float
+				type = if type then check_cg_type(type, RealType) else FloatType.instance end
 				
 				[Bindings.create_generic_value_of_float(type, ruby_val), type]
 				
@@ -57,8 +58,8 @@ module RLTK::CG
 			if signed and val >= 2**63 then val - 2**64 else val end
 		end
 	
-		def to_f(type)
-			Bindings.generic_value_to_float(@type, @ptr)
+		def to_f(type = RLTK::CG::FloatType)
+			Bindings.generic_value_to_float(@type || check_cg_type(type, RLTK::CG::NumberType), @ptr)
 		end
 	
 		def to_b

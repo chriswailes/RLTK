@@ -29,13 +29,13 @@ module RLTK::CG
 			when RLTK::CG::Module
 				@type = if type_info.first.is_a?(FunctionType) then type_info.first else FunctionType.new(*type_info) end
 				
-				Bindings.add_function(overloaded, name, @type)
+				Bindings.add_function(overloaded, name.to_s, @type)
 				
 			else
 				raise 'The first argument to Function.new must be either a pointer or an instance of RLTK::CG::Module.'
 			end
 			
-			yield self, self.params.to_a if block_given?
+			yield self, *self.params.to_a if block_given?
 		end
 		
 		def attributes
@@ -128,9 +128,9 @@ module RLTK::CG
 			end
 			
 			def [](index)
-				limit = if index < 0 then self.size + index else self.size end
+				index += self.size if index < 0
 				
-				if 0 <= index and index < limit
+				if 0 <= index and index < self.size
 					Value.new(Bindings.get_param(@fun, index))
 				end
 			end

@@ -84,8 +84,6 @@ module RLTK::CG
 		end
 		
 		def run_function(fun, *args)
-			args_ptr = FFI::MemoryPointer.new(:pointer, args.length)
-			
 			new_values = Array.new
 			
 			new_args =
@@ -98,6 +96,7 @@ module RLTK::CG
 				end
 			end
 			
+			args_ptr = FFI::MemoryPointer.new(:pointer, args.length)
 			args_ptr.write_array_of_pointer(new_args)
 			
 			returning(GenericValue.new(Bindings.run_function(@ptr, fun, args.length, args_ptr))) do

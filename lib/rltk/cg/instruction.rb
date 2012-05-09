@@ -23,7 +23,7 @@ module RLTK::CG
 			:Call,
 			:ExtractElement,
 			:ExtractValue,
-			:FPCmp,
+			:FCmp,
 			[:FPExtend, :FPExt],
 			:FPToSI,
 			:FPToUI,
@@ -125,9 +125,9 @@ module RLTK::CG
 			end
 			
 			def [](index)
-				limit = if index < 0 then self.size + index else self.size end
+				index += self.size if index < 0
 				
-				if 0 <= index and index < limit
+				if 0 <= index and index < self.size
 					[self.block(index), self.value(index)]
 				end
 			end
@@ -155,9 +155,9 @@ module RLTK::CG
 			alias :<< :add
 			
 			def block(index)
-				limit = if index < 0 then self.size + index else self.size end
+				index += self.size if index < 0
 				
-				if 0 <= index and index < limit
+				if 0 <= index and index < self.size
 					BasicBlock.new(Bindings.get_incoming_block(@phi, index))
 				end
 			end
@@ -175,9 +175,9 @@ module RLTK::CG
 			end
 			
 			def value(index)
-				limit = if index < 0 then self.size + index else self.size end
+				index += self.size if index < 0
 				
-				if 0 <= index and index < limit
+				if 0 <= index and index < self.size
 					Value.new(Bindings.get_incoming_value(@phi, index))
 				end
 			end
@@ -205,13 +205,13 @@ module RLTK::CG
 	class ExtractElementInst		< Instruction; end
 	class ExtractValueInst		< Instruction; end
 	class FAddInst				< Instruction; end
+	class FCmpInst				< Instruction; end
 	class FDivInst				< Instruction; end
 	class FMulInst				< Instruction; end
 	class FNegInst				< Instruction; end
 	class FPToSIInst			< Instruction; end
 	class FPToUIInst			< Instruction; end
 	class FPCastInst			< Instruction; end
-	class FPCmpInst			< Instruction; end
 	class FPExtendInst			< Instruction; end
 	class FPTruncInst			< Instruction; end
 	class FreeInst				< Instruction; end

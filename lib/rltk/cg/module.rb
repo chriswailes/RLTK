@@ -74,7 +74,7 @@ module RLTK::CG
 			@globals ||= GlobalCollection.new(self)
 		end
 		
-		def write_bitecode(overloaded)
+		def write_bitcode(overloaded)
 			0 ==
 			if overloaded.respond_to?(:path)
 				Bindings.write_bitcode_to_file(@ptr, overloaded.path)

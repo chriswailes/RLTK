@@ -19,51 +19,6 @@ require 'rltk/cg/context'
 # Classes and Modules #
 #######################
 
-def check_cg_type(o, type = Type, blame = 'type', strict = false)
-	if o.is_a?(Class)
-		type_ok = if strict then o == type else o.subclass_of?(type) end 
-		
-		if type_ok
-			if o.includes_module?(Singleton)
-				o.instance
-			else
-				raise "The #{o.name} class (passed as parameter #{blame}) must be instantiated directly."
-			end
-		else
-			raise "The #{o.name} class (passed as parameter #{blame} does not inherit from the #{type.name} class." 
-		end
-	else
-		check_type(o, type, blame, strict)
-	end
-end
-
-def check_cg_array_type(array, type = Type, blame = 'el_types', strict = false)
-	array.map do |o|
-		if o.is_a?(Class)
-			type_ok = if strict then o == type else o.subclass_of?(type) end
-			
-			if type_ok
-				if o.includes_module?(Singletone)
-					o.instance
-				else
-					raise "The #{o.name} class (passed in parameter #{blame}) must be instantiated directly."
-				end
-			else
-				raise "The #{o.name} class (passed in parameter #{blame}) does not inherit from the #{type.name} class."
-			end
-			
-		else
-			type_ok = if strict then o.instance_of(type) else o.is_a?(type) end
-			
-			if type_ok
-				o
-			else
-				raise "Parameter #{blame} must contain instances of the #{type.name} class."
-			end
-		end
-	end
-end
-
 module RLTK::CG
 	class Type
 		include BindingClass
@@ -110,6 +65,10 @@ module RLTK::CG
 		
 		def hash
 			@ptr.address.hash
+		end
+		
+		def kind
+			Bindings.get_type_kind(@ptr)
 		end
 		
 		def size
@@ -323,6 +282,55 @@ module RLTK::CG
 				types_ptr = ret_ptr.get_pointer(0)
 				
 				types_ptr.get_array_of_pointer(0, num_elements).map { |ptr| Type.from_ptr(ptr) }
+			end
+		end
+	end
+end
+
+####################
+# Helper Functions #
+####################
+
+def check_cg_type(o, type = RLTK::CG::Type, blame = 'type', strict = false)
+	if o.is_a?(Class)
+		type_ok = if strict then o == type else o.subclass_of?(type) end 
+		
+		if type_ok
+			if o.includes_module?(Singleton)
+				o.instance
+			else
+				raise "The #{o.name} class (passed as parameter #{blame}) must be instantiated directly."
+			end
+		else
+			raise "The #{o.name} class (passed as parameter #{blame} does not inherit from the #{type.name} class." 
+		end
+	else
+		check_type(o, type, blame, strict)
+	end
+end
+
+def check_cg_array_type(array, type = RLTK::CG::Type, blame = 'el_types', strict = false)
+	array.map do |o|
+		if o.is_a?(Class)
+			type_ok = if strict then o == type else o.subclass_of?(type) end
+			
+			if type_ok
+				if o.includes_module?(Singleton)
+					o.instance
+				else
+					raise "The #{o.name} class (passed in parameter #{blame}) must be instantiated directly."
+				end
+			else
+				raise "The #{o.name} class (passed in parameter #{blame}) does not inherit from the #{type.name} class."
+			end
+			
+		else
+			type_ok = if strict then o.instance_of(type) else o.is_a?(type) end
+			
+			if type_ok
+				o
+			else
+				raise "Parameter #{blame} must contain instances of the #{type.name} class."
 			end
 		end
 	end
