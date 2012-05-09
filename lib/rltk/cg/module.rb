@@ -22,14 +22,15 @@ module RLTK::CG
 		def self.read_bitcode(overloaded)
 			buffer = if overloaded.is_a?(MemoryBuffer) then overloaded else MemoryBuffer.new(overloaded) end
 			
-			FFI::MemoryPointer.new(:pointer) do |mod_ptr|
-				FFI::MemoryPointer.new(:pointer) do |msg_ptr|
-					status = Bindings.parse_bitcode(buffer, mod_ptr, msg_ptr)
-					
-					raise msg_ptr.get_pointer(0).get_string(0) if status != 0
-					
-					Module.new(mod_ptr.get_pointer(0))
-				end
+			mod_ptr = FFI::MemoryPointer.new(:pointer)
+			msg_ptr = FFI::MemoryPointer.new(:pointer)
+			
+			status = Bindings.parse_bitcode(buffer, mod_ptr, msg_ptr)
+			
+			if status != 0
+				raise msg_ptr.get_pointer(0).get_string(0)
+			else
+				Module.new(mod_ptr.get_pointer(0))
 			end
 		end
 		
@@ -41,9 +42,9 @@ module RLTK::CG
 				
 			when String
 				if context
-					Bindings.module_create_with_name_in_context(name, check_type(context, Context, 'context'))
+					Bindings.module_create_with_name_in_context(overloaded, check_type(context, Context, 'context'))
 				else
-					Bindings.module_create_with_name(name)
+					Bindings.module_create_with_name(overloaded)
 				end
 			end
 		end
@@ -88,6 +89,22 @@ module RLTK::CG
 				Bindings.write_bitcode_to_file(@ptr, overloaded)
 			end
 		end
+		
+		def verify
+			do_verification(:return_status)
+		end
+		
+		def verify!
+			do_verification(:abort_process)
+		end
+		
+		def do_verification(action)
+			str_ptr	= FFI::MemoryPointer.new(:pointer)
+			status	= Bindings.verify_module(@ptr, action, str_ptr)
+			
+			returning(status == 1 ? str_ptr.read_string : nil) { Bindings.dispose_message(str_ptr.read_pointer) }
+		end
+		private :do_verification
 		
 		class FunctionCollection
 			include Enumerable

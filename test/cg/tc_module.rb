@@ -12,16 +12,10 @@ require 'test/unit'
 
 # Ruby Language Toolkit
 require 'rltk/cg/llvm'
-
-puts "FOO"
-
 require 'rltk/cg/module'
-
-puts "BAR"
-
 require 'rltk/cg/execution_engine'
-
-puts "BAF"
+require 'rltk/cg/type'
+require 'rltk/cg/value'
 
 #######################
 # Classes and Modules #
@@ -34,14 +28,14 @@ class ModuleTester < Test::Unit::TestCase
 	
 	def test_simple_module
 		mod = RLTK::CG::Module.new('Testing Module')
-		fun = mod.functions.add('Test Function', RLTK::CG::NativeIntType, [])
+		jit = RLTK::CG::JITCompiler.new(mod)
+		fun = mod.functions.add('test_function', RLTK::CG::NativeIntType, [])
 		
 		fun.blocks.append.build do
 			ret RLTK::CG::NativeInt.new(1)
 		end
 		
-		engine = RLTK::CG::ExecutionEngine.new(mod)
-		
-		assert_equal(1, engine.run_function(fun).to_i)
+		assert_nil(mod.verify)
+		assert_equal(1, jit.run_function(fun).to_i)
 	end
 end

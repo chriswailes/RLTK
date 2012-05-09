@@ -9,6 +9,7 @@
 
 # Ruby Language Toolkit
 require 'rltk/cg/bindings'
+require 'rltk/cg/instruction'
 
 #######################
 # Classes and Modules #
@@ -98,11 +99,10 @@ module RLTK::CG
 		def ret_aggregate(*vals)
 			vals = vals.first if vals.length == 1 and vals.first.instance_of?(::Array)
 			
-			FFI::MemoryPointer.new(:pointer, vals.length) do |vals_ptr|
-				vals_ptr.write_array_of_pointers(vals)
-				
-				ReturnAggregateInst.new(Bindings.build_aggregate_ret(@ptr, vals_ptr, vals.length))
-			end
+			vals_ptr = FFI::MemoryPointer.new(:pointer, vals.length)
+			vals_ptr.write_array_of_pointer(vals)
+			
+			ReturnAggregateInst.new(Bindings.build_aggregate_ret(@ptr, vals_ptr, vals.length))
 		end
 		
 		################
@@ -117,11 +117,10 @@ module RLTK::CG
 		def call(fun, *args)
 			name = if args.last.is_a?(String) then args.pop else '' end
 			
-			FFI::MemoryPointer.new(:pointer, args.length) do |args_ptr|
-				args_ptr.write_array_of_pointers(args)
-				
-				CallInst.new(Bindings.build_call(@ptr, fun, args_ptr, args.length, name))
-			end
+			args_ptr = FFI::MemoryPointer.new(:pointer, args.length)
+			args_ptr.write_array_of_pointer(args)
+			
+			CallInst.new(Bindings.build_call(@ptr, fun, args_ptr, args.length, name))
 		end
 		
 		def cond_branch(block, iftrue, iffalse)
@@ -360,22 +359,20 @@ module RLTK::CG
 		def get_element_ptr(ptr, indices, name = '')
 			check_array_type(indices, Value, 'indices')
 			
-			FFI::MemoryPointer.new(:pointer, indices.length) do |indices_ptr|
-				indices_ptr.write_array_of_pointer(indices)
-				
-				GEPInst.new(Bindings.build_gep(@ptr, ptr, indices_ptr, indices.length, name))
-			end
+			indices_ptr = FFI::MemoryPointer.new(:pointer, indices.length)
+			indices_ptr.write_array_of_pointer(indices)
+			
+			GEPInst.new(Bindings.build_gep(@ptr, ptr, indices_ptr, indices.length, name))
 		end
 		alias :gep :get_element_ptr
 		
 		def get_element_ptr_in_bounds(ptr, indices, name = '')
 			check_array_type(indices, Value, 'indices')
 			
-			FFI::MemoryPointer.new(:pointer, indices.length) do |indices_ptr|
-				indices_ptr.write_array_of_pointer(indices)
-				
-				InBoundsGEPInst.new(Bindings.build_in_bounds_gep(@ptr, ptr, indices_ptr, indices.length, name))
-			end
+			indices_ptr = FFI::MemoryPointer.new(:pointer, indices.length)
+			indices_ptr.write_array_of_pointer(indices)
+			
+			InBoundsGEPInst.new(Bindings.build_in_bounds_gep(@ptr, ptr, indices_ptr, indices.length, name))
 		end
 		alias :inbounds_gep :get_element_ptr_in_bounds
 		
@@ -430,7 +427,7 @@ module RLTK::CG
 		end
 		alias :int2Ptr :int_to_ptr
 		
-		def int_cast(val, type, name = '')
+		def integer_cast(val, type, name = '')
 			IntCastInst.new(Bindings.build_int_cast(@ptr, val, check_type(type), name))
 		end
 		alias :int_cast :integer_cast
@@ -466,10 +463,10 @@ module RLTK::CG
 			TruncateOrBitCastInst.new(Bindings.build_trunc_or_bit_cast(@ptr, val, check_type(type), name))
 		end
 		
-		def unsgined_int_to_floating_point(val, type, name = '')
+		def unsigned_int_to_floating_point(val, type, name = '')
 			UIToFPInst.new(Bindings.build_ui_to_fp(@ptr, val, check_type(type), name))
 		end
-		alias :ui2fp
+		alias :ui2fp :unsigned_int_to_floating_point
 		
 		def zero_extend(val, type, name = '')
 			ZeroExtendInst.new(Bindings.build_z_ext(val, check_type(type), name))

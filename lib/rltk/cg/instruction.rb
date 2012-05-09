@@ -54,10 +54,10 @@ module RLTK::CG
 			TESTABLE.each do |el|
 				klass, test =
 				if el.is_a?(Symbol)
-					RLTK::CG.const_get("#{el}Inst".to_sym), Bindings.get_bname("IsA#{el}Inst")
+					[RLTK::CG.const_get("#{el}Inst".to_sym), Bindings.get_bname("IsA#{el}Inst")]
 					
 				else
-					RLTK::CG.const_get("#{el.first}Inst".to_sym), Bindings.get_bname("IsA#{el.last}Inst")
+					[RLTK::CG.const_get("#{el.first}Inst".to_sym), Bindings.get_bname("IsA#{el.last}Inst")]
 				end
 				
 				match = klass if Bindings.send(test, ptr)
@@ -94,7 +94,7 @@ module RLTK::CG
 		syms.each do |sym|
 			sym = (Bindings.get_bname(sym).to_s + '?').to_sym
 			
-			define_method(sym)
+			define_method(sym) do
 				Bindings.send(sym, @ptr)
 			end
 		end
@@ -135,27 +135,22 @@ module RLTK::CG
 			def add(overloaded, value = nil)
 				blks, vals =
 				if overloaded.is_a?(BasicBlock) and check_type(value, Value, 'value')
-					overloaded, value
+					[overloaded, value]
 				else
 					if RUBY_VERSION[0..2] == "1.9"
-						overloaded.keys, overloaded.values
+						[overloaded.keys, overloaded.values]
 					else
-						(keys = overloaded.keys), overloaded.values_at(*keys)
+						[(keys = overloaded.keys), overloaded.values_at(*keys)]
 					end
 				end
 				
-				FFI::MemoryPointer.new(:pointer, incoming.size) do |vals_ptr|
+				vals_ptr = FFI::MemoryPointer.new(:pointer, incoming.size)
+				vals_ptr.write_array_of_pointer(vals)
 				
-					vals_ptr.write_array_of_pointers(vals)
-				
-					FFI::MemoryPointer.new(:pointer, incoming.size) do |blks_ptr|
-						blks_ptr.write_array_of_pointers(blks)
-					
-						Bindings.add_incoming(@ptr, vals_ptr, blks_ptr, vals.length)
-					end
-				end
+				blks_ptr = FFI::MemoryPointer.new(:pointer, incoming.size)
+				blks_ptr.write_array_of_pointer(blks)
 			
-				nil
+				returning(nil) { Bindings.add_incoming(@ptr, vals_ptr, blks_ptr, vals.length) }
 			end
 			alias :<< :add
 			

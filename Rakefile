@@ -34,7 +34,7 @@ Rake::TestTask.new do |t|
 	t.test_files = FileList['test/ts_rltk.rb']
 end
 
-if RUBY_VERSION.match(/1\.8/)
+if RUBY_VERSION[0..2] == '1.8'
 	begin
 		require 'rcov/rcovtask'
 		

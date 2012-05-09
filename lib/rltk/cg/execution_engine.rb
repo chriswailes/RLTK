@@ -23,27 +23,25 @@ module RLTK::CG
 		attr_reader :module
 		
 		def initialize(mod, &block)
-			block = Proc.new { Bindings.create_execution_engine_for_module(ptr, mod, error) } if block == nil
+			block = Proc.new { |ptr, error| Bindings.create_execution_engine_for_module(ptr, mod, error) } if block == nil
 			
-			FFI::MemoryPointer.new(:pointer) do |ptr|
-				FFI::MemoryPointer.new(:pointer) do |error|
-					status = block.call(ptr, error)
-					
-					if status.zero?
-						@ptr		= ptr.read_pointer
-						@module	= mod
-				
-					else
-						errorp  = error.read_pointer
-						message = errorp.null? ? 'Unknown' : errorp.read_string
-				
-						error.autorelease = false
-				
-						Bindings.dispose_message(error)
-				
-						raise "Error creating execution engine: #{message}"
-					end
-				end
+			ptr		= FFI::MemoryPointer.new(:pointer)
+			error	= FFI::MemoryPointer.new(:pointer)
+			status	= block.call(ptr, error)
+			
+			if status.zero?
+				@ptr		= ptr.read_pointer
+				@module	= mod
+		
+			else
+				errorp  = error.read_pointer
+				message = errorp.null? ? 'Unknown' : errorp.read_string
+		
+				error.autorelease = false
+		
+				Bindings.dispose_message(error)
+		
+				raise "Error creating execution engine: #{message}"
 			end
 		end
 		
@@ -72,7 +70,7 @@ module RLTK::CG
 	
 	class Interpreter < ExecutionEngine
 		def initialize(mod)
-			super do |ptr, error|
+			super(mod) do |ptr, error|
 				Bindings.create_interpreter_for_module(ptr, mod, error)
 			end
 		end
@@ -80,30 +78,30 @@ module RLTK::CG
 	
 	class JITCompiler < ExecutionEngine
 		def initialize(mod, opt_level = 3)
-			super do |ptr, error|
+			super(mod) do |ptr, error|
 				Bindings.create_jit_compiler_for_module(ptr, mod, opt_level, error)
 			end
 		end
 		
 		def run_function(fun, *args)
-			FFI::MemoryPointer.new(:pointer, args.length) do |args_ptr|
-				new_values = Array.new
-				
-				new_args =
-				fun.params.zip(args).map do |param, arg|
-					if arg.is_a?(GenericValue)
-						arg
-						
-					else
-						returning(GenericValue.new(arg)) { |val| new_values << val }
-					end
+			args_ptr = FFI::MemoryPointer.new(:pointer, args.length)
+			
+			new_values = Array.new
+			
+			new_args =
+			fun.params.zip(args).map do |param, arg|
+				if arg.is_a?(GenericValue)
+					arg
+					
+				else
+					returning(GenericValue.new(arg)) { |val| new_values << val }
 				end
-				
-				args_ptr.write_array_of_pointer(new_args)
-				
-				returning(GenericValue.new(Bindings.run_function(@ptr, fun, args.length, args_ptr))) do
-					new_values.each { |val| val.dispose }
-				end
+			end
+			
+			args_ptr.write_array_of_pointer(new_args)
+			
+			returning(GenericValue.new(Bindings.run_function(@ptr, fun, args.length, args_ptr))) do
+				new_values.each { |val| val.dispose }
 			end
 		end
 	end

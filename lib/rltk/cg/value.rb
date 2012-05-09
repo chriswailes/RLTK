@@ -28,7 +28,7 @@ module RLTK::CG
 			size_or_values
 		end
 		
-		FFI::MemoryPointer.new(:pointer, values.size).write_array_of_pointers(values)
+		FFI::MemoryPointer.new(:pointer, values.size).write_array_of_pointer(values)
 	end
 	
 	class Value
@@ -194,24 +194,22 @@ module RLTK::CG
 		end
 		
 		def bitcast_to(type)
-			ConstantExpr.new(Bindings.const_bit_cast(@ptr, check_type(type))
+			ConstantExpr.new(Bindings.const_bit_cast(@ptr, check_type(type)))
 		end
 		
 		def get_element_ptr(*indices)
-			FFI::MemoryPointer.new(:pointer, indices.length) do |indices_ptr|
-				indices_ptr.write_array_of_pointers(indices)
-				
-				ConstantExpr.new(Bindings.const_gep(@ptr, indices_ptr, indices.length))
-			end
+			indicies_ptr = FFI::MemoryPointer.new(:pointer, indices.length)
+			indices_ptr.write_array_of_pointer(indices)
+			
+			ConstantExpr.new(Bindings.const_gep(@ptr, indices_ptr, indices.length))
 		end
 		alias :gep :get_element_ptr
 		
 		def get_element_ptr_in_bounds(*indices)
-			FFI::MemoryPointer.new(:pointer, indices.length) do |indices_ptr|
-				indices_ptr.write_array_of_pointers(indices)
-				
-				ConstantExpr.new(Bindings.const_in_bounds_gep(@ptr, indices_ptr, indices.length))
-			end
+			indices_ptr = FFI::MemoryPointer.new(:pointer, indices.length)
+			indices_ptr.write_array_of_pointer(indices)
+			
+			ConstantExpr.new(Bindings.const_in_bounds_gep(@ptr, indices_ptr, indices.length))
 		end
 		alias :inbounds_gep :get_element_ptr_in_bounds
 	end
@@ -238,19 +236,17 @@ module RLTK::CG
 		include AbstractClass
 		
 		def extract(indices)
-			FFI::MemoryPointer.new(:uint, indices.length) do |indices_ptr|
-				indices_ptr.write_array_of_pointer(indices)
-				
-				ConstantExpr.new(Bindings.const_extract_value(@ptr, indices_ptr, indices.length))
-			end
+			indices_ptr = FFI::MemoryPointer.new(:uint, indices.length)
+			indices_ptr.write_array_of_uint(indices)
+			
+			ConstantExpr.new(Bindings.const_extract_value(@ptr, indices_ptr, indices.length))
 		end
 		
 		def insert(value, indices)
-			FFI::MemoryPointer.new(:uint, indices.length) do |indices_ptr|
-				indices_ptr.write_array_of_pointer(indices)
-				
-				ConstantExpr.new(Bindings.const_insert_value(@ptr, value, indices_ptr, inicies.length))
-			end
+			indices_ptr = FFI::MemoryPointer.new(:uint, indices.length)
+			indices_ptr.write_array_of_uint(indices)
+			
+			ConstantExpr.new(Bindings.const_insert_value(@ptr, value, indices_ptr, inicies.length))
 		end
 	end
 	
@@ -337,6 +333,9 @@ module RLTK::CG
 				overloaded0
 				
 			when Integer
+#				puts "Constructing a #{self.class.name} from an Integer (#{overloaded0})."
+#				puts "Using type #{self.type}"
+				
 				@signed = overloaded1 or true
 				
 				Bindings.const_int(self.type, overloaded0, @signed.to_i)
@@ -504,15 +503,7 @@ module RLTK::CG
 		def to_f(type)
 			check_type(type, FloatingPointType)
 			
-			if @signed
-				self.class.new(Bindings.const_si_to_fp(@ptr, type)
-			else
-				self.class.new(Bindings.const_ui_to_fp(@ptr, type)
-			end
-		end
-		
-		def to_ptr(type)
-			Pointer.new(Bindings.const_int_to_ptr(@ptr, check_type(type)))
+			self.class.new(Bindings.send(@signed ? :const_si_to_fp : :const_ui_to_fp, @ptr, type))
 		end
 		
 		def value(extension = :sign)
@@ -523,11 +514,11 @@ module RLTK::CG
 		end
 	end
 	
-	class Int1	< Integer; end
-	class Int8	< Integer; end
-	class Int16	< Integer; end
-	class Int32	< Integer; end
-	class Int64	< Integer; end
+	class Int1	< ConstantInteger; end
+	class Int8	< ConstantInteger; end
+	class Int16	< ConstantInteger; end
+	class Int32	< ConstantInteger; end
+	class Int64	< ConstantInteger; end
 	
 	NativeInt = RLTK::CG.const_get("Int#{FFI.type_size(:int) * 8}")
 	
@@ -535,7 +526,7 @@ module RLTK::CG
 	FALSE	= Int1.new( 0)
 	
 	class ConstantReal < ConstantNumber
-		include Abstractclass
+		include AbstractClass
 		
 		def initialize(num_or_string, size = nil)
 			@ptr =

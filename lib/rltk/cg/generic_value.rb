@@ -24,49 +24,49 @@ module RLTK::CG
 			@ptr, @type =
 			case ruby_val
 			when FFI::Pointer
-				Bindings.create_generic_value_of_pointer(ruby_val), nil
+				[ruby_val, nil]
 				
 			when Integer
 				type ||= NativeIntType
 				
-				Bindings.create_generic_value_of_int(type, ruby_val, signed.to_i), type
+				[Bindings.create_generic_value_of_int(type, ruby_val, signed.to_i), type]
 				
 			when Float
 				type ||= FloatType
 				
-				Bindings.create_generic_value_of_float(type, ruby_val), type
+				[Bindings.create_generic_value_of_float(type, ruby_val), type]
 				
 			when TrueClass
-				Bindings.create_generic_value_of_int(Int1Type, 1, 0), Int1Type
+				[Bindings.create_generic_value_of_int(Int1Type, 1, 0), Int1Type]
 				
 			when FalseClass
-				Bindings.create_generic_value_of_int(Int1Type, 0, 0), Int1Type
+				[Bindings.create_generic_value_of_int(Int1Type, 0, 0), Int1Type]
 			end
 		end
-	end
-	
-	def dispose
-		if @ptr
-			Bindings.dispose_generic_value(@ptr)
-			@ptr = nil
-		end
-	end
-	
-	def to_i(signed = true)
-		val = Bindings.generic_value_to_int(@ptr, signed.to_i)
 		
-		if signed and val >= 2**63 then val - 2**64 else val
-	end
+		def dispose
+			if @ptr
+				Bindings.dispose_generic_value(@ptr)
+				@ptr = nil
+			end
+		end
 	
-	def to_f(type)
-		Bindings.generic_value_to_float(@type, @ptr)
-	end
+		def to_i(signed = true)
+			val = Bindings.generic_value_to_int(@ptr, signed.to_i)
+			
+			if signed and val >= 2**63 then val - 2**64 else val end
+		end
 	
-	def to_b
-		self.to_i(false).to_bool
-	end
+		def to_f(type)
+			Bindings.generic_value_to_float(@type, @ptr)
+		end
 	
-	def to_value_ptr
-		Bindings.generic_value_to_pointer(@ptr)
+		def to_b
+			self.to_i(false).to_bool
+		end
+	
+		def to_value_ptr
+			Bindings.generic_value_to_pointer(@ptr)
+		end
 	end
 end

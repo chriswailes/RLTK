@@ -7,62 +7,64 @@
 # Requires #
 ############
 
+# Standard Library
+require 'singleton'
+
 # Ruby Language Toolkit
 require 'rltk/util/abstract_class'
 require 'rltk/cg/bindings'
 require 'rltk/cg/context'
-require 'rltk/cg/value'
-
+	
 #######################
 # Classes and Modules #
 #######################
 
-module RLTK::CG
-	def check_cg_type(o, type = Type, blame = 'type', strict = false)
-		if o.is_a?(Class)
-			type_ok = if strict then o == type else o.subclass_of?(type) end 
-			
-			if type_ok
-				if o.includes_module?(Singleton)
-					o.instance
-				else
-					raise "The #{o.name} class (passed as parameter #{blame}) must be instantiated directly."
-				end
+def check_cg_type(o, type = Type, blame = 'type', strict = false)
+	if o.is_a?(Class)
+		type_ok = if strict then o == type else o.subclass_of?(type) end 
+		
+		if type_ok
+			if o.includes_module?(Singleton)
+				o.instance
 			else
-				raise "The #{o.name} class (passed as parameter #{blame} does not inherit from the #{type.name} class." 
+				raise "The #{o.name} class (passed as parameter #{blame}) must be instantiated directly."
 			end
 		else
-			check_type(o, type, blame, strict)
+			raise "The #{o.name} class (passed as parameter #{blame} does not inherit from the #{type.name} class." 
 		end
+	else
+		check_type(o, type, blame, strict)
 	end
-	
-	def check_cg_array_type(array, type = Type, blame = 'el_types', strict = false)
-		array.map do |o|
-			if o.is_a?(Class)
-				type_ok = if strict then o == type else o.subclass_of?(type) end
-				
-				if type_ok
-					if o.includes_module?(Singletone)
-						o.instance
-					else
-						raise "The #{o.name} class (passed in parameter #{blame}) must be instantiated directly."
-					end
+end
+
+def check_cg_array_type(array, type = Type, blame = 'el_types', strict = false)
+	array.map do |o|
+		if o.is_a?(Class)
+			type_ok = if strict then o == type else o.subclass_of?(type) end
+			
+			if type_ok
+				if o.includes_module?(Singletone)
+					o.instance
 				else
-					raise "The #{o.name} class (passed in parameter #{blame}) does not inherit from the #{type.name} class."
+					raise "The #{o.name} class (passed in parameter #{blame}) must be instantiated directly."
 				end
-				
 			else
-				type_ok = if strict then o.instance_of(type) else o.is_a?(type) end
-				
-				if type_ok
-					o
-				else
-					raise "Parameter #{blame} must contain instances of the #{type.name} class."
-				end
+				raise "The #{o.name} class (passed in parameter #{blame}) does not inherit from the #{type.name} class."
+			end
+			
+		else
+			type_ok = if strict then o.instance_of(type) else o.is_a?(type) end
+			
+			if type_ok
+				o
+			else
+				raise "Parameter #{blame} must contain instances of the #{type.name} class."
 			end
 		end
 	end
-	
+end
+
+module RLTK::CG
 	class Type
 		include BindingClass
 		include AbstractClass
@@ -120,6 +122,7 @@ module RLTK::CG
 		
 		def self.value_class
 			begin
+				@value_class ||=
 				RLTK::CG.const_get(self.name.match(/::(.+)Type$/).captures.last.to_sym)
 				
 			rescue
@@ -245,17 +248,16 @@ module RLTK::CG
 		def initialize(overloaded, arg_types = nil, varargs = false)
 			@ptr =
 			case overloaded
-			when FFIP::Pointer
+			when FFI::Pointer
 				overloaded
 			else
 				@return_type	= check_cg_type(overloaded, Type, 'return_type')
 				@arg_types	= check_cg_array_type(arg_types, Type, 'arg_types').freeze
 				
-				FFI::MemoryPointer.new(:pointer, @arg_types.length) do |arg_types_ptr|
-					arg_types_ptr.write_array_of_pointer(@arg_types)
-					
-					Bindings.function_type(@return_type, arg_types_ptr, @arg_types.length, varargs.to_i)
-				end
+				arg_types_ptr = FFI::MemoryPointer.new(:pointer, @arg_types.length)
+				arg_types_ptr.write_array_of_pointer(@arg_types)
+				
+				Bindings.function_type(@return_type, arg_types_ptr, @arg_types.length, varargs.to_i)
 			end
 		end
 		
@@ -264,13 +266,12 @@ module RLTK::CG
 			begin
 				num_elements = Bindings.count_param_types(@ptr)
 				
-				FFI::MemoryPointer.new(:pointer) do |ret_ptr|
-					Bindings.get_param_types(@ptr, ret_ptr)
-					
-					types_ptr = ret_ptr.get_pointer(0)
-					
-					types_ptr.get_array_of_pointer(0, num_elements).map { |ptr| Type.from_ptr(ptr) }
-				end
+				ret_ptr = FFI::MemoryPointer.new(:pointer)
+				Bindings.get_param_types(@ptr, ret_ptr)
+				
+				types_ptr = ret_ptr.get_pointer(0)
+				
+				types_ptr.get_array_of_pointer(0, num_elements).map { |ptr| Type.from_ptr(ptr) }
 			end
 		end
 		alias :arg_types :argument_types
@@ -290,24 +291,23 @@ module RLTK::CG
 				# Check the types of the elements of the overloaded parameter.
 				@element_types = check_cg_array_type(overloaded, Type, 'overloaded')
 				
-				FFI::MemoryPointer.new(:pointer, @element_types.length) do |el_types_pointer|
-					el_types_ptr.write_array_of_pointer(@element_types)
-				
-					if name
-						check_type(name, String, 'name')
-				
-						returning Bindings.struct_create_named(Context.global, name) do |ptr|
-							Bindings.struct_set_body(ptr, elt_types_ptr, @element_types.length, is_packed.to_i) unless @element_types.empty?
-						end
-				
-					elsif context
-						check_type(context, Context, 'context')
-				
-						Bindings.struct_type_in_context(context, el_types_ptr, @element_types.length, is_packed.to_i)
-				
-					else
-						Bindings.struct_type(el_types_ptr, @element_types.length, is_packed.to_i)
+				el_types_ptr = FFI::MemoryPointer.new(:pointer, @element_types.length)
+				el_types_ptr.write_array_of_pointer(@element_types)
+			
+				if name
+					check_type(name, String, 'name')
+			
+					returning Bindings.struct_create_named(Context.global, name) do |ptr|
+						Bindings.struct_set_body(ptr, elt_types_ptr, @element_types.length, is_packed.to_i) unless @element_types.empty?
 					end
+			
+				elsif context
+					check_type(context, Context, 'context')
+			
+					Bindings.struct_type_in_context(context, el_types_ptr, @element_types.length, is_packed.to_i)
+			
+				else
+					Bindings.struct_type(el_types_ptr, @element_types.length, is_packed.to_i)
 				end
 			end
 		end
@@ -317,13 +317,12 @@ module RLTK::CG
 			begin
 				num_elements = Bindings.count_struct_element_types(@ptr)
 				
-				FFI::MemoryPointer.new(:pointer) do |ret_ptr|
-					Bindings.get_struct_element_types(@ptr, ret_ptr)
-					
-					types_ptr = ret_ptr.get_pointer(0)
-					
-					types_ptr.get_array_of_pointer(0, num_elements).map { |ptr| Type.from_ptr(ptr) }
-				end
+				ret_ptr = FFI::MemoryPointer.new(:pointer)
+				Bindings.get_struct_element_types(@ptr, ret_ptr)
+				
+				types_ptr = ret_ptr.get_pointer(0)
+				
+				types_ptr.get_array_of_pointer(0, num_elements).map { |ptr| Type.from_ptr(ptr) }
 			end
 		end
 	end

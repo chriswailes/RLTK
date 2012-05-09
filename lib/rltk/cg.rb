@@ -10,7 +10,20 @@
 
 module RLTK
 	module CG
-		autoload :Bindings, 'rltk/cg/bindings'
-		autoload :LLVM    , 'rltk/cg/llvm'
+		autoload :BasicBloc,		'rltk/cg/basic_block'
+		autoload :Bindings,			'rltk/cg/bindings'
+		autoload :Builder,			'rltk/cg/builder'
+		autoload :Context,			'rltk/cg/context'
+		autoload :ExecutionEngine,	'rltk/cg/execution_engine'
+		autoload :Function,			'rltk/cg/function'
+		autoload :GenericValue,		'rltk/cg/generic_value'
+		autoload :Instruction,		'rltk/cg/instruction'
+		autoload :LLVM,			'rltk/cg/llvm'
+		autoload :MemoryBuffer,		'rltk/cg/memory_buffer'
+		autoload :Module,			'rltk/cg/module'
+		autoload :PassManager,		'rltk/cg/pass_manager'
+		autoload :Support,			'rltk/cg/support'
+		autoload :Type,			'rltk/cg/type'
+		autoload :Value,			'rltk/cg/value'
 	end
 end

@@ -9,6 +9,7 @@
 
 # Ruby Language Toolkit
 require 'rltk/cg/bindings'
+require 'rltk/cg/basic_block'
 require 'rltk/cg/value'
 
 #######################
@@ -26,9 +27,9 @@ module RLTK::CG
 				overloaded
 			
 			when RLTK::CG::Module
-				@type = if args.first.is_a?(FunctionType) then args.first else FunctionType.new(*type_info) end
+				@type = if type_info.first.is_a?(FunctionType) then type_info.first else FunctionType.new(*type_info) end
 				
-				Bindings.add_function(overloaded, name, type)
+				Bindings.add_function(overloaded, name, @type)
 				
 			else
 				raise 'The first argument to Function.new must be either a pointer or an instance of RLTK::CG::Module.'
@@ -58,9 +59,22 @@ module RLTK::CG
 		end
 		
 		def parameters
-			@parameters ||= ParameterCollection.new
+			@parameters ||= ParameterCollection.new(self)
 		end
 		alias :params :parameters
+		
+		def verify
+			do_verification(:return_status)
+		end
+		
+		def verify!
+			do_verification(:abort_process)
+		end
+		
+		def do_verification(action)
+			Bindings.verify_function(@ptr, action).to_bool
+		end
+		private :do_verification
 		
 		class BasicBlockCollection
 			include Enumerable

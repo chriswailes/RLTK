@@ -24,21 +24,20 @@ module RLTK::CG
 			when FFI::Pointer
 				overloaded
 			else
-				FFI::MemoryPointer.new(:pointer) do |buf_ptr|
-					FFI::MemoryPointer.new(:pointer) do |msg_ptr|
-						status =
-						case overloaded
-						when String
-							Bindings.create_memory_buffer_with_contents_of_file(overloaded, buf_ptr, msg_ptr)
-						else
-							Bindings.create_memory_buffer_with_stdin(buf_ptr, msg_ptr)
-						end
-						
-						raise msg_ptr.get_pointer(0).get_string(0) if status != 0
-						
-						buf_ptr.get_pointer(0)
-					end
+				buf_ptr = FFI::MemoryPointer.new(:pointer)
+				msg_ptr = FFI::MemoryPointer.new(:pointer)
+				
+				status =
+				case overloaded
+				when String
+					Bindings.create_memory_buffer_with_contents_of_file(overloaded, buf_ptr, msg_ptr)
+				else
+					Bindings.create_memory_buffer_with_stdin(buf_ptr, msg_ptr)
 				end
+				
+				raise msg_ptr.get_pointer(0).get_string(0) if status != 0
+				
+				buf_ptr.get_pointer(0)
 			end
 		end
 		
