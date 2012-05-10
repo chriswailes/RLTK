@@ -17,20 +17,6 @@ require 'rltk/cg/type'
 #######################
 
 module RLTK::CG
-	def make_ptr_to_elements(size_or_values, &block)
-		values =
-		case
-		when Integer
-			raise ArgumentError, 'Block not given.' if not block_given?
-			
-			::Array.new(size_or_values, &block)
-		else
-			size_or_values
-		end
-		
-		FFI::MemoryPointer.new(:pointer, values.size).write_array_of_pointer(values)
-	end
-	
 	class Value
 		include BindingClass
 		
@@ -253,7 +239,7 @@ module RLTK::CG
 	class ConstantArray < ConstantAggregate
 		def initialize(element_type, size_or_values, &block)
 			vals_ptr	= make_ptr_to_elements(size_or_values, &block)
-			@type	= ArrayType.new(element_type)
+			@type	= ArrayType.new(element_type = check_cg_type(element_type, Type, 'element_type'))
 			@ptr		= Bindings.const_array(element_type, vals_ptr, vals_ptr.size / vals_ptr.type_size)
 		end
 	end
@@ -333,9 +319,6 @@ module RLTK::CG
 				overloaded0
 				
 			when Integer
-#				puts "Constructing a #{self.class.name} from an Integer (#{overloaded0})."
-#				puts "Using type #{self.type}"
-				
 				@signed = overloaded1 or true
 				
 				Bindings.const_int(self.type, overloaded0, @signed.to_i)
@@ -661,5 +644,25 @@ module RLTK::CG
 		def thread_local=(local)
 			Bindings.set_thread_local(@ptr, local.to_i)
 		end
+	end
+end
+
+####################
+# Helper Functions #
+####################
+
+def make_ptr_to_elements(size_or_values, &block)
+	values =
+	case size_or_values
+	when Integer
+		raise ArgumentError, 'Block not given.' if not block_given?
+		
+		::Array.new(size_or_values, &block)
+	else
+		size_or_values
+	end
+	
+	returning(FFI::MemoryPointer.new(:pointer, values.size)) do |ptr|
+		ptr.write_array_of_pointer(values)
 	end
 end

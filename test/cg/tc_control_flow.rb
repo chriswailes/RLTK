@@ -25,6 +25,38 @@ class ControlFlowTester < Test::Unit::TestCase
 		@jit = RLTK::CG::JITCompiler.new(@mod)
 	end
 	
+	def test_phi
+		fun = @mod.functions.add('phi_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType])
+		
+		entry = fun.blocks.append('entry')
+		
+		block0 = fun.blocks.append('block0')
+		block1 = fun.blocks.append('block1')
+		
+		exit = fun.blocks.append('exit')
+		
+		entry.build do
+			cond(icmp(:eq, fun.params[0], RLTK::CG::NativeInt.new(0)), block0, block1)
+		end
+		
+		result0 =
+		block0.build do
+			returning(add(fun.params[0], RLTK::CG::NativeInt.new(1))) { br(exit) }
+		end
+		
+		result1 =
+		block1.build do
+			returning(sub(fun.params[0], RLTK::CG::NativeInt.new(1))) { br(exit) }
+		end
+		
+		exit.build do
+			ret(phi(RLTK::CG::NativeIntType, {block0 => result0, block1 => result1}))
+		end
+		
+		assert_equal(1, @jit.run_function(fun, 0).to_i)
+		assert_equal(0, @jit.run_function(fun, 1).to_i)
+	end
+	
 	def test_select
 		fun = @mod.functions.add('select_tester', RLTK::CG::Int1Type, [RLTK::CG::NativeIntType])
 		fun.blocks.append.build do

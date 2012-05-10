@@ -123,8 +123,8 @@ module RLTK::CG
 			CallInst.new(Bindings.build_call(@ptr, fun, args_ptr, args.length, name))
 		end
 		
-		def cond_branch(block, iftrue, iffalse)
-			CondBranchInst.new(Bindings.build_cond_br(@ptr, cond, iftrue, iffalse))
+		def cond_branch(val, iftrue, iffalse)
+			CondBranchInst.new(Bindings.build_cond_br(@ptr, val, iftrue, iffalse))
 		end
 		alias :cond :cond_branch
 		
@@ -149,8 +149,8 @@ module RLTK::CG
 		end
 		
 		def phi(type, incoming, name = '')
-			returning PhiInst.new(Bindings.build_phi(@ptr, check_type(type), name)) do |phi|
-				phi.add_incoming(incoming)
+			returning PhiInst.new(Bindings.build_phi(@ptr, check_cg_type(type), name)) do |phi|
+				phi.incoming.add(incoming)
 			end
 		end
 		
@@ -333,15 +333,15 @@ module RLTK::CG
 		end
 		
 		def array_malloc(type, size, name = '')
-			ArrayMallocInst.new(Bindings.build_array_malloc(@ptr, check_type(type), size, name))
+			ArrayMallocInst.new(Bindings.build_array_malloc(@ptr, check_cg_type(type), size, name))
 		end
 		
 		def alloca(type, name = '')
-			AllocaInst.new(Bindings.build_alloca(@ptr, check_type(type), name))
+			AllocaInst.new(Bindings.build_alloca(@ptr, check_cg_type(type), name))
 		end
 		
 		def array_alloca(type, size, name = '')
-			ArrayAllocaInst.new(Bindings.build_array_alloca(@ptr, check_type(type), size, name))
+			ArrayAllocaInst.new(Bindings.build_array_alloca(@ptr, check_cg_type(type), size, name))
 		end
 		
 		def free(ptr)
