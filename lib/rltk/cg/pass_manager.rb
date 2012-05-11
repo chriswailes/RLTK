@@ -68,9 +68,11 @@ module RLTK::CG
 			:Verifier			=> 'verifier'
 		}
 		
-		def initialize(engine)
+		def initialize(engine, mod)
 			# LLVM Initialization
-			@ptr = Bindings.create_pass_manager
+			@ptr		= Bindings.create_pass_manager
+			@engine	= engine
+			@mod		= mod
 			
 			Bindings.add_target_data(Bindings.get_execution_engine_target_data(engine), @ptr)
 			
@@ -90,7 +92,7 @@ module RLTK::CG
 		
 		def add(name)
 			if PASSES.has_key?(name)
-				return if @nabled.include?(name)
+				return if @enabled.include?(name)
 				
 				Bindings.send("add_#{PASSES[name]}_pass", @ptr)
 				
@@ -119,8 +121,8 @@ module RLTK::CG
 			@enabled.include?(name) or @enabled.include?(PASSES.key(Bindings.get_bname(name)))
 		end
 		
-		def run(mod)
-			Bindings.run_pass_manager(@ptr, mod).to_bool
+		def run
+			Bindings.run_pass_manager(@ptr, @mod).to_bool
 		end
 		
 		protected

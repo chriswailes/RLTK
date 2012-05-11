@@ -194,7 +194,24 @@ module RLTK::CG
 	end
 	
 	# Not actually an aggregate type in the LLVM world, but that is kind of stupid so...
-	class VectorType < SimpleAggregateType
+	class VectorType < Type
+		def initialize(overloaded, size = 0)
+			@ptr =
+			case overloaded
+			when FFI::Pointer
+				overloaded
+			else
+				@element_type	= check_cg_type(overloaded, Type, 'overloaded')
+				bname		= Bindings.get_bname(self.class.short_name)
+				
+				Bindings.send(bname, @element_type, size)
+			end
+		end
+		
+		def element_type
+			@element_type ||= Type.from_ptr(Bindings.get_element_type(@ptr))
+		end
+		
 		def size
 			Bindings.get_vector_size(@ptr)
 		end

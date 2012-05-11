@@ -29,9 +29,10 @@ class ModuleTester < Test::Unit::TestCase
 		@mod = RLTK::CG::Module.new('Testing Module')
 		@jit = RLTK::CG::JITCompiler.new(@mod)
 		
-		fun = @mod.functions.add('test_int_function', RLTK::CG::NativeIntType, [])
-		fun.blocks.append.build do
-			ret RLTK::CG::NativeInt.new(1)
+		@mod.functions.add('test_int_function', RLTK::CG::NativeIntType, []) do
+			blocks.append do
+				ret RLTK::CG::NativeInt.new(1)
+			end
 		end
 	end
 	
@@ -51,18 +52,20 @@ class ModuleTester < Test::Unit::TestCase
 	end
 	
 	def test_simple_float_fun
-		fun = @mod.functions.add('test_float_function', RLTK::CG::FloatType, [])
-		fun.blocks.append.build do
-			ret RLTK::CG::Float.new(1.5)
+		fun = @mod.functions.add('test_float_function', RLTK::CG::FloatType, []) do
+			blocks.append do
+				ret RLTK::CG::Float.new(1.5)
+			end
 		end
 		
 		assert_equal(1.5, @jit.run_function(fun).to_f(RLTK::CG::FloatType))
 	end
 	
 	def test_simple_double_fun
-		fun = @mod.functions.add('test_double_function', RLTK::CG::DoubleType, [])
-		fun.blocks.append.build do
-			ret RLTK::CG::Double.new(1.6)
+		fun = @mod.functions.add('test_double_function', RLTK::CG::DoubleType, []) do
+			blocks.append do
+				ret RLTK::CG::Double.new(1.6)
+			end
 		end
 		
 		assert_equal(1.6, @jit.run_function(fun).to_f(RLTK::CG::DoubleType))

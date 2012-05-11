@@ -26,31 +26,29 @@ class ControlFlowTester < Test::Unit::TestCase
 	end
 	
 	def test_phi
-		fun = @mod.functions.add('phi_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType])
+		fun = @mod.functions.add('phi_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType]) do |fun|
+			entry	= blocks.append('entry')
+			block0	= blocks.append('block0')
+			block1	= blocks.append('block1')
+			exit		= blocks.append('exit')
 		
-		entry = fun.blocks.append('entry')
+			entry.build do
+				cond(icmp(:eq, fun.params[0], RLTK::CG::NativeInt.new(0)), block0, block1)
+			end
 		
-		block0 = fun.blocks.append('block0')
-		block1 = fun.blocks.append('block1')
+			result0 =
+			block0.build do
+				returning(add(fun.params[0], RLTK::CG::NativeInt.new(1))) { br(exit) }
+			end
 		
-		exit = fun.blocks.append('exit')
+			result1 =
+			block1.build do
+				returning(sub(fun.params[0], RLTK::CG::NativeInt.new(1))) { br(exit) }
+			end
 		
-		entry.build do
-			cond(icmp(:eq, fun.params[0], RLTK::CG::NativeInt.new(0)), block0, block1)
-		end
-		
-		result0 =
-		block0.build do
-			returning(add(fun.params[0], RLTK::CG::NativeInt.new(1))) { br(exit) }
-		end
-		
-		result1 =
-		block1.build do
-			returning(sub(fun.params[0], RLTK::CG::NativeInt.new(1))) { br(exit) }
-		end
-		
-		exit.build do
-			ret(phi(RLTK::CG::NativeIntType, {block0 => result0, block1 => result1}))
+			exit.build do
+				ret(phi(RLTK::CG::NativeIntType, {block0 => result0, block1 => result1}))
+			end
 		end
 		
 		assert_equal(1, @jit.run_function(fun, 0).to_i)
@@ -58,9 +56,10 @@ class ControlFlowTester < Test::Unit::TestCase
 	end
 	
 	def test_select
-		fun = @mod.functions.add('select_tester', RLTK::CG::Int1Type, [RLTK::CG::NativeIntType])
-		fun.blocks.append.build do
-			ret(select(fun.params[0], RLTK::CG::Int1.new(0), RLTK::CG::Int1.new(1)))
+		fun = @mod.functions.add('select_tester', RLTK::CG::Int1Type, [RLTK::CG::NativeIntType]) do |fun|
+			blocks.append do
+				ret(select(fun.params[0], RLTK::CG::Int1.new(0), RLTK::CG::Int1.new(1)))
+			end
 		end
 		
 		assert_equal(0, @jit.run_function(fun, 1).to_i(false))

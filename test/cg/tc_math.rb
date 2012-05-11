@@ -30,9 +30,10 @@ class MathTester < Test::Unit::TestCase
 	end
 	
 	def test_fadd_fun
-		fun = @mod.functions.add('test_fadd_function', RLTK::CG::FloatType, [RLTK::CG::FloatType])
-		fun.blocks.append.build do
-			ret(fadd(fun.params[0], RLTK::CG::Float.new(1.0)))
+		fun = @mod.functions.add('test_fadd_function', RLTK::CG::FloatType, [RLTK::CG::FloatType]) do |fun|
+			blocks.append do
+				ret(fadd(fun.params[0], RLTK::CG::Float.new(1.0)))
+			end
 		end
 		
 		assert_equal(6.0, @jit.run_function(fun, 5.0).to_f)

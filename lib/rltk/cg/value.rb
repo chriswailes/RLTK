@@ -25,7 +25,7 @@ module RLTK::CG
 		end
 		
 		def ==(other)
-			other.is_a?(Value) and @ptr = other.ptr
+			other.is_a?(Value) and @ptr == other.ptr
 		end
 		
 		def attributes

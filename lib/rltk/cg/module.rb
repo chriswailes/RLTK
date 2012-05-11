@@ -34,7 +34,7 @@ module RLTK::CG
 			end
 		end
 		
-		def initialize(overloaded, context = nil)
+		def initialize(overloaded, context = nil, &block)
 			@ptr =
 			case overloaded
 			when FFI::Pointer
@@ -47,6 +47,8 @@ module RLTK::CG
 					Bindings.module_create_with_name(overloaded)
 				end
 			end
+			
+			self.instance_exec(&block) if block
 		end
 		
 		def context
@@ -124,7 +126,7 @@ module RLTK::CG
 			end
 			
 			def add(name, *type_info, &block)
-				Function.new(@module, name, *type_info)
+				Function.new(@module, name, *type_info, &block)
 			end
 			
 			def delete(fun)
@@ -132,6 +134,8 @@ module RLTK::CG
 			end
 			
 			def each
+				return to_enum(:each) unless block_given?
+				
 				fun = self.first
 				
 				while fun
@@ -141,23 +145,23 @@ module RLTK::CG
 			end
 			
 			def first
-				Function.new(Bindings.get_first_function(@module))
+				if (ptr = Bindings.get_first_function(@module)).null? then nil else Function.new(ptr) end
 			end
 			
 			def last
-				Function.new(Bindings.get_last_function(@module))
+				if (ptr = Bindings.get_last_function(@module)).null? then nil else Function.new(ptr) end
 			end
 			
 			def named(name)
-				Function.new(Bindings.get_named_function(@module, name))
+				if (ptr = Bindings.get_named_function(@module, name)).null? then nil else Function.new(ptr) end
 			end
 			
 			def next(fun)
-				Function.new(Bindings.get_next_function(fun))
+				if (ptr = Bindings.get_next_function(fun)).null? then nil else Function.new(ptr) end
 			end
 			
 			def previous(fun)
-				Function.new(Bindings.get_previous_function(fun))
+				if (ptr = Bindings.get_previous_function(fun)).null? then nil else Function.new(ptr) end
 			end
 		end
 		
@@ -187,6 +191,8 @@ module RLTK::CG
 			end
 			
 			def each
+				return to_enum(:each) unless block_given?
+				
 				global = self.first
 				
 				while global
@@ -196,23 +202,23 @@ module RLTK::CG
 			end
 			
 			def first
-				GlobalValue.new(Bindings.get_first_global(@module))
+				if (ptr = Bindings.get_first_global(@module)).null? then nil else GlobalValue.new(ptr) end
 			end
 			
 			def last
-				GlobalValue.new(Bindings.get_last_global(@module))
+				if (ptr = Bindings.get_last_global(@module)).null? then nil else GlobalValue.new(ptr) end
 			end
 			
 			def named(name)
-				GlobalValue.new(Bindings.get_named_global(@module, name))
+				if (ptr = Bindings.get_named_global(@module, name)).null? then nil else GlobalValue.new(ptr) end
 			end
 			
 			def next(global)
-				GlobalValue.new(Bindings.get_next_global(global))
+				if (ptr = Bindings.get_next_global(global)).null? then nil else GlobalValue.new(ptr) end
 			end
 			
 			def previous(global)
-				GlobalValue.new(Bindings.get_previous_global(global))
+				if (ptr = Bindings.get_previous_global(global)).null? then nil else GlobalValue.new(ptr) end
 			end
 		end
 	end

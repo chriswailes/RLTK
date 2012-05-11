@@ -24,9 +24,10 @@ class InstructionTester < Test::Unit::TestCase
 	end
 	
 	def test_instruction
-		fun = @mod.functions.add('test_instruction', RLTK::CG::DoubleType, [RLTK::CG::DoubleType])
-		fun.blocks.append.build do
-			ret(fadd(fun.params[0], RLTK::CG::Double.new(3.0)))
+		fun = @mod.functions.add('test_instruction', RLTK::CG::DoubleType, [RLTK::CG::DoubleType]) do |fun|
+			blocks.append do
+				ret(fadd(fun.params[0], RLTK::CG::Double.new(3.0)))
+			end
 		end
 		
 		entry = fun.blocks.entry

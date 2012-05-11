@@ -59,7 +59,7 @@ module RLTK::CG
 		alias :fpm :function_pass_manager
 		
 		def pass_manager
-			@pass_manager ||= PassManager.new(self)
+			@pass_manager ||= PassManager.new(self, @module)
 		end
 		alias :pm :pass_manager
 		

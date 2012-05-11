@@ -20,7 +20,7 @@ module RLTK::CG
 	class Function < GlobalValue
 		attr_reader :type
 		
-		def initialize(overloaded, name = '', *type_info)
+		def initialize(overloaded, name = '', *type_info, &block)
 			@ptr =
 			case overloaded
 			when FFI::Pointer
@@ -35,7 +35,7 @@ module RLTK::CG
 				raise 'The first argument to Function.new must be either a pointer or an instance of RLTK::CG::Module.'
 			end
 			
-			yield self, *self.params.to_a if block_given?
+			self.instance_exec(self, &block) if block
 		end
 		
 		def attributes
@@ -83,8 +83,8 @@ module RLTK::CG
 				@fun = fun
 			end
 			
-			def append(name = '')
-				BasicBlock.new(@fun, name)
+			def append(name = '', context = nil, &block)
+				BasicBlock.new(@fun, name, context, &block)
 			end
 			
 			def each

@@ -18,7 +18,7 @@ require 'rltk/cg/value'
 
 module RLTK::CG
 	class BasicBlock < Value
-		def initialize(overloaded, name = '', context = nil)
+		def initialize(overloaded, name = '', context = nil, &block)
 			check_type(context, Context, 'context') if context
 			
 			@ptr =
@@ -40,6 +40,8 @@ module RLTK::CG
 					Bindings.insert_basic_block(overloaded, name)
 				end
 			end
+			
+			self.build(&block) if block
 		end
 		
 		def build(builder = nil, &block)
