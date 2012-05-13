@@ -29,10 +29,8 @@ class ModuleTester < Test::Unit::TestCase
 		@mod = RLTK::CG::Module.new('Testing Module')
 		@jit = RLTK::CG::JITCompiler.new(@mod)
 		
-		@mod.functions.add('test_int_function', RLTK::CG::NativeIntType, []) do
-			blocks.append do
-				ret RLTK::CG::NativeInt.new(1)
-			end
+		@mod.functions.add('int_function_tester', RLTK::CG::NativeIntType, []) do
+			blocks.append { ret RLTK::CG::NativeInt.new(1) }
 		end
 	end
 	
@@ -43,16 +41,32 @@ class ModuleTester < Test::Unit::TestCase
 			new_mod = RLTK::CG::Module.read_bitcode(tmp.path)
 			new_jit = RLTK::CG::JITCompiler.new(new_mod)
 			
-			assert_equal(1, new_jit.run_function(new_mod.functions['test_int_function']).to_i)
+			assert_equal(1, new_jit.run_function(new_mod.functions['int_function_tester']).to_i)
 		end
 	end
 	
+	def test_equality
+		mod0 = RLTK::CG::Module.new('foo')
+		mod1 = RLTK::CG::Module.new('bar')
+		mod2 = RLTK::CG::Module.new(mod0.ptr)
+		
+		assert_equal(mod0, mod2)
+		assert_not_equal(mod0, mod1)
+	end
+	
+	def test_external_fun
+		fun = @mod.functions.add(:sin, RLTK::CG::DoubleType, [RLTK::CG::DoubleType])
+		res = @jit.run_function(fun, RLTK::CG::GenericValue.new(1.0, RLTK::CG::DoubleType)).to_f(RLTK::CG::DoubleType)
+		
+		assert_in_delta(Math.sin(1.0), res, 1e-10)
+	end
+	
 	def test_simple_int_fun
-		assert_equal(1, @jit.run_function(@mod.functions['test_int_function']).to_i)
+		assert_equal(1, @jit.run_function(@mod.functions['int_function_tester']).to_i)
 	end
 	
 	def test_simple_float_fun
-		fun = @mod.functions.add('test_float_function', RLTK::CG::FloatType, []) do
+		fun = @mod.functions.add('float_function_tester', RLTK::CG::FloatType, []) do
 			blocks.append do
 				ret RLTK::CG::Float.new(1.5)
 			end
@@ -62,19 +76,12 @@ class ModuleTester < Test::Unit::TestCase
 	end
 	
 	def test_simple_double_fun
-		fun = @mod.functions.add('test_double_function', RLTK::CG::DoubleType, []) do
+		fun = @mod.functions.add('double_function_tester', RLTK::CG::DoubleType, []) do
 			blocks.append do
 				ret RLTK::CG::Double.new(1.6)
 			end
 		end
 		
 		assert_equal(1.6, @jit.run_function(fun).to_f(RLTK::CG::DoubleType))
-	end
-	
-	def test_external_fun
-		fun = @mod.functions.add(:sin, RLTK::CG::DoubleType, [RLTK::CG::DoubleType])
-		res = @jit.run_function(fun, RLTK::CG::GenericValue.new(1.0, RLTK::CG::DoubleType)).to_f(RLTK::CG::DoubleType)
-		
-		assert_in_delta(Math.sin(1.0), res, 1e-10)
 	end
 end

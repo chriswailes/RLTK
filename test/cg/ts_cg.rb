@@ -12,6 +12,7 @@
 require 'cg/tc_llvm'
 require 'cg/tc_module'
 
+require 'cg/tc_basic_block'
 require 'cg/tc_control_flow'
 require 'cg/tc_function'
 require 'cg/tc_generic_value'

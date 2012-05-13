@@ -301,11 +301,11 @@ module RLTK::CG
 		end
 		
 		def ashr(lhs, rhs, name = '')
-			ARightShiftInst.new(Bindings.build_a_shr(lhs, rhs, name))
+			ARightShiftInst.new(Bindings.build_a_shr(@ptr, lhs, rhs, name))
 		end
 		
 		def lshr(lhs, rhs, name = '')
-			LRightShiftInst.new(Bindings.build_l_shr(lhs, rhs, name))
+			LRightShiftInst.new(Bindings.build_l_shr(@ptr, lhs, rhs, name))
 		end
 		
 		def and(lhs, rhs, name = '')
@@ -362,7 +362,7 @@ module RLTK::CG
 			indices_ptr = FFI::MemoryPointer.new(:pointer, indices.length)
 			indices_ptr.write_array_of_pointer(indices)
 			
-			GEPInst.new(Bindings.build_gep(@ptr, ptr, indices_ptr, indices.length, name))
+			GetElementPtrInst.new(Bindings.build_gep(@ptr, ptr, indices_ptr, indices.length, name))
 		end
 		alias :gep :get_element_ptr
 		
@@ -488,7 +488,7 @@ module RLTK::CG
 		alias :icmp :int_comparison
 		
 		def fp_comparison(pred, lhs, rhs, name = '')
-			FPCmpInst.new(Bindings.build_f_cmp(@ptr, pred, lhs, rhs, name))
+			FCmpInst.new(Bindings.build_f_cmp(@ptr, pred, lhs, rhs, name))
 		end
 		alias :fcmp :fp_comparison
 		

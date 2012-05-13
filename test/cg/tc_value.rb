@@ -21,13 +21,13 @@ require 'rltk/cg/value'
 class ValueTester < Test::Unit::TestCase
 	def setup
 		RLTK::CG::LLVM.init(:X86)
+		
+		@mod = RLTK::CG::Module.new('Testing Module')
+		@jit = RLTK::CG::JITCompiler.new(@mod)
 	end
 	
 	def test_array_values
-		mod = RLTK::CG::Module.new('Testing Module')
-		jit = RLTK::CG::JITCompiler.new(mod)
-		
-		fun = mod.functions.add('test_array_function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+		fun = @mod.functions.add('array_function_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
 			blocks.append do
 				ptr = alloca(RLTK::CG::ArrayType.new(RLTK::CG::NativeIntType, 2))
 			
@@ -39,18 +39,81 @@ class ValueTester < Test::Unit::TestCase
 			end
 		end
 		
-		assert_equal(5, jit.run_function(fun, 2, 3).to_i)
+		assert_equal(5, @jit.run_function(fun, 2, 3).to_i)
 	end
 	
 	def test_constant_array_from_array
 		array = RLTK::CG::ConstantArray.new(RLTK::CG::NativeIntType, [RLTK::CG::NativeInt.new(0), RLTK::CG::NativeInt.new(1)])
 		
+		assert_instance_of(RLTK::CG::ConstantArray, array)
 		assert_equal(2, array.operands.size)
 	end
 	
 	def test_constant_array_from_size
 		array = RLTK::CG::ConstantArray.new(RLTK::CG::NativeIntType, 2) { |i| RLTK::CG::NativeInt.new(i) }
 		
+		assert_instance_of(RLTK::CG::ConstantArray, array)
 		assert_equal(2, array.operands.size)
+	end
+	
+	def test_constant_vector_elements
+		fun = @mod.functions.add('constant_vector_elements_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+			blocks.append do
+				ptr = alloca(RLTK::CG::VectorType.new(RLTK::CG::NativeIntType, 2))
+				
+				vector = load(ptr)
+				vector = insert_element(vector, fun.params[0], RLTK::CG::NativeInt.new(0))
+				vector = insert_element(vector, fun.params[1], RLTK::CG::NativeInt.new(1))
+				
+				ret(add(extract_element(vector, RLTK::CG::NativeInt.new(0)), extract_element(vector, RLTK::CG::NativeInt.new(1))))
+			end
+		end
+		
+		assert_equal(5, @jit.run_function(fun, 2, 3).to_i)
+	end
+	
+	def test_constant_vector_from_array
+		vector = RLTK::CG::ConstantVector.new([RLTK::CG::NativeInt.new(0), RLTK::CG::NativeInt.new(1)])
+		
+		assert_instance_of(RLTK::CG::ConstantVector, vector)
+		assert_equal(2, vector.operands.size)
+	end
+	
+	def test_constant_vector_from_size
+		vector = RLTK::CG::ConstantVector.new(2) { |i| RLTK::CG::NativeInt.new(i) }
+		
+		assert_instance_of(RLTK::CG::ConstantVector, vector)
+		assert_equal(2, vector.operands.size)
+	end
+	
+	def test_constant_vector_shuffle
+		fun = @mod.functions.add('constant_vector_shuffle_tester', RLTK::CG::NativeIntType, Array.new(4, RLTK::CG::NativeIntType)) do |fun|
+			blocks.append do
+				vec_type = RLTK::CG::VectorType.new(RLTK::CG::NativeIntType, 2)
+				
+				v0 = load(alloca(vec_type))
+				v0 = insert_element(v0, fun.params[0], RLTK::CG::NativeInt.new(0))
+				v0 = insert_element(v0, fun.params[1], RLTK::CG::NativeInt.new(1))
+				
+				v1 = load(alloca(vec_type))
+				v1 = insert_element(v1, fun.params[2], RLTK::CG::NativeInt.new(0))
+				v1 = insert_element(v1, fun.params[3], RLTK::CG::NativeInt.new(1))
+				
+				v2 = shuffle_vector(v0, v1, RLTK::CG::ConstantVector.new([RLTK::CG::NativeInt.new(0), RLTK::CG::NativeInt.new(3)]))
+				
+				ret(add(extract_element(v2, RLTK::CG::NativeInt.new(0)), extract_element(v2, RLTK::CG::NativeInt.new(1))))
+			end
+		end
+		
+		assert_equal(5, @jit.run_function(fun, 1, 2, 3, 4).to_i)
+	end
+	
+	def test_equality
+		v0 = RLTK::CG::NativeInt.new(0)
+		v1 = RLTK::CG::NativeInt.new(1)
+		v2 = RLTK::CG::NativeInt.new(v0.ptr)
+		
+		assert_equal(v0, v2)
+		assert_not_equal(v0, v1)
 	end
 end

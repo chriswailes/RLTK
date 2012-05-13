@@ -25,6 +25,15 @@ class FunctionTester < Test::Unit::TestCase
 		@fun.params[1].name = 'bar'
 	end
 	
+	def test_equality
+		fun0 = @mod.functions.add('fun0', RLTK::CG::NativeIntType, [])
+		fun1 = @mod.functions.add('fun0', RLTK::CG::FloatType, [])
+		fun2 = RLTK::CG::Function.new(fun0.ptr)
+		
+		assert_equal(fun0, fun2)
+		assert_not_equal(fun0, fun1)
+	end
+	
 	def test_positive_index_in_range
 		assert_equal('foo', @fun.params[0].name)
 		assert_equal('bar', @fun.params[1].name)

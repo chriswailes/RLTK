@@ -103,11 +103,11 @@ module RLTK::CG
 			end
 			
 			def first
-				if ptr = Bindings.get_first_basic_block(@fun) then BasicBlock.new(prt) else nil end
+				if (ptr = Bindings.get_first_basic_block(@fun)) then BasicBlock.new(ptr) else nil end
 			end
 			
 			def last
-				if ptr = Bindings.get_last_basic_block(@fun) then BasicBlock.new(prt) else nil end
+				if (ptr = Bindings.get_last_basic_block(@fun)) then BasicBlock.new(ptr) else nil end
 			end
 			
 			def size

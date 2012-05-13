@@ -605,7 +605,7 @@ module RLTK::CG
 		end
 		
 		def initializer=(val)
-			Bidnings.set_initializer(@ptr, check_type(val, Value, 'val'))
+			Bindings.set_initializer(@ptr, check_type(val, Value, 'val'))
 		end
 		
 		def linkage

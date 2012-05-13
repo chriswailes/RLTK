@@ -61,8 +61,8 @@ class TransformTester < Test::Unit::TestCase
 		
 		funs = @mod.functions.to_a
 		
-		assert(funs.include?(fn0))
+		assert( funs.include?(fn0))
 		assert(!funs.include?(fn1))
-		assert(funs.include?(main))
+		assert( funs.include?(main))
 	end
 end
