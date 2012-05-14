@@ -193,7 +193,6 @@ module RLTK::CG
 		end
 	end
 	
-	# Not actually an aggregate type in the LLVM world, but that is kind of stupid so...
 	class VectorType < Type
 		def initialize(overloaded, size = 0)
 			@ptr =
@@ -258,7 +257,7 @@ module RLTK::CG
 	end
 	
 	class StructType < AggregateType
-		def initialize(overloaded, packed = false, name = nil, context = nil)
+		def initialize(overloaded, name = nil, packed = false, context = nil)
 			@ptr =
 			case overloaded
 			when FFI::Pointer
@@ -271,10 +270,10 @@ module RLTK::CG
 				el_types_ptr.write_array_of_pointer(@element_types)
 			
 				if name
-					check_type(name, String, 'name')
+					@name = check_type(name, String, 'name')
 			
-					returning Bindings.struct_create_named(Context.global, name) do |ptr|
-						Bindings.struct_set_body(ptr, elt_types_ptr, @element_types.length, is_packed.to_i) unless @element_types.empty?
+					returning Bindings.struct_create_named(Context.global, @name) do |ptr|
+						Bindings.struct_set_body(ptr, el_types_ptr, @element_types.length, packed.to_i) unless @element_types.empty?
 					end
 			
 				elsif context
@@ -283,7 +282,7 @@ module RLTK::CG
 					Bindings.struct_type_in_context(context, el_types_ptr, @element_types.length, is_packed.to_i)
 			
 				else
-					Bindings.struct_type(el_types_ptr, @element_types.length, is_packed.to_i)
+					Bindings.struct_type(el_types_ptr, @element_types.length, packed.to_i)
 				end
 			end
 		end
@@ -300,6 +299,19 @@ module RLTK::CG
 				
 				types_ptr.get_array_of_pointer(0, num_elements).map { |ptr| Type.from_ptr(ptr) }
 			end
+		end
+		
+		def element_types=(el_types, packed = false)
+			@element_types = check_cg_array_type(el_types, Type, 'el_types')
+			
+			el_types_ptr = FFI::MemoryPointer.new(:pointer, @element_types.length)
+			el_types_ptr.write_array_of_pointer(@element_types)
+			
+			Bindings.struct_set_body(@ptr, el_types_ptr, @element_types.length, packed.to_i)
+		end
+		
+		def name
+			@name ||= Bindings.get_struct_name(@ptr)
 		end
 	end
 end

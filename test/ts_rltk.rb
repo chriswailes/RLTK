@@ -13,6 +13,7 @@ if RUBY_VERSION[0..2] == '1.9'
 		require 'simplecov'
 		SimpleCov.start do
 			add_filter 'tc_*'
+			add_filter 'generated*'
 		end
 		
 	rescue LoadError

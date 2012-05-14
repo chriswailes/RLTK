@@ -16,6 +16,8 @@ require 'rltk/cg/bindings'
 
 module RLTK::CG
 	class Context
+		include BindingClass
+		
 		#################
 		# Class Methods #
 		#################
@@ -28,7 +30,7 @@ module RLTK::CG
 		# Instance Methods #
 		####################
 		
-		def intialize(ptr = nil)
+		def initialize(ptr = nil)
 			@ptr = ptr || Bindings.context_create()
 		end
 		

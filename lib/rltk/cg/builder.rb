@@ -394,87 +394,91 @@ module RLTK::CG
 		###############################
 		
 		def bitcast(val, type, name = '')
-			BitCastInst.new(Bindings.build_bit_cast(@ptr, val, check_type(type), name))
+			BitCastInst.new(Bindings.build_bit_cast(@ptr, val, check_cg_type(type), name))
 		end
 		
 		def floating_point_cast(val, type, name = '')
-			FPCastInst.new(Bindings.build_fp_cast(@ptr, val, check_type(type), name))
+			FPCastInst.new(Bindings.build_fp_cast(@ptr, val, check_cg_type(type), name))
 		end
 		alias :fp_cast :floating_point_cast
 		
 		def floating_point_extend(val, type, name = '')
-			FPExtendInst.new(Bindings.build_fp_ext(@ptr, val, check_type(type), name))
+			FPExtendInst.new(Bindings.build_fp_ext(@ptr, val, check_cg_type(type), name))
 		end
+		alias :fp_ext :floating_point_extend
 		alias :fp_extend :floating_point_extend
 		
 		def floating_point_to_signed_int(val, type, name = '')
-			FPToSIInst.new(Bindings.build_fp_to_si(@ptr, val, check_type(type), name))
+			FPToSIInst.new(Bindings.build_fp_to_si(@ptr, val, check_cg_type(type), name))
 		end
 		alias :fp2si :floating_point_to_signed_int
 		
 		def floating_point_to_unsigned_int(val, type, name = '')
-			FPToUIInst.new(Bindings.build_fp_to_ui(@ptr, val, check_type(type), name))
+			FPToUIInst.new(Bindings.build_fp_to_ui(@ptr, val, check_cg_type(type), name))
 		end
 		alias :fp2ui :floating_point_to_unsigned_int
 		
 		def floating_point_truncate(val, type, name = '')
-			FPTruncInst.new(Bindings.build_fp_trunc(@ptr, val, check_type(type), name))
+			FPTruncInst.new(Bindings.build_fp_trunc(@ptr, val, check_cg_type(type), name))
 		end
+		alias :fp_trunc :floating_point_truncate
 		alias :fp_truncate :floating_point_truncate
 		
 		def int_to_ptr(val, type, name = '')
-			IntToPtrInst.new(Bindings.build_int_to_ptr(@ptr, val, check_type(type), name))
+			IntToPtrInst.new(Bindings.build_int_to_ptr(@ptr, val, check_cg_type(type), name))
 		end
-		alias :int2Ptr :int_to_ptr
+		alias :int2ptr :int_to_ptr
 		
 		def integer_cast(val, type, name = '')
-			IntCastInst.new(Bindings.build_int_cast(@ptr, val, check_type(type), name))
+			IntCastInst.new(Bindings.build_int_cast(@ptr, val, check_cg_type(type), name))
 		end
 		alias :int_cast :integer_cast
 		
 		def ptr_cast(val, type, name = '')
-			PtrCastInst.new(Bindings.build_pointer_cast(@ptr, val, check_type(type), name))
+			PtrCastInst.new(Bindings.build_pointer_cast(@ptr, val, check_cg_type(type), name))
 		end
 		
 		def ptr_to_int(val, type, name = '')
-			PtrToIntInst.new(Bindings.build_ptr_to_int(@ptr, val, check_type(type), name))
+			PtrToIntInst.new(Bindings.build_ptr_to_int(@ptr, val, check_cg_type(type), name))
 		end
 		alias :ptr2int :ptr_to_int
 		
 		def sign_extend(val, type, name = '')
-			SignExtendInst.new(Bindings.build_s_ext(val, check_type(type), name))
+			SignExtendInst.new(Bindings.build_s_ext(@ptr, val, check_cg_type(type), name))
 		end
 		alias :sext :sign_extend
 		
 		def sign_extend_or_bitcast(val, type, name = '')
-			SignExtendOrBitCastInst.new(Bindings.build_s_ext_or_bit_cast(@ptr, val, check_type(type), name))
+			SignExtendOrBitCastInst.new(Bindings.build_s_ext_or_bit_cast(@ptr, val, check_cg_type(type), name))
 		end
 		alias :sext_or_bitcast :sign_extend_or_bitcast
 		
 		def signed_int_to_floating_point(val, type, name = '')
-			SIToFPInst.new(Bindings.build_si_to_fp(@ptr, val, check_type(type), name))
+			SIToFPInst.new(Bindings.build_si_to_fp(@ptr, val, check_cg_type(type), name))
 		end
+		alias :si2fp :signed_int_to_floating_point
 		
 		def truncate(val, type, name = '')
-			TruncateInst.new(Bindings.build_trunc(@ptr, val, check_type(type), name))
+			TruncateInst.new(Bindings.build_trunc(@ptr, val, check_cg_type(type), name))
 		end
+		alias :trunc :truncate
 		
 		def truncate_or_bitcast(val, type, name = '')
-			TruncateOrBitCastInst.new(Bindings.build_trunc_or_bit_cast(@ptr, val, check_type(type), name))
+			TruncateOrBitCastInst.new(Bindings.build_trunc_or_bit_cast(@ptr, val, check_cg_type(type), name))
 		end
 		
 		def unsigned_int_to_floating_point(val, type, name = '')
-			UIToFPInst.new(Bindings.build_ui_to_fp(@ptr, val, check_type(type), name))
+			UIToFPInst.new(Bindings.build_ui_to_fp(@ptr, val, check_cg_type(type), name))
 		end
 		alias :ui2fp :unsigned_int_to_floating_point
 		
 		def zero_extend(val, type, name = '')
-			ZeroExtendInst.new(Bindings.build_z_ext(val, check_type(type), name))
+			ZeroExtendInst.new(Bindings.build_z_ext(@ptr, val, check_cg_type(type), name))
 		end
 		alias :zext :zero_extend
 		
 		def zero_extend_or_bitcast(val, type, name = '')
-			ZeroExtendOrBitCastInst.new(Bindings.build_z_ext_or_bit_cast(@ptr, val, check_type(type), name))
+			ZeroExtendOrBitCastInst.new(Bindings.build_z_ext_or_bit_cast(@ptr, val, check_cg_type(type), name))
 		end
 		alias :zext_or_bitcast :zero_extend_or_bitcast
 		

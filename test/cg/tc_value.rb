@@ -108,6 +108,34 @@ class ValueTester < Test::Unit::TestCase
 		assert_equal(5, @jit.run_function(fun, 1, 2, 3, 4).to_i)
 	end
 	
+	def test_constant_struct_from_size_packed
+		struct = RLTK::CG::ConstantStruct.new(2, true) { |i| RLTK::CG::NativeInt.new(i) }
+		
+		assert_instance_of(RLTK::CG::ConstantStruct, struct)
+		assert_equal(2, struct.operands.size)
+	end
+	
+	def test_constant_struct_from_size_unpacked
+		struct = RLTK::CG::ConstantStruct.new(2, false) { |i| RLTK::CG::NativeInt.new(i) }
+		
+		assert_instance_of(RLTK::CG::ConstantStruct, struct)
+		assert_equal(2, struct.operands.size)
+	end
+	
+	def test_constant_struct_from_values_packed
+		struct = RLTK::CG::ConstantStruct.new([RLTK::CG::NativeInt.new(0), RLTK::CG::NativeInt.new(1)], true)
+		
+		assert_instance_of(RLTK::CG::ConstantStruct, struct)
+		assert_equal(2, struct.operands.size)
+	end
+	
+	def test_constant_struct_from_values_unpacked
+		struct = RLTK::CG::ConstantStruct.new([RLTK::CG::NativeInt.new(0), RLTK::CG::NativeInt.new(1)], false)
+		
+		assert_instance_of(RLTK::CG::ConstantStruct, struct)
+		assert_equal(2, struct.operands.size)
+	end
+	
 	def test_equality
 		v0 = RLTK::CG::NativeInt.new(0)
 		v1 = RLTK::CG::NativeInt.new(1)
