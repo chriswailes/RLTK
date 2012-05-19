@@ -123,8 +123,7 @@ module Kazoo
 				# Add the conditional branch to the loop_cond_bb.
 				after_bb = fun.blocks.append('afterloop')
 				
-				@builder.position_at_end(loop_cond_bb)
-				@builder.cond(end_cond, loop_bb0, after_bb)
+				loop_cond_bb.build { cond(end_cond, loop_bb0, after_bb) }
 				
 				@builder.position_at_end(after_bb)
 				
