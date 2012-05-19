@@ -83,8 +83,8 @@ module RLTK::CG
 				@fun = fun
 			end
 			
-			def append(name = '', context = nil, &block)
-				BasicBlock.new(@fun, name, context, &block)
+			def append(name = '', context = nil, builder = nil, *block_args, &block)
+				BasicBlock.new(@fun, name, context, builder, *block_args, &block)
 			end
 			
 			def each

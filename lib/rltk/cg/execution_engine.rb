@@ -103,5 +103,6 @@ module RLTK::CG
 				new_values.each { |val| val.dispose }
 			end
 		end
+		alias :run :run_function
 	end
 end

@@ -29,8 +29,8 @@ module RLTK::CG
 			:ArgPromote		=> 'argument_promotion',
 			:BasicAliasAnalysis	=> 'basic_alias_analysis',
 			:CFGSimplify		=> 'cfg_simplification',
-			:ConstMerge		=> 'constant_merge_pass',
-			:ConstProp		=> 'constant_propagation_pass',
+			:ConstMerge		=> 'constant_merge',
+			:ConstProp		=> 'constant_propagation',
 			:CorValProp		=> 'correlated_value_propagation',
 			:DAE				=> 'dead_arg_elimination',
 			:DSE				=> 'dead_store_elimination',
@@ -43,7 +43,7 @@ module RLTK::CG
 			:GVN				=> 'gvn',
 			:Internalize		=> 'internalize',
 			:IndVarSimplify	=> 'ind_var_simplify',
-			:InstCombine		=> 'instruction_combining_pass',
+			:InstCombine		=> 'instruction_combining',
 			:IPConstProp		=> 'ip_constant_propagation',
 			:IPSCCP			=> 'ipsccp',
 			:JumpThreading		=> 'jump_threading',
@@ -59,7 +59,7 @@ module RLTK::CG
 			:PruneEH			=> 'prune_eh',
 			:Reassociate		=> 'reassociate',
 			:SCCP			=> 'sccp',
-			:ScalarRepl		=> 'scalar_repl_aggregates_pass',
+			:ScalarRepl		=> 'scalar_repl_aggregates',
 			:SimplifyLibCalls	=> 'simplify_lib_calls',
 			:StripDeadProtos	=> 'strip_dead_prototypes',
 			:StripSymbols		=> 'strip_symbols',
@@ -71,8 +71,6 @@ module RLTK::CG
 		def initialize(engine, mod)
 			# LLVM Initialization
 			@ptr		= Bindings.create_pass_manager
-			@engine	= engine
-			@mod		= mod
 			
 			Bindings.add_target_data(Bindings.get_execution_engine_target_data(engine), @ptr)
 			
@@ -90,23 +88,25 @@ module RLTK::CG
 			end
 		end
 		
-		def add(name)
-			if PASSES.has_key?(name)
-				return if @enabled.include?(name)
+		def add(*names)
+			names.each do |name|
+				if PASSES.has_key?(name)
+					return if @enabled.include?(name)
 				
-				Bindings.send("add_#{PASSES[name]}_pass", @ptr)
+					Bindings.send("add_#{PASSES[name]}_pass", @ptr)
 				
-				@enabled << name
+					@enabled << name
 				
-			elsif PASSES.has_value?(bname = Bindings.get_bname(name))
-				return if @enabled.include?(PASSES.key(bname))
+				elsif PASSES.has_value?(bname = Bindings.get_bname(name))
+					return if @enabled.include?(PASSES.key(bname))
 				
-				Bindings.send("add_#{bname}_pass", @ptr)
+					Bindings.send("add_#{bname}_pass", @ptr)
 				
-				@enabled << PASSES.key(bname)
+					@enabled << PASSES.key(bname)
 				
-			else
-				raise "Unknown pass: #{name}"
+				else
+					raise "Unknown pass: #{name}"
+				end
 			end
 			
 			self
@@ -130,13 +130,17 @@ module RLTK::CG
 		end
 	end
 	
-	class FunctionPassmanager < PassManager
+	class FunctionPassManager < PassManager
 		def initialize(engine, mod)
+			# LLVM Initialization
 			@ptr = Bindings.create_function_pass_manager_for_module(mod)
 			
-			Bindings.add_target_data(Bidnings.get_execution_engine_target_data(engine), @ptr)
+			Bindings.add_target_data(Bindings.get_execution_engine_target_data(engine), @ptr)
 			
 			Bindings.initialize_function_pass_manager(@ptr).to_bool
+			
+			# RLTK Initialization
+			@enabled = Array.new
 		end
 		
 		def run(fun)

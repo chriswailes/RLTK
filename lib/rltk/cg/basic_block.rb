@@ -18,7 +18,7 @@ require 'rltk/cg/value'
 
 module RLTK::CG
 	class BasicBlock < Value
-		def initialize(overloaded, name = '', context = nil, &block)
+		def initialize(overloaded, name = '', context = nil, builder = nil, *block_args, &block)
 			check_type(context, Context, 'context') if context
 			
 			@ptr =
@@ -41,16 +41,16 @@ module RLTK::CG
 				end
 			end
 			
-			self.build(&block) if block
+			self.build(builder, *block_args, &block) if block
 		end
 		
-		def build(builder = nil, &block)
+		def build(builder = nil, *block_args, &block)
 			if builder
-				builder.position_at_end(self).build(&block)
+				builder.position_at_end(self).build(*block_args, &block)
 				
 			else
 				builder	= Builder.new(self)
-				last_inst	= builder.build(&block)
+				last_inst	= builder.build(*block_args, &block)
 				
 				builder.dispose
 				

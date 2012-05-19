@@ -38,7 +38,9 @@ module RLTK::CG
 		
 		# Create an alias to instance_exec to facilitate building lots of
 		# instructions easily.
-		alias :build :instance_exec
+		def build(*block_args, &block)
+			self.instance_exec(*block_args, &block)
+		end
 		
 		def build_inst(inst, *args)
 			self.send(inst.to_sym, *args)
