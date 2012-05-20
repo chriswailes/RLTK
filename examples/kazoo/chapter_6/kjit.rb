@@ -116,7 +116,7 @@ module Kazoo
 				
 				step_val = translate_expression(node.step)
 				next_var = @builder.fadd(var, step_val, 'nextvar')
-				var.add_incoming({loop_bb1 => next_var})
+				var.incoming.add({loop_bb1 => next_var})
 				
 				@builder.br(loop_cond_bb)
 				
