@@ -7,11 +7,15 @@
 require 'rltk/cg/llvm'
 require 'rltk/cg/module'
 require 'rltk/cg/execution_engine'
+require 'rltk/cg/value'
 
 # Inform LLVM that we will be targeting an x86 architecture.
 RLTK::CG::LLVM.init(:X86)
 
 module Kazoo
+	
+	ZERO = RLTK::CG::Double.new(0.0)
+	
 	class JIT
 		attr_reader :module
 		
@@ -69,10 +73,37 @@ module Kazoo
 				when LT
 					cond = @builder.fcmp(:ult, left, right, 'cmptmp')
 					@builder.ui2fp(cond, RLTK::CG::DoubleType, 'booltmp')
+					
+				when GT
+					cond = @builder.fcmp(:ugt, left, right, 'cmptmp')
+					@builder.ui2fp(cond, RLTK::CG::DoubleType, 'booltmp')
+					
+				when Eql
+					cond = @builder.fcmp(:ueq, left, right, 'cmptmp')
+					@builder.ui2fp(cond, RLTK::CG::DoubleType, 'booltmp')
+					
+				when Or
+					left  = @builder.fcmp(:une, left, ZERO, 'lefttmp')
+					right = @builder.fcmp(:une, right, ZERO, 'righttmp')
+					
+					int = @builder.or(left, right, 'ortmp')
+					
+					@builder.ui2fp(int, RLTK::CG::DoubleType, 'booltmp')
+					
+				when And
+					left  = @builder.fcmp(:une, left, ZERO, 'lefttmp')
+					right = @builder.fcmp(:une, right, ZERO, 'righttmp')
+					
+					int = @builder.and(left, right, 'andtmp')
+					
+					@builder.ui2fp(int, RLTK::CG::DoubleType, 'booltmp')
+					
+				else
+					right
 				end
 			
 			when Call
-				callee = @module.functions[node.name]
+				callee = @module.functions.named(node.name)
 	
 				if not callee
 					raise 'Unknown function referenced.'
@@ -84,6 +115,89 @@ module Kazoo
 	
 				args = node.args.map { |arg| translate_expression(arg) }
 				@builder.call(callee, *args.push('calltmp'))
+				
+			when For
+				ph_bb		= @builder.current_block
+				fun			= ph_bb.parent
+				loop_cond_bb	= fun.blocks.append('loop_cond')
+				
+				init_val = translate_expression(node.init)
+				@builder.br(loop_cond_bb)
+				
+				@builder.position_at_end(loop_cond_bb)
+				var = @builder.phi(RLTK::CG::DoubleType, {ph_bb => init_val}, node.var)
+				
+				old_var = @st[node.var]
+				@st[node.var] = var
+				
+				# Translate the conditional code.
+				end_cond = translate_expression(node.cond)
+				end_cond = @builder.fcmp(:one, end_cond, ZERO, 'loopcond')
+				
+				loop_bb0 = fun.blocks.append('loop')
+				@builder.position_at_end(loop_bb0)
+				
+				translate_expression(node.body)
+				
+				loop_bb1 = @builder.current_block
+				
+				step_val = translate_expression(node.step)
+				next_var = @builder.fadd(var, step_val, 'nextvar')
+				var.incoming.add({loop_bb1 => next_var})
+				
+				@builder.br(loop_cond_bb)
+				
+				# Add the conditional branch to the loop_cond_bb.
+				after_bb = fun.blocks.append('afterloop')
+				
+				loop_cond_bb.build { cond(end_cond, loop_bb0, after_bb) }
+				
+				@builder.position_at_end(after_bb)
+				
+				@st[node.var] = old_var
+				
+				ZERO
+				
+			when If
+				cond_value = translate_expression(node.cond)
+				cond_value = @builder.fcmp(:one, cond_value, ZERO, 'ifcond')
+				
+				start_bb = @builder.current_block
+				fun = start_bb.parent
+				
+				then_bb = fun.blocks.append('then')
+				@builder.position_at_end(then_bb)
+				then_value = translate_expression(node.then)
+				new_then_bb = @builder.current_block
+				
+				else_bb = fun.blocks.append('else')
+				@builder.position_at_end(else_bb)
+				else_value = translate_expression(node.else)
+				new_else_bb = @builder.current_block
+				
+				merge_bb = fun.blocks.append('merge')
+				@builder.position_at_end(merge_bb)
+				phi = @builder.phi(RLTK::CG::DoubleType, {new_then_bb => then_value, new_else_bb => else_value}, 'iftmp')
+				
+				start_bb.build { cond(cond_value, then_bb, else_bb) }
+				
+				new_then_bb.build { br(merge_bb) }
+				new_else_bb.build { br(merge_bb) }
+				
+				returning(phi) { @builder.position_at_end(merge_bb) }
+				
+			when Unary
+				op = translate_expression(node.operand)
+				
+				case node
+				when Neg
+					@builder.fneg(op, 'negtmp')
+				
+				when Not
+					cond	= @builder.fcmp(:ueq, op, ZERO, 'cmptmp')
+					int	= @builder.not(cond, 'nottmp')
+					@builder.ui2fp(int, RLTK::CG::DoubleType, 'booltmp')
+				end
 				
 			when Variable
 				if @st.key?(node.name)
@@ -118,10 +232,9 @@ module Kazoo
 		end
 		
 		def translate_prototype(node)
-			if fun = @module.functions[node.name]
+			if fun = @module.functions.named(node.name)
 				if fun.basic_blocks.size != 0
 					raise "Redefinition of function #{node.name}."
-					
 				elsif fun.params.size != node.arg_names.length
 					raise "Redefinition of function #{node.name} with different number of arguments."
 				end

@@ -3,7 +3,7 @@
 # Date:		2011/05/11
 # Description:	This file sets up a JITing execution engine for Kazoo.
 
-# LLVM Files
+# RLTK Files
 require 'rltk/cg/llvm'
 require 'rltk/cg/module'
 
