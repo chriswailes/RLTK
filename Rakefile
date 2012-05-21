@@ -14,18 +14,17 @@ require 'bundler'
 require File.expand_path("../lib/rltk/version", __FILE__)
 
 begin
-	require 'rdoc/task'
-	
-	RDoc::Task.new do |t|
-		t.title		= 'The Ruby Language Toolkit'
-		t.main		= 'README'
-		t.rdoc_dir	= 'doc'
-	
-		t.rdoc_files.include('README', 'lib/*.rb', 'lib/rltk/*.rb', 'lib/rltk/**/*.rb')
-	end
+	require 'yard'
 
+	YARD::Rake::YardocTask.new do |t|
+		yardlib = File.join(File.dirname(__FILE__), 'yardlib/rltk.rb')
+		
+		t.options	= ['-e', yardlib, '--title', 'The Ruby Language Toolkit', '-m', 'markdown', '-M', 'redcarpet', '-c', '.yardoc/cache']
+		t.files	= Dir['lib/**/*.rb']
+	end
+	
 rescue LoadError
-	warn 'RDoc is not installed.'
+	warn 'Yard is not installed. `gem install yard` to build documentation.'
 end
 
 Rake::TestTask.new do |t|
