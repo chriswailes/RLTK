@@ -103,7 +103,7 @@ module Kazoo
 				end
 			
 			when Call
-				callee = @module.functions.named(node.name)
+				callee = @module.functions[node.name]
 	
 				if not callee
 					raise 'Unknown function referenced.'
@@ -232,7 +232,7 @@ module Kazoo
 		end
 		
 		def translate_prototype(node)
-			if fun = @module.functions.named(node.name)
+			if fun = @module.functions[node.name]
 				if fun.basic_blocks.size != 0
 					raise "Redefinition of function #{node.name}."
 				elsif fun.params.size != node.arg_names.length

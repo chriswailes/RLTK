@@ -29,7 +29,7 @@ module Kazoo
 			@engine = RLTK::CG::JITCompiler.new(@module)
 			
 			# Add passes to the Function Pass Manager.
-			@engine.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify)
+			@engine.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify, :PromoteMemToReg)
 		end
 		
 		def add(ast)
@@ -53,6 +53,18 @@ module Kazoo
 		
 		def translate_expression(node)
 			case node
+			when Assign
+				right = translate_expression(node.right)
+				
+				alloca =
+				if @st.has_key?(node.name)
+					@st[node.name]
+				else
+					@st[node.name] = @builder.alloca(RLTK::CG::DoubleType, node.name)
+				end
+				
+				@builder.store(right, alloca)
+				
 			when Binary
 				left  = translate_expression(node.left)
 				right = translate_expression(node.right)
@@ -73,6 +85,33 @@ module Kazoo
 				when LT
 					cond = @builder.fcmp(:ult, left, right, 'cmptmp')
 					@builder.ui2fp(cond, RLTK::CG::DoubleType, 'booltmp')
+					
+				when GT
+					cond = @builder.fcmp(:ugt, left, right, 'cmptmp')
+					@builder.ui2fp(cond, RLTK::CG::DoubleType, 'booltmp')
+					
+				when Eql
+					cond = @builder.fcmp(:ueq, left, right, 'cmptmp')
+					@builder.ui2fp(cond, RLTK::CG::DoubleType, 'booltmp')
+					
+				when Or
+					left  = @builder.fcmp(:une, left, ZERO, 'lefttmp')
+					right = @builder.fcmp(:une, right, ZERO, 'righttmp')
+					
+					int = @builder.or(left, right, 'ortmp')
+					
+					@builder.ui2fp(int, RLTK::CG::DoubleType, 'booltmp')
+					
+				when And
+					left  = @builder.fcmp(:une, left, ZERO, 'lefttmp')
+					right = @builder.fcmp(:une, right, ZERO, 'righttmp')
+					
+					int = @builder.and(left, right, 'andtmp')
+					
+					@builder.ui2fp(int, RLTK::CG::DoubleType, 'booltmp')
+					
+				else
+					right
 				end
 			
 			when Call
@@ -94,16 +133,17 @@ module Kazoo
 				fun			= ph_bb.parent
 				loop_cond_bb	= fun.blocks.append('loop_cond')
 				
-				init_val = translate_expression(node.init)
-				@builder.br(loop_cond_bb)
-				
-				@builder.position_at_end(loop_cond_bb)
-				var = @builder.phi(RLTK::CG::DoubleType, {ph_bb => init_val}, node.var)
+				alloca	= @builder.alloca(RLTK::CG::DoubleType, node.var)
+				init_val	= translate_expression(node.init)
+				@builder.store(init_val, alloca)
 				
 				old_var = @st[node.var]
-				@st[node.var] = var
+				@st[node.var] = alloca
+				
+				@builder.br(loop_cond_bb)
 				
 				# Translate the conditional code.
+				@builder.position_at_end(loop_cond_bb)
 				end_cond = translate_expression(node.cond)
 				end_cond = @builder.fcmp(:one, end_cond, ZERO, 'loopcond')
 				
@@ -114,9 +154,10 @@ module Kazoo
 				
 				loop_bb1 = @builder.current_block
 				
-				step_val = translate_expression(node.step)
-				next_var = @builder.fadd(var, step_val, 'nextvar')
-				var.incoming.add({loop_bb1 => next_var})
+				step_val	= translate_expression(node.step)
+				var		= @builder.load(alloca, node.var)
+				next_var	= @builder.fadd(var, step_val, 'nextvar')
+				@builder.store(next_var, alloca)
 				
 				@builder.br(loop_cond_bb)
 				
@@ -159,9 +200,23 @@ module Kazoo
 				
 				returning(phi) { @builder.position_at_end(merge_bb) }
 				
+			when Unary
+				op = translate_expression(node.operand)
+				
+				case node
+				when Neg
+					@builder.fneg(op, 'negtmp')
+				
+				when Not
+					cond	= @builder.fcmp(:ueq, op, ZERO, 'cmptmp')
+					int	= @builder.not(cond, 'nottmp')
+					@builder.ui2fp(int, RLTK::CG::DoubleType, 'booltmp')
+				end
+				
 			when Variable
 				if @st.key?(node.name)
-					@st[node.name]
+					@builder.load(@st[node.name], node.name)
+					
 				else
 					raise "Unitialized variable '#{node.name}'."
 				end
@@ -181,9 +236,15 @@ module Kazoo
 			# Translate the function's prototype.
 			fun = translate_prototype(node.proto)
 			
-			# Create a new basic block to insert into, translate the
-			# expression, and set its value as the return value.
-			fun.blocks.append('entry', nil, @builder, self) do |jit|
+			# Create a new basic block to insert into, allocate space for
+			# the arguments, store their values, translate the expression,
+			# and set its value as the return value.
+			fun.blocks.append('entry', nil, @builder, self, @st) do |jit, st|
+				fun.params.each do |param|
+					st[param.name] = alloca(RLTK::CG::DoubleType, param.name)
+					store(param, st[param.name])
+				end
+				
 				ret jit.translate_expression(node.body)
 			end
 			
@@ -192,11 +253,11 @@ module Kazoo
 		end
 		
 		def translate_prototype(node)
-			if fun = @module.functions[node.name]
+			if fun = @module.functions.named(node.name)
 				if fun.basic_blocks.size != 0
-					raise "Redefinition of function #{node.name}."
+					raise Exception, "Redefinition of function #{node.name}."
 				elsif fun.params.size != node.arg_names.length
-					raise "Redefinition of function #{node.name} with different number of arguments."
+					raise Exception, "Redefinition of function #{node.name} with different number of arguments."
 				end
 			else
 				fun = @module.functions.add(node.name, RLTK::CG::DoubleType, Array.new(node.arg_names.length, RLTK::CG::DoubleType))
