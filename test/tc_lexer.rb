@@ -20,61 +20,61 @@ require 'rltk/lexers/ebnf'
 # Classes and Modules #
 #######################
 
-class ABLongest < RLTK::Lexer
-	rule(/a+/)	{ :APLUS }
-	rule(/b+/)	{ :BPLUS }
+class LexerTester < Test::Unit::TestCase
+	class ABLongest < RLTK::Lexer
+		rule(/a+/)	{ :APLUS }
+		rule(/b+/)	{ :BPLUS }
 	
-	rule(/a+b+/)	{ :APLUSBPLUS }
-end
+		rule(/a+b+/)	{ :APLUSBPLUS }
+	end
 
-class ABFirst < RLTK::Lexer
-	match_first
+	class ABFirst < RLTK::Lexer
+		match_first
 	
-	rule(/a+/)	{ :APLUS }
-	rule(/b+/)	{ :BPLUS }
+		rule(/a+/)	{ :APLUS }
+		rule(/b+/)	{ :BPLUS }
 	
-	rule(/a+b+/)	{ :APLUSBPLUS }
-end
+		rule(/a+b+/)	{ :APLUSBPLUS }
+	end
 
-class ENVLexer < RLTK::Lexer
-	rule(/a/)	{ [:A, next_value] }
+	class ENVLexer < RLTK::Lexer
+		rule(/a/)	{ [:A, next_value] }
 	
-	class Environment < Environment
-		def initialize(*args)
-			super(*args)
-			@value = -1
-		end
+		class Environment < Environment
+			def initialize(*args)
+				super(*args)
+				@value = -1
+			end
 		
-		def next_value
-			@value += 1
+			def next_value
+				@value += 1
+			end
 		end
 	end
-end
 
-class FlagLexer < RLTK::Lexer
-	rule(/a/)		{ set_flag(:a); :A }
-	rule(/\s/)
+	class FlagLexer < RLTK::Lexer
+		rule(/a/)		{ set_flag(:a); :A }
+		rule(/\s/)
 	
-	rule(/b/, :default, [:a])	{ set_flag(:b); :B }
-	rule(/c/, :default, [:a, :b])	{ :C }
-end
+		rule(/b/, :default, [:a])	{ set_flag(:b); :B }
+		rule(/c/, :default, [:a, :b])	{ :C }
+	end
 
-class StateLexer < RLTK::Lexer
-	rule(/a/)		{ :A }
-	rule(/\s/)
+	class StateLexer < RLTK::Lexer
+		rule(/a/)		{ :A }
+		rule(/\s/)
 	
-	rule(/\(\*/)	{ push_state(:comment) }
+		rule(/\(\*/)	{ push_state(:comment) }
 	
-	rule(/\(\*/, :comment)	{ push_state(:comment) }
-	rule(/\*\)/, :comment)	{ pop_state }
-	rule(/./,    :comment)
-end
+		rule(/\(\*/, :comment)	{ push_state(:comment) }
+		rule(/\*\)/, :comment)	{ pop_state }
+		rule(/./,    :comment)
+	end
 
-class MatchDataLexer < RLTK::Lexer
-	rule(/a(b*)(c+)/) { [:FOO, match[1,2]] }
-end
-
-class LexerTester < Test::Unit::TestCase
+	class MatchDataLexer < RLTK::Lexer
+		rule(/a(b*)(c+)/) { [:FOO, match[1,2]] }
+	end
+	
 	def test_calc
 		expected =
 			[

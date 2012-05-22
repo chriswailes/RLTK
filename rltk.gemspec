@@ -31,10 +31,14 @@ Gem::Specification.new do |s|
 	s.homepage	= 'http://github.com/chriswailes/RLTK'
 	s.license		= 'University of Illinois/NCSA Open Source License'
 	
-	s.add_development_dependency("builder")
-	s.add_development_dependency("rake")
-	s.add_development_dependency("rcov")
-	s.add_development_dependency("rdoc")
+	s.add_dependency('ffi', '>= 1.0.0')
 	
-	s.test_files	= Dir.glob('test/tc_*.rb')
+	s.add_development_dependency('bundler')
+	s.add_development_dependency('ffi_gen')
+	s.add_development_dependency('rake')
+	s.add_development_dependency('rcov')
+	s.add_development_dependency('simplecov')
+	s.add_development_dependency('yard')
+	
+	s.test_files	= Dir.glob('test/tc_*.rb') + Dir.glob('test/ts_*.rb')
 end
