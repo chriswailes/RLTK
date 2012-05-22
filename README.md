@@ -39,7 +39,7 @@ Here are some reasons to use RLTK to build your lexers, parsers, and abstract sy
 
 ## Lexers
 
-To create your own lexer using RLTK you simply need to subclass the RLTK::Lexer class and define the *rules* that will be used for matching text and generating tokens.  Here we see a simple lexer for a calculator:
+To create your own lexer using RLTK you simply need to subclass the {RLTK::Lexer} class and define the *rules* that will be used for matching text and generating tokens.  Here we see a simple lexer for a calculator:
 
 	class Calculator < RLTK::Lexer
 		rule(/\+/)	{ :PLS }
@@ -57,11 +57,11 @@ To create your own lexer using RLTK you simply need to subclass the RLTK::Lexer 
 
 The `rule` method's first argument is the regular expression used for matching text.  The block passed to the function is the action that executes when a substring is matched by the rule.  These blocks must return the *type* of the token (which must be in ALL CAPS; see the Parsers section), and optionally a *value*.  In the latter case you must return an array containing the *type* and *value*, which you can see an example of in the Calculator lexer shown above.  The values returned by the proc object are used to build a RLTK::Token object that includes the *type* and *value* information, as well as information about the line number the token was found on, the offset from the beginning of the line to the start of the token, and the length of the token's text.  If the *type* value returned by the proc is `nil` the input is discarded and no token is produced.
 
-The RLTK::Lexer class provides both RLTK::Lexer::lex and RLTK::Lexer::lex_file.  The RLTK::Lexer::lex method takes a string as its argument and returns an array of tokens, with an *end of stream* token automatically added to the result.  The RLTK::Lexer::lex_file method takes the name of a file as input, and lexes the contents of the specified file.
+The {RLTK::Lexer} class provides both RLTK::Lexer::lex and RLTK::Lexer::lex_file.  The RLTK::Lexer::lex method takes a string as its argument and returns an array of tokens, with an *end of stream* token automatically added to the result.  The RLTK::Lexer::lex_file method takes the name of a file as input, and lexes the contents of the specified file.
 
 ### The Lexing Environment
 
-The proc objects passed to the `rule` methods are evaluated inside an instance of the RLTK::Lexer::Environment class.  This gives you access to methods for manipulating the lexer's state and flags (see bellow).  You can also subclass the environment inside your lexer to provide additional functionality to your rule blocks.  When doing so you need to ensure that you name your new class Environment like in the following example:
+The proc objects passed to the `rule` methods are evaluated inside an instance of the {RLTK::Lexer::Environment} class.  This gives you access to methods for manipulating the lexer's state and flags (see bellow).  You can also subclass the environment inside your lexer to provide additional functionality to your rule blocks.  When doing so you need to ensure that you name your new class Environment like in the following example:
 
 	class MyLexer < RLTK::Lexer
 		...
@@ -161,7 +161,7 @@ Let us look at the simple prefix calculator included with RLTK:
 		finalize
 	end
 
-The parser uses the same method for defining productions as the RLTK::CFG class.  In fact, the parser forwards the `production` and `clause` method invocations to an internal RLTK::CFG object after removing the parser specific information.  To see a detailed description of grammar definitions please read the Context-Free Grammars section bellow.
+The parser uses the same method for defining productions as the {RLTK::CFG} class.  In fact, the parser forwards the `production` and `clause` method invocations to an internal RLTK::CFG object after removing the parser specific information.  To see a detailed description of grammar definitions please read the Context-Free Grammars section bellow.
 
 It is important to note that the proc objects associated with productions should evaluate to the value you wish the left-hand side of the production to take.
 
@@ -208,7 +208,7 @@ By default the proc objects associated with productions are passed one argument 
 
 ### The Parsing Environment
 
-The parsing environment is the context in which the proc objects associated with productions are evaluated, and can be used to provide helper functions and to keep state while parsing.  To define a custom environment simply subclass RLTK::Parser::Environment inside your parser definition as follows:
+The parsing environment is the context in which the proc objects associated with productions are evaluated, and can be used to provide helper functions and to keep state while parsing.  To define a custom environment simply subclass {RLTK::Parser::Environment} inside your parser definition as follows:
 
 	class MyParser < RLTK::Parser
 		...
@@ -294,9 +294,9 @@ The example below for the unit tests shows a very basic usage of error productio
 
 ## ASTNode
 
-The RLTK::ASTNode base class is meant to be a good starting point for implementing your own abstract syntax tree nodes.  By subclassing RLTK::ASTNode you automagically get features such as tree comparison, notes, value accessors with type checking, child node accessors and `each` and `map` methods (with type checking), and the ability to retrieve the root of a tree from any member node.
+The {RLTK::ASTNode} base class is meant to be a good starting point for implementing your own abstract syntax tree nodes.  By subclassing {RLTK::ASTNode} you automagically get features such as tree comparison, notes, value accessors with type checking, child node accessors and `each` and `map` methods (with type checking), and the ability to retrieve the root of a tree from any member node.
 
-To create your own AST node classes you subclass the RLTK::ASTNode class and then use the RLTK::ASTNode::child and RLTK::ASTNode::value methods.  By declaring the children and values of a node the class will define the appropriate accessors with type checking, know how to pack and unpack a node's children, and know how to handle constructor arguments.
+To create your own AST node classes you subclass the {RLTK::ASTNode} class and then use the RLTK::ASTNode::child and RLTK::ASTNode::value methods.  By declaring the children and values of a node the class will define the appropriate accessors with type checking, know how to pack and unpack a node's children, and know how to handle constructor arguments.
 
 Here we can see the definition of several AST node classes that might be used to implement binary operations for a language:
 	
@@ -313,9 +313,9 @@ Here we can see the definition of several AST node classes that might be used to
 		child :right, Expression
 	end
 
-The assignment functions that are generated for the children and values perform type checking to make sure that the AST is well-formed.  The type of a child must be a subclass of the RLTK::ASTNode class, whereas the type of a value must NOT be a subclass of the RLTK::ASTNode class.  While child and value objects are stored as instance variables it is unsafe to assign to these variables directly, and it is strongly recommended to always use the accessor functions.
+The assignment functions that are generated for the children and values perform type checking to make sure that the AST is well-formed.  The type of a child must be a subclass of the {RLTK::ASTNode} class, whereas the type of a value must NOT be a subclass of the {RLTK::ASTNode} class.  While child and value objects are stored as instance variables it is unsafe to assign to these variables directly, and it is strongly recommended to always use the accessor functions.
 
-When instantiating a subclass of RLTK::ASTNode the arguments to the constructor should be the node's values (in order of definition) followed by the node's children (in order of definition).  Example:
+When instantiating a subclass of {RLTK::ASTNode} the arguments to the constructor should be the node's values (in order of definition) followed by the node's children (in order of definition).  Example:
 
 	class Foo < RLTK::ASTNode
 		value :a, Fixnum
@@ -336,11 +336,11 @@ Lastly, the type of a child or value can be defined as an array of objects of a 
 
 ## Context-Free Grammars
 
-The RLTK::CFG class provides an abstraction for context-free grammars.  For the purpose of this class terminal symbols appear in **ALL CAPS**, and non-terminal symbols appear in **all lowercase**.  Once a grammar is defined the RLTK::CFG.first_set and RLTK::CFG.follow_set methods can be used to find *first* and *follow* sets.
+The {RLTK::CFG} class provides an abstraction for context-free grammars.  For the purpose of this class terminal symbols appear in **ALL CAPS**, and non-terminal symbols appear in **all lowercase**.  Once a grammar is defined the {RLTK::CFG.first_set} and {RLTK::CFG.follow_set} methods can be used to find *first* and *follow* sets.
 
 === Defining Grammars
 
-A grammar is defined by first instantiating the RLTK::CFG class.  The RLTK::CFG.production and RLTK::CFG.clause methods may then be used to define the productions of the grammar.  The `production` method can take a Symbol denoting the left-hand side of the production and a string describing the right-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the `clause` method, each call producing a new production with the same left-hand side but different right-hand sides.  RLTK::CFG.clause may not be called outside of RLTK::CFG.production.  Bellow we see a grammar definition that uses both methods:
+A grammar is defined by first instantiating the {RLTK::CFG} class.  The {RLTK::CFG.production} and {RLTK::CFG.clause} methods may then be used to define the productions of the grammar.  The `production` method can take a Symbol denoting the left-hand side of the production and a string describing the right-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the `clause` method, each call producing a new production with the same left-hand side but different right-hand sides.  {RLTK::CFG.clause} may not be called outside of {RLTK::CFG.production}.  Bellow we see a grammar definition that uses both methods:
 
 	grammar = RLTK::CFG.new
 	
@@ -358,7 +358,7 @@ A grammar is defined by first instantiating the RLTK::CFG class.  The RLTK::CFG.
 
 The RLTK::CFG class understands grammars written in the extended Backus–Naur form.  This allows you to use the \*, \+, and ? operators in your grammar definitions.  When each of these operators are encountered additional productions are generated.  For example, if the right-hand side of a production contained 'NUM*' a production of the form 'num_star -> | NUM num_star' is added to the grammar.  As such, your grammar should not contain productions with similar left-hand sides (e.g. foo_star, bar_question, or baz_plus).
 
-As these additional productions are added internally to the grammar a callback functionality is provided to let you know when such an event occurs.  The callback proc object can either be specified when the CFG object is created, or by using the RLTK::CFG.callback method.  The callback will receive three arguments: the production generated, the operator that triggered the generation, and a symbol (:first or :second) specifying which clause of the production this callback is for.
+As these additional productions are added internally to the grammar a callback functionality is provided to let you know when such an event occurs.  The callback proc object can either be specified when the CFG object is created, or by using the {RLTK::CFG.callback} method.  The callback will receive three arguments: the production generated, the operator that triggered the generation, and a symbol (:first or :second) specifying which clause of the production this callback is for.
 
 ### Helper Functions
 
@@ -375,11 +375,11 @@ Once a grammar has been defined you can use the following functions to obtain in
 
 The following lexer and parser classes are included as part of RLTK:
 
-* RLTK::Lexers::Calculator
-* RLTK::Lexers::EBNF
-* RLTK::Parsers::PrefixCalc
-* RLTK::Parsers::InfixCalc
-* RLTK::Parsers::PostfixCalc
+* {RLTK::Lexers::Calculator}
+* {RLTK::Lexers::EBNF}
+* {RLTK::Parsers::PrefixCalc}
+* {RLTK::Parsers::InfixCalc}
+* {RLTK::Parsers::PostfixCalc}
 
 ## Contributing
 
