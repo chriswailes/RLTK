@@ -42,8 +42,10 @@ module RLTK # :nodoc:
 		# Class Methods #
 		#################
 		
-		def ASTNode.inherited(klass)
-			klass.class_exec do
+		class << self
+			
+			# Installes instance class varialbes into a class.
+			def install_icvars
 				if self.superclass == ASTNode
 					@child_names = Array.new
 					@value_names = Array.new
@@ -51,126 +53,132 @@ module RLTK # :nodoc:
 					@child_names = self.superclass.child_names.clone
 					@value_names = self.superclass.value_names.clone
 				end
+			end
+			
+			# Called when the Lexer class is sub-classed, it installes
+			# necessary instance class variables.
+			def inherited(klass)
+				klass.install_icvars
+			end
+			
+			# Defined a child for this AST class and its subclasses.
+			# The name of the child will be used to define accessor
+			# methods that include type checking.  The type of this
+			# child must be a subclass of the ASTNode class.
+			def child(name, type)
+				if type.is_a?(Array) and type.length == 1
+					t = type.first
 				
-				# Defined a child for this AST class and its subclasses.
-				# The name of the child will be used to define accessor
-				# methods that include type checking.  The type of this
-				# child must be a subclass of the ASTNode class.
-				def self.child(name, type)
-					if type.is_a?(Array) and type.length == 1
-						t = type.first
+				elsif type.is_a?(Class)
+					t = type
 					
-					elsif type.is_a?(Class)
-						t = type
-						
-					else
-						raise 'Child and Value types must be a class name or an array with a single class name element.'
-					end
-					
-					# Check to make sure that type is a subclass of
-					# ASTNode.
-					if not t.subclass_of?(t, ASTNode)
-						raise "A child's type specification must be a subclass of ASTNode."
-					end
-					
-					@child_names << name
-					self.define_accessor(name, type, true)
+				else
+					raise 'Child and Value types must be a class name or an array with a single class name element.'
 				end
 				
-				# Returns an array of the names of this node's children.
-				def self.child_names
-					@child_names
+				# Check to make sure that type is a subclass of
+				# ASTNode.
+				if not t.subclass_of?(ASTNode)
+					raise "A child's type specification must be a subclass of ASTNode."
 				end
 				
-				# This method defines a type checking accessor named _name_
-				# with type _type_.
-				def self.define_accessor(name, type, set_parent = false)
-					ivar_name = ('@' + name.to_s).to_sym
-					
-					define_method(name) do
-						self.instance_variable_get(ivar_name)
-					end
-					
-					if type.is_a?(Class)
-						if set_parent
-							define_method((name.to_s + '=').to_sym) do |value|
-								if value.is_a?(type) or value == nil
-									self.instance_variable_set(ivar_name, value)
-								
-									value.parent = self if value
-								else
-									raise TypeMismatch.new(type, value.class)
-								end
-							end
+				@child_names << name
+				self.define_accessor(name, type, true)
+			end
+			
+			# Returns an array of the names of this node class's children.
+			def child_names
+				@child_names
+			end
+			
+			# This method defines a type checking accessor named _name_
+			# with type _type_.
+			def define_accessor(name, type, set_parent = false)
+				ivar_name = ('@' + name.to_s).to_sym
+				
+				define_method(name) do
+					self.instance_variable_get(ivar_name)
+				end
+				
+				if type.is_a?(Class)
+					if set_parent
+						define_method((name.to_s + '=').to_sym) do |value|
+							if value.is_a?(type) or value == nil
+								self.instance_variable_set(ivar_name, value)
 							
-						else
-							define_method((name.to_s + '=').to_sym) do |value|
-								if value.is_a?(type) or value == nil
-									self.instance_variable_set(ivar_name, value)
-									
-								else
-									raise TypeMismatch.new(type, value.class)
-								end
+								value.parent = self if value
+							else
+								raise TypeMismatch.new(type, value.class)
 							end
 						end
 						
 					else
-						type = type.first
-						
-						if set_parent
-							define_method((name.to_s + '=').to_sym) do |value|
-								if value.inject(true) { |m, o| m and o.is_a?(type) }
-									self.instance_variable_set(ivar_name, value)
+						define_method((name.to_s + '=').to_sym) do |value|
+							if value.is_a?(type) or value == nil
+								self.instance_variable_set(ivar_name, value)
 								
-									value.each { |c| c.parent = self }
-								else
-									raise TypeMismatch.new(type, value.class)
-								end
+							else
+								raise TypeMismatch.new(type, value.class)
 							end
+						end
+					end
+					
+				else
+					type = type.first
+					
+					if set_parent
+						define_method((name.to_s + '=').to_sym) do |value|
+							if value.inject(true) { |m, o| m and o.is_a?(type) }
+								self.instance_variable_set(ivar_name, value)
 							
-						else
-							define_method((name.to_s + '=').to_sym) do |value|
-								if value.inject(true) { |m, o| m and o.is_a?(type) }
-									self.instance_variable_set(ivar_name, value)
-									
-								else
-									raise TypeMismatch.new(type, value.class)
-								end
+								value.each { |c| c.parent = self }
+							else
+								raise TypeMismatch.new(type, value.class)
 							end
 						end
 						
-					end
-				end
-				
-				# Defined a value for this AST class and its subclasses.
-				# The name of the value will be used to define accessor
-				# methods that include type checking.  The type of this
-				# value must NOT be a subclass of the ASTNode class.
-				def self.value(name, type)
-					if type.is_a?(Array) and type.length == 1
-						t = type.first
-					
-					elsif type.is_a?(Class)
-						t = type
-						
 					else
-						raise 'Child and Value types must be a class name or an array with a single class name element.'
+						define_method((name.to_s + '=').to_sym) do |value|
+							if value.inject(true) { |m, o| m and o.is_a?(type) }
+								self.instance_variable_set(ivar_name, value)
+								
+							else
+								raise TypeMismatch.new(type, value.class)
+							end
+						end
 					end
 					
-					# Check to make sure that type is NOT a subclass of
-					# ASTNode.
-					if t.subclass_of?(ASTNode)
-						raise "A value's type specification must NOT be a subclass of ASTNode."
-					end
+				end
+			end
+			
+			# Defined a value for this AST class and its subclasses.
+			# The name of the value will be used to define accessor
+			# methods that include type checking.  The type of this
+			# value must NOT be a subclass of the ASTNode class.
+			def value(name, type)
+				if type.is_a?(Array) and type.length == 1
+					t = type.first
+				
+				elsif type.is_a?(Class)
+					t = type
 					
-					@value_names << name
-					self.define_accessor(name, type)
+				else
+					raise 'Child and Value types must be a class name or an array with a single class name element.'
 				end
 				
-				# Returns an array of the names of this node's values.
-				def self.value_names
-					@value_names
+				# Check to make sure that type is NOT a subclass of
+				# ASTNode.
+				if t.subclass_of?(ASTNode)
+					raise "A value's type specification must NOT be a subclass of ASTNode."
 				end
+				
+				@value_names << name
+				self.define_accessor(name, type)
+			end
+			
+			# Returns an array of the names of this node's values.
+			def value_names
+				@value_names
 			end
 		end
 		

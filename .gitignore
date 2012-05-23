@@ -2,4 +2,6 @@ pkg/*
 doc/*
 coverage/*
 
+.yardoc/*
+
 *.gem

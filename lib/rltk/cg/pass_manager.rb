@@ -70,7 +70,8 @@ module RLTK::CG
 		
 		def initialize(engine, mod)
 			# LLVM Initialization
-			@ptr		= Bindings.create_pass_manager
+			@ptr = Bindings.create_pass_manager
+			@mod = mod
 			
 			Bindings.add_target_data(Bindings.get_execution_engine_target_data(engine), @ptr)
 			

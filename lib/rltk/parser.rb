@@ -62,112 +62,13 @@ module RLTK # :nodoc:
 	# documentation.
 	class Parser
 		
-		# Called when the Parser class is sub-classed, this method adds a
-		# ParserCore to the new class, and installs some needed class and
-		# instance methods.
-		def Parser.inherited(klass)
-			klass.class_exec do
-				@core = ParserCore.new
-				
-				# Returns this class's ParserCore object.
-				def self.core
-					@core
-				end
-				
-				# Routes method calls to the new subclass to the ParserCore
-				# object.
-				def self.method_missing(method, *args, &proc)
-					@core.send(method, *args, &proc)
-				end
-				
-				# Alias for RLTK::Parser::ParserCore.p that needs to be
-				# manually connected.
-				def self.p(*args, &proc)
-					@core.p(*args, &proc)
-				end
-				
-				# Parses the given token stream using a newly instantiated
-				# environment.  See ParserCore.parse for a description of
-				# the _opts_ option hash.
-				def self.parse(tokens, opts = {})
-					opts[:env] ||= self::Environment.new
-					
-					@core.parse(tokens, opts)
-				end
-				
-				# Instantiates a new parser and creates an environment to be
-				# used for subsequent calls.
-				def initialize
-					@env = self.class::Environment.new
-				end
-				
-				# Returns the environment used by the instantiated parser.
-				def env
-					@env
-				end
-				
-				# Parses the given token stream using the encapsulated
-				# environment.  See ParserCore.parse for a description of
-				# the _opts_ option hash.
-				def parse(tokens, opts = {})
-					self.class.core.parse(tokens, {:env => @env}.update(opts))
-				end
-			end
-		end
+		#################
+		# Class Methods #
+		#################
 		
-		# All actions passed to ParserCore.rule and ParserCore.clause are
-		# evaluated inside an instance of the Environment class or its
-		# subclass (which must have the same name).
-		class Environment
-			# Indicates if an error was encountered and handled.
-			attr_accessor :he
-			
-			# A list of all objects added using the _error_ method.
-			attr_reader :errors
-			
-			# Instantiate a new Environment object.
-			def initialize
-				self.reset
-			end
-			
-			# Adds an object to the list of errors.
-			def error(o)
-				@errors << o
-			end
-			
-			# Returns a StreamPosition object for the symbol at location n,
-			# indexed from zero.
-			def pos(n)
-				@positions[n]
-			end
-			
-			# Reset any variables that need to be re-initialized between
-			# parse calls.
-			def reset
-				@errors	= Array.new
-				@he		= false
-			end
-			
-			# Setter for the _positions_ array.
-			def set_positions(positions)
-				@positions = positions
-			end
-		end
-		
-		# The ParserCore class provides mos of the functionality of the Parser
-		# class.  A ParserCore is instantiated for each subclass of Parser,
-		# thereby allowing multiple parsers to be defined inside a single Ruby
-		# program.
-		class ParserCore
-			
-			# The grammar that can be parsed by this ParserCore.  The grammar
-			# is used internally and should not be manipulated outside of the
-			# ParserCore object.
-			attr_reader :grammar
-			
-			# Instantiates a new ParserCore object with the needed data
-			# structures.
-			def initialize
+		class << self
+			# Installes instance class varialbes into a class.
+			def install_icvars
 				@curr_lhs		= nil
 				@curr_prec	= nil
 				
@@ -212,6 +113,12 @@ module RLTK # :nodoc:
 				end
 			end
 			
+			# Called when the Lexer class is sub-classed, it installes
+			# necessary instance class variables.
+			def inherited(klass)
+				klass.install_icvars
+			end
+			
 			# If _state_ (or its equivalent) is not in the state list it is
 			# added and it's ID is returned.  If there is already a state
 			# with the same items as _state_ in the state list its ID is
@@ -230,7 +137,7 @@ module RLTK # :nodoc:
 			
 			# Calling this method will cause the parser to pass right-hand
 			# side values as arrays instead of splats.  This method must be
-			# called before ANY calls to ParserCore.production.
+			# called before ANY calls to Parser.production.
 			def array_args
 				if @grammar.productions.length == 0
 					@args = :array
@@ -262,7 +169,7 @@ module RLTK # :nodoc:
 				end
 			end
 			
-			# Build a hash with the default options for ParserCore.finalize
+			# Build a hash with the default options for Parser.finalize
 			# and then update it with the values from _opts_.
 			def build_finalize_opts(opts)
 				opts[:explain]	= self.get_io(opts[:explain])
@@ -275,7 +182,7 @@ module RLTK # :nodoc:
 				}.update(opts)
 			end
 			
-			# Build a hash with the default options for ParserCore.parse and
+			# Build a hash with the default options for Parser.parse and
 			# then update it with the values from _opts_.
 			def build_parse_opts(opts)
 				opts[:parse_tree]	= self.get_io(opts[:parse_tree])
@@ -283,7 +190,7 @@ module RLTK # :nodoc:
 				
 				{
 					:accept		=> :first,
-					:env			=> Environment.new,
+					:env			=> self::Environment.new,
 					:parse_tree	=> false,
 					:verbose		=> false
 				}.update(opts)
@@ -389,7 +296,6 @@ module RLTK # :nodoc:
 				# last terminal in the production.
 				@production_precs[production.id] = precedence || production.last_terminal
 			end
-			
 			alias :c :clause
 			
 			# Removes resources that were needed to generate the parser but
@@ -418,9 +324,9 @@ module RLTK # :nodoc:
 			# provided IO object.
 			def explain(io)
 				if @grammar and not @states.empty?
-					io.puts("###############")
-					io.puts("# Productions #")
-					io.puts("###############")
+					io.puts('###############')
+					io.puts('# Productions #')
+					io.puts('###############')
 					io.puts
 					
 					# Print the productions.
@@ -438,9 +344,9 @@ module RLTK # :nodoc:
 						io.puts
 					end
 					
-					io.puts("##########")
-					io.puts("# Tokens #")
-					io.puts("##########")
+					io.puts('##########')
+					io.puts('# Tokens #')
+					io.puts('##########')
 					io.puts
 					
 					@grammar.terms.sort {|a,b| a.to_s <=> b.to_s }.each do |term|
@@ -455,9 +361,9 @@ module RLTK # :nodoc:
 					
 					io.puts
 					
-					io.puts("#####################")
-					io.puts("# Table Information #")
-					io.puts("#####################")
+					io.puts('#####################')
+					io.puts('# Table Information #')
+					io.puts('#####################')
 					io.puts
 					
 					io.puts("\tStart symbol: #{@grammar.start_symbol}")
@@ -476,9 +382,9 @@ module RLTK # :nodoc:
 					io.puts if not @conflicts.empty?
 					
 					# Print the parse table.
-					io.puts("###############")
-					io.puts("# Parse Table #")
-					io.puts("###############")
+					io.puts('###############')
+					io.puts('# Parse Table #')
+					io.puts('###############')
 					io.puts
 					
 					@states.each do |state|
@@ -540,8 +446,8 @@ module RLTK # :nodoc:
 			# * :precedence - To use precedence info for conflict resolution.
 			# * :use - A file name or object that is used to load/save the parser.
 			# 
-			# No calls to ParserCore.production may appear after the call to
-			# ParserCore.finalize.
+			# No calls to Parser.production may appear after the call to
+			# Parser.finalize.
 			def finalize(opts = {})
 				
 				# Get the full options hash.
@@ -675,6 +581,11 @@ module RLTK # :nodoc:
 				else
 					false
 				end
+			end
+			
+			# The grammar that can be parsed by this Parser.
+			def grammar
+				@grammar.clone
 			end
 			
 			# This method generates and memoizes the G' grammar used to
@@ -976,7 +887,7 @@ module RLTK # :nodoc:
 			# right-hand side of the production and _action_ is associated
 			# with the production.  If _expression_ is nil then _action_ is
 			# evaluated and expected to make one or more calls to
-			# ParserCore.clause.  A precedence can be associate with this
+			# Parser.clause.  A precedence can be associate with this
 			# production by setting _precedence_ to a terminal symbol.
 			def production(symbol, expression = nil, precedence = nil, &action)
 				
@@ -997,7 +908,6 @@ module RLTK # :nodoc:
 				@grammar.curr_lhs	= nil
 				@curr_prec		= nil
 			end
-			
 			alias :p :production
 			
 			# This method uses lookahead sets and precedence information to
@@ -1118,7 +1028,69 @@ module RLTK # :nodoc:
 			end
 		end
 		
-		# The ParseStack class is used by a ParserCore to keep track of state
+		####################
+		# Instance Methods #
+		####################
+		
+		# Instantiates a new parser and creates an environment to be
+		# used for subsequent calls.
+		def initialize
+			@env = self.class::Environment.new
+		end
+	
+		# Returns the environment used by the instantiated parser.
+		def env
+			@env
+		end
+	
+		# Parses the given token stream using the encapsulated environment
+		# See Parser.parse for a description of the *opts* option hash.
+		def parse(tokens, opts = {})
+			self.class.parse(tokens, {:env => @env}.update(opts))
+		end
+		
+		################################
+		
+		# All actions passed to Parser.producation and Parser.clause are
+		# evaluated inside an instance of the Environment class or its
+		# subclass (which must have the same name).
+		class Environment
+			# Indicates if an error was encountered and handled.
+			attr_accessor :he
+			
+			# A list of all objects added using the _error_ method.
+			attr_reader :errors
+			
+			# Instantiate a new Environment object.
+			def initialize
+				self.reset
+			end
+			
+			# Adds an object to the list of errors.
+			def error(o)
+				@errors << o
+			end
+			
+			# Returns a StreamPosition object for the symbol at location n,
+			# indexed from zero.
+			def pos(n)
+				@positions[n]
+			end
+			
+			# Reset any variables that need to be re-initialized between
+			# parse calls.
+			def reset
+				@errors	= Array.new
+				@he		= false
+			end
+			
+			# Setter for the _positions_ array.
+			def set_positions(positions)
+				@positions = positions
+			end
+		end
+		
+		# The ParseStack class is used by a Parser to keep track of state
 		# during parsing.
 		class ParseStack
 			attr_reader :id
