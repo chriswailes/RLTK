@@ -56,13 +56,13 @@ To create your own lexer using RLTK you simply need to subclass the {RLTK::Lexer
 		rule(/\s/)
 	end
 
-The `rule` method's first argument is the regular expression used for matching text.  The block passed to the function is the action that executes when a substring is matched by the rule.  These blocks must return the *type* of the token (which must be in ALL CAPS; see the Parsers section), and optionally a *value*.  In the latter case you must return an array containing the *type* and *value*, which you can see an example of in the Calculator lexer shown above.  The values returned by the proc object are used to build a {RLTK::Token} object that includes the *type* and *value* information, as well as information about the line number the token was found on, the offset from the beginning of the line to the start of the token, and the length of the token's text.  If the *type* value returned by the proc is `nil` the input is discarded and no token is produced.
+The {RLTK::Lexer.rule} method's first argument is the regular expression used for matching text.  The block passed to the function is the action that executes when a substring is matched by the rule.  These blocks must return the *type* of the token (which must be in ALL CAPS; see the Parsers section), and optionally a *value*.  In the latter case you must return an array containing the *type* and *value*, which you can see an example of in the Calculator lexer shown above.  The values returned by the proc object are used to build a {RLTK::Token} object that includes the *type* and *value* information, as well as information about the line number the token was found on, the offset from the beginning of the line to the start of the token, and the length of the token's text.  If the *type* value returned by the proc is `nil` the input is discarded and no token is produced.
 
 The {RLTK::Lexer} class provides both {RLTK::Lexer.lex} and {RLTK::Lexer.lex_file}.  The {RLTK::Lexer.lex} method takes a string as its argument and returns an array of tokens, with an *end of stream* token automatically added to the result.  The {RLTK::Lexer.lex_file} method takes the name of a file as input, and lexes the contents of the specified file.
 
 ### The Lexing Environment
 
-The proc objects passed to the `rule` methods are evaluated inside an instance of the {RLTK::Lexer::Environment} class.  This gives you access to methods for manipulating the lexer's state and flags (see bellow).  You can also subclass the environment inside your lexer to provide additional functionality to your rule blocks.  When doing so you need to ensure that you name your new class Environment like in the following example:
+The proc objects passed to the {RLTK::Lexer.rule} methods are evaluated inside an instance of the {RLTK::Lexer::Environment} class.  This gives you access to methods for manipulating the lexer's state and flags (see bellow).  You can also subclass the environment inside your lexer to provide additional functionality to your rule blocks.  When doing so you need to ensure that you name your new class Environment like in the following example:
 
 	class MyLexer < RLTK::Lexer
 		...
@@ -78,7 +78,7 @@ The proc objects passed to the `rule` methods are evaluated inside an instance o
 
 ### Using States
 
-The lexing environment may be used to keep track of state inside your lexer.  When rules are defined they are defined inside a given state, which is specified by the second parameter to `rule`.  The default state is cleverly named `:default`.  When the lexer is scanning the input string for matching rules, it only considers the rules for the given state.
+The lexing environment may be used to keep track of state inside your lexer.  When rules are defined they are defined inside a given state, which is specified by the second parameter to {RLTK::Lexer.rule}.  The default state is cleverly named `:default`.  When the lexer is scanning the input string for matching rules, it only considers the rules for the given state.
 
 The methods used to manipulate state are:
 
@@ -162,7 +162,7 @@ Let us look at the simple prefix calculator included with RLTK:
 		finalize
 	end
 
-The parser uses the same method for defining productions as the {RLTK::CFG} class.  In fact, the parser forwards the `production` and `clause` method invocations to an internal {RLTK::CFG} object after removing the parser specific information.  To see a detailed description of grammar definitions please read the Context-Free Grammars section bellow.
+The parser uses the same method for defining productions as the {RLTK::CFG} class.  In fact, the parser forwards the {RLTK::Parser.production} and {RLTK::Parser.clause} method invocations to an internal {RLTK::CFG} object after removing the parser specific information.  To see a detailed description of grammar definitions please read the Context-Free Grammars section bellow.
 
 It is important to note that the proc objects associated with productions should evaluate to the value you wish the left-hand side of the production to take.
 
