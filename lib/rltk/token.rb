@@ -12,16 +12,30 @@ module RLTK # :nodoc:
 	# The StreamPosition class is used to indicate the position of a token or
 	# other text inside a stream.
 	class StreamPosition
+		# @return [Integer]
 		attr_accessor :stream_offset
+		
+		# @return [Integer]
 		attr_accessor :line_number
+		
+		# @return [Integer]
 		attr_accessor :line_offset
+		
+		# @return [Integer]
 		attr_accessor :length
 		
+		# @return [String]
 		attr_accessor :file_name
 		
 		alias :start :line_offset
 		
 		# Instantiates a new StreamPosition object with the values specified.
+		#
+		# @param [Integer] stream_offset	The position from the beginning of the stream.
+		# @param [Integer] line_number	The number of newlines since the beginning of the file.
+		# @param [Integer] line_offset	The offset of this token from the beginning of the current line.
+		# @param [Integer] length		The length of the token.
+		# @param [String, nil] file_name	The name of the file being lexed.
 		def initialize(stream_offset = 0, line_number = 0, line_offset = 0, length = 0, file_name = nil)
 			@stream_offset	= stream_offset
 			@line_number	= line_number
@@ -34,13 +48,22 @@ module RLTK # :nodoc:
 	# The Token class is used to represent the output of a RLTK::Lexer and the
 	# input of a RLTK::Parser.
 	class Token
+		# @return [Symbol]
 		attr_reader :type
+		
+		# @return [Symbol]
 		attr_reader :value
 		
 		# The StreamPosition object associated with this token.
+		#
+		# @return [StreamPosition]
 		attr_reader :position
 		
 		# Instantiates a new Token object with the values specified.
+		#
+		# @param [Symbol] type			A symbol representing the type of this Token.
+		# @param [Object, nil] value		A value associated with this token.
+		# @param [StreamPosition] position	The position of the token in a stream.
 		def initialize(type, value = nil, position = nil)
 			@type	= type
 			@value	= value
@@ -50,11 +73,16 @@ module RLTK # :nodoc:
 		
 		# Compares one token to another.  This only tests the token's _type_
 		# and _value_ and not the location of the token in its source.
+		#
+		# @param [Token] other Another Token to compare to.
+		# @return [Boolean]
 		def ==(other)
 			self.type == other.type and self.value == other.value
 		end
 		
 		# Returns a string representing the tokens _type_ and _value_.
+		#
+		# @return [String]
 		def to_s
 			if value
 				"#{self.type}(#{self.value})"
