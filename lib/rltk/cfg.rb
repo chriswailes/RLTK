@@ -28,11 +28,13 @@ module RLTK # :nodoc:
 	# used to manipulate arbitrary CFGs.
 	class CFG
 		
-		# The start symbol for the grammar.
+		# @return [Symbol] The grammar's starting symbol.
 		attr_reader :start_symbol
 		
-		# The current left-hand side symbol.  This is used by the
-		# CFG.production method to wrap CFG.clause calls.
+		# This is used by the {CFG#production} method to wrap {CFG#clause}
+		# calls.
+		#
+		# @return [Symbol] The current left-hand side symbol.
 		attr_accessor :curr_lhs
 		
 		#################
@@ -41,12 +43,20 @@ module RLTK # :nodoc:
 		
 		# Tests to see if a symbol is a terminal symbol, as used by the CFG
 		# class.
+		#
+		# @param [Symbol] sym The symbol to test.
+		#
+		# @return [Boolean]
 		def self.is_terminal?(sym)
 			sym and (s = sym.to_s) == s.upcase
 		end
 		
 		# Tests to see if a symbol is a non-terminal symbol, as used by the
 		# CFG class.
+		#
+		# @param [Symbol] sym The symbol to test.
+		#
+		# @return [Boolean]
 		def self.is_nonterminal?(sym)
 			sym and (s = sym.to_s) == s.downcase
 		end
@@ -55,9 +65,11 @@ module RLTK # :nodoc:
 		# Instance Methods #
 		####################
 		
-		# Instantiates a new CFG object that uses _callback_ to inform the
+		# Instantiates a new CFG object that uses *callback* to inform the
 		# programmer of the generation of new productions due to EBNF
 		# operators.
+		#
+		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded.
 		def initialize(&callback)
 			@curr_lhs			= nil
 			@callback			= callback || Proc.new {}
@@ -77,12 +89,20 @@ module RLTK # :nodoc:
 			@follows	= Hash.new { |h,k| h[k] = Array.new }
 		end
 		
-		# Adds _production_ to the appropriate internal data structures.
+		# Adds *production* to the appropriate internal data structures.
+		#
+		# @param [Production] production The production to add to the grammar.
+		#
+		# @return [void]
 		def add_production(production)
 			@productions_sym[production.lhs] << (@productions_id[production.id] = production)
 		end
 		
-		# Sets the EBNF callback to _callback_.
+		# Sets the EBNF callback to *callback*.
+		#
+		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded.
+		#
+		# @return [void]
 		def callback(&callback)
 			@callback = callback || Proc.new {}
 		end
@@ -91,6 +111,10 @@ module RLTK # :nodoc:
 		# make a new production with the left-hand side specified by the
 		# CFG.production call's argument.  This is the function that is
 		# responsible for removing EBNF symbols from the grammar.
+		#
+		# @param [String] expression The right-hand side of a CFG production.
+		#
+		# @return [Production]
 		def clause(expression)
 			if not @curr_lhs
 				raise GrammarError, 'CFG.clause called outside of CFG.production block.'
@@ -150,11 +174,12 @@ module RLTK # :nodoc:
 			return production
 		end
 		
-		# Returns the _first_ set for _sentence_.  _Sentence_ may be either a
-		# single symbol or an array of symbols.
+		# @param [Symbol, Array<Symbol>] sentence Sentence to find the *first set* for.
+		#
+		# @return [Array<Symbol>] The *first set* for the given sentence.
 		def first_set(sentence)
 			if sentence.is_a?(Symbol)
-				self.first_set_prime(sentence)
+				first_set_prime(sentence)
 				
 			elsif sentence.inject(true) { |m, sym| m and self.symbols.include?(sym) }
 				set0 = []
@@ -167,14 +192,18 @@ module RLTK # :nodoc:
 				end
 				
 				if all_have_empty then set0 + [:'ɛ'] else set0 end
-			else
-				nil
 			end
 		end
 		
-		# This function is responsible for calculating the _first_ set of
-		# individual symbols.  CFG.first_set is a wrapper around this function
-		# to provide support for calculating the _first_ set for sentences.
+		# This function is responsible for calculating the *first* set of
+		# individual symbols.  {CFG.first_set} is a wrapper around this
+		# function to provide support for calculating the *first* set for
+		# sentences.
+		#
+		# @param [Symbol]		sym0			The symbol to find the *first set* of.
+		# @param [Array<Symbol>]	seen_lh_sides	Previously seen LHS symbols.
+		#
+		# @return [Array<Symbol>]
 		def first_set_prime(sym0, seen_lh_sides = [])
 			if self.symbols.include?(sym0)
 				# Memoize the result for later.
@@ -202,7 +231,7 @@ module RLTK # :nodoc:
 								# Grab the First set for the current
 								# symbol in this production.
 								if not seen_lh_sides.include?(sym1)
-									set0 |= (set1 = self.first_set_prime(sym1, seen_lh_sides << sym1)) - [:'ɛ']
+									set0 |= (set1 = first_set_prime(sym1, seen_lh_sides << sym1)) - [:'ɛ']
 								end
 								
 								break if not (all_have_empty = set1.include?(:'ɛ'))
@@ -218,13 +247,19 @@ module RLTK # :nodoc:
 					set0.uniq
 				end
 			else
-				nil
+				[]
 			end
 		end
+		private :first_set_prime
 		
-		# Returns the _follow_ set for a given symbol.  The second argument is
+		# Returns the *follow* set for a given symbol.  The second argument is
 		# used to avoid infinite recursion when mutually recursive rules are
 		# encountered.
+		#
+		# @param [Symbol]		sym0			The symbol to find the *follow set* for.
+		# @param [Array<Symbol>]	seen_lh_sides	Previously seen LHS symbols.
+		#
+		# @return [Array<Symbol>]
 		def follow_set(sym0, seen_lh_sides = [])
 			
 			# Use the memoized set if possible.
@@ -262,6 +297,10 @@ module RLTK # :nodoc:
 		end
 		
 		# Builds productions used to eliminate the + EBNF operator.
+		#
+		# @param [Symbol] symbol Symbol to expand.
+		#
+		# @return [Symbol]
 		def get_plus(symbol)
 			new_symbol = (symbol.to_s.downcase + '_plus').to_sym
 			
@@ -286,6 +325,10 @@ module RLTK # :nodoc:
 		end
 		
 		# Builds productions used to eliminate the ? EBNF operator.
+		#
+		# @param [Symbol] symbol Symbol to expand.
+		#
+		# @return [Symbol]
 		def get_question(symbol)
 			new_symbol = (symbol.to_s.downcase + '_question').to_sym
 			
@@ -310,6 +353,10 @@ module RLTK # :nodoc:
 		end
 		
 		# Builds productions used to eliminate the * EBNF operator.
+		#
+		# @param [Symbol] symbol Symbol to expand.
+		#
+		# @return [Symbol]
 		def get_star(symbol)
 			new_symbol = (symbol.to_s.downcase + '_star').to_sym
 			
@@ -333,21 +380,26 @@ module RLTK # :nodoc:
 			return new_symbol
 		end
 		
-		# Returns the ID for the next production to be defined.
+		# @return [Integer] ID for the next production to be defined.
 		def next_id
 			@production_counter += 1
 		end
 		
-		# Returns all of the non-terminal symbols used in the gramar's
-		# definition.
+		# @return [Array<Symbol>] All terminal symbols used in the grammar's definition.
 		def nonterms
 			@nonterms.keys
 		end
 		
-		# Builds a new production with the left-hand side value of _symbol_.
-		# If _expression_ is specified it is take as the right-hand side of
-		# production.  If _expression_ is nil then _block_ is evaluated, and
-		# expected to make one or more calls to CFG.clause.
+		# Builds a new production with the left-hand side value of *symbol*.
+		# If *expression* is specified it is take as the right-hand side of
+		# production.  If *expression* is nil then *block* is evaluated, and
+		# expected to make one or more calls to {CFG#clause}.
+		#
+		# @param [Symbol]	symbol		The right-hand side of a production.
+		# @param [String]	expression	The left-hand side of a production.
+		# @param [Proc]	block		Optional block for defining production clauses.
+		#
+		# @return [Array<Production>]
 		def production(symbol, expression = nil, &block)
 			@production_buffer = Array.new
 			@curr_lhs = symbol
@@ -362,10 +414,14 @@ module RLTK # :nodoc:
 			return @production_buffer.clone
 		end
 		
-		# If _by_ is :sym, returns a hash of the grammar's productions, using
-		# the productions' left-hand side symbol as the key.  If _by_ is :id
+		# If *by* is :sym, returns a hash of the grammar's productions, using
+		# the productions' left-hand side symbol as the key.  If *by* is :id
 		# an array of productions is returned in the order of their
 		# definition.
+		#
+		# @param [:sym, :id] by The way in which productions should be returned.
+		#
+		# @return [Array<Production>, Hash{Symbol => Production}]
 		def productions(by = :sym)
 			if by == :sym
 				@productions_sym
@@ -377,6 +433,10 @@ module RLTK # :nodoc:
 		end
 		
 		# Sets the start symbol for this grammar.
+		#
+		# @param [Symbol] symbol The new start symbol.
+		#
+		# @return [Symbol]
 		def start(symbol)
 			if not CFG::is_nonterminal?(symbol)
 				raise GrammarError, 'Start symbol must be a non-terminal.'
@@ -385,13 +445,12 @@ module RLTK # :nodoc:
 			@start_symbol = symbol
 		end
 		
-		# Returns a list of symbols encountered in the grammar's definition.
+		# @return [Array<Symbol>] All symbols used in the grammar's definition.
 		def symbols
 			self.terms + self.nonterms
 		end
 		
-		# Returns a list of all terminal symbols encountered in the grammar's
-		# definition.
+		# @return [Array<Symbol>] All terminal symbols used in the grammar's definition.
 		def terms
 			@terms.keys
 		end
@@ -399,12 +458,21 @@ module RLTK # :nodoc:
 		# Oddly enough, the Production class represents a production in a
 		# context-free grammar.
 		class Production
+			# @return [Integer] ID of this production.
 			attr_reader :id
+			
+			# @return [Symbol] Left-hand side of this production.
 			attr_reader :lhs
+			
+			# @return [Array<Symbol>] Right-hand side of this production.
 			attr_reader :rhs
 			
 			# Instantiates a new Production object with the specified ID,
 			# and left- and right-hand sides.
+			#
+			# @param [Integer]		id	ID number of this production.
+			# @param [Symbol]		lhs	Left-hand side of the production.
+			# @param [Array<Symbol>]	rhs	Right-hand side of the production.
 			def initialize(id, lhs, rhs)
 				@id	= id
 				@lhs	= lhs
@@ -413,27 +481,34 @@ module RLTK # :nodoc:
 			
 			# Comparese on production to another.  Returns true only if the
 			# left- and right- hand sides match.
+			#
+			# @param [Production] other Another production to compare to.
+			#
+			# @return [Boolean]
 			def ==(other)
 				self.lhs == other.lhs and self.rhs == other.rhs
 			end
 			
-			# Makes a new copy of the production.
+			# @return [Production] A new copy of this production.
 			def copy
 				Production.new(@id, @lhs, @rhs.clone)
 			end
 			
-			# Locates the last terminal in the right-hand side of a
-			# production.
+			# @return [Symbol] The last terminal in the right-hand side of the production.
 			def last_terminal
 				@rhs.inject(nil) { |m, sym| if CFG::is_terminal?(sym) then sym else m end }
 			end
 			
-			# Returns a new Item based on this production.
+			# @return [Item] An Item based on this production.
 			def to_item
 				Item.new(0, @id, @lhs, @rhs)
 			end
 			
 			# Returns a string representation of this production.
+			#
+			# @param [Integer] padding The ammount of padding spaces to add to the beginning of the string.
+			#
+			# @return [String]
 			def to_s(padding = 0)
 				"#{format("%-#{padding}s", @lhs)} -> #{@rhs.map { |s| s.to_s }.join(' ')}"
 			end
@@ -441,12 +516,16 @@ module RLTK # :nodoc:
 		
 		# The Item class represents a CFG production with dot in it.
 		class Item < Production
+			# @return [Integer] Index of the next symbol in this item.
 			attr_reader :dot
 			
 			# Instantiates a new Item object with a dot located before the
-			# symbol at index _dot_ of the right-hand side.  The remaining
-			# arguments (_args_) should be as specified by
-			# Production.initialize.
+			# symbol at index *dot* of the right-hand side.  The remaining
+			# arguments (*args*) should be as specified by
+			# {Production#initialize}.
+			#
+			# @param [Integer] dot Location of the dot in this Item.
+			# @param [Array<Object>] args (see {Production#initialize})
 			def initialize(dot, *args)
 				super(*args)
 				
@@ -455,12 +534,18 @@ module RLTK # :nodoc:
 			end
 			
 			# Compares two items.
+			#
+			# @param [Item] other Another item to compare to.
+			#
+			# @return [Boolean]
 			def ==(other)
 				self.dot == other.dot and self.lhs == other.lhs and self.rhs == other.rhs
 			end
 			
 			# Moves the items dot forward by one if the end of the right-hand
 			# side hasn't already been reached.
+			#
+			# @return [Integer, nil]
 			def advance
 				if @dot < @rhs.length
 					@dot += 1
@@ -468,21 +553,29 @@ module RLTK # :nodoc:
 			end
 			
 			# Tests to see if the dot is at the end of the right-hand side.
+			#
+			# @return [Boolean]
 			def at_end?
 				@dot == @rhs.length
 			end
 			
-			# Produces a new copy of this item.
+			# @return [Item] A new copy of this item.
 			def copy
 				Item.new(@dot, @id, @lhs, @rhs.clone)
 			end
 			
 			# Returns the symbol located after the dot.
+			#
+			# @return [Symbol] Symbol located after the dot (at the index indicated by the {#dot} attribute).
 			def next_symbol
 				@rhs[@dot]
 			end
 			
 			# Returns a string representation of this item.
+			#
+			# @param [Integer] padding The ammount of padding spaces to add to the beginning of the string.
+			#
+			# @return [String]
 			def to_s(padding = 0)
 				"#{format("%-#{padding}s", @lhs)} -> #{@rhs.map { |s| s.to_s }.insert(@dot, '·').join(' ') }"
 			end

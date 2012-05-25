@@ -8,8 +8,8 @@
 class RLTKTagFactory < YARD::Tags::DefaultFactory
 	def parse_tag(name, text)
 		case name
-		when :LLVMinst then inst_tag(text)
-		when :LLVMpass then pass_tag(text)
+		when :LLVMInst then inst_tag(text)
+		when :LLVMPass then pass_tag(text)
 		else super
 		end
 	end
@@ -31,6 +31,6 @@ class RLTKTagFactory < YARD::Tags::DefaultFactory
 	end
 end
 
-YARD::Tags::Library.define_tag 'Instruction', :LLVMinst
-YARD::Tags::Library.define_tag 'Pass', :LLVMpass
+YARD::Tags::Library.define_tag 'Instruction', :LLVMInst
+YARD::Tags::Library.define_tag 'Pass', :LLVMPass
 YARD::Tags::Library.default_factory = RLTKTagFactory

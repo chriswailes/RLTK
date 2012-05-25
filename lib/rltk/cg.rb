@@ -8,7 +8,11 @@
 # Classes and Modules #
 #######################
 
-module RLTK
+module RLTK # :nodoc:
+	
+	# This module contains classes and methods for code generation.  Code
+	# generation functionality is provided by bindings to
+	# [LLVM](http://llvm.org).
 	module CG
 		autoload :BasicBloc,		'rltk/cg/basic_block'
 		autoload :Bindings,			'rltk/cg/bindings'

@@ -15,7 +15,10 @@ require 'rltk/lexer'
 #######################
 
 module RLTK  # :nodoc:
-	module Lexers # :nodoc:
+	
+	# The RLTK::Lexers module contains the lexers that are included as part of
+	# the RLKT project.
+	module Lexers
 		
 		# The Calculator lexer is a simple lexer for use with several of the
 		# provided parsers.

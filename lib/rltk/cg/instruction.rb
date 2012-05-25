@@ -100,6 +100,7 @@ module RLTK::CG
 		end
 	end
 	
+	# @LLVMInst call
 	class CallInst < Instruction
 		def calling_convention
 			Bindings.get_instruction_call_conv(@ptr)
@@ -112,6 +113,7 @@ module RLTK::CG
 		end	
 	end
 	
+	# @LLVMInst phi
 	class PhiInst < Instruction
 		def incoming
 			@incoming_collection ||= IncomingCollection.new(self)
@@ -184,6 +186,7 @@ module RLTK::CG
 		end
 	end
 	
+	# @LLVMInst switch
 	class SwitchInst < Instruction
 		def add_case(val, block)
 			Bindings.add_case(@ptr, val, block)
@@ -192,82 +195,228 @@ module RLTK::CG
 	
 	# Empty Instruction Classes
 	
+	# @LLVMInst add
 	class AddInst				< Instruction; end
+	
+	# @LLVMInst alloca
 	class AllocaInst			< Instruction; end
+	
+	# @LLVMInst and
 	class AndInst				< Instruction; end
+	
+	# @LLVMInst ashr
 	class ARightShiftInst		< Instruction; end
+	
+	# @LLVMInst alloca
 	class ArrayAllocaInst		< Instruction; end
+	
 	class ArrayMallocInst		< Instruction; end
+	
+	# @LLVMInst bitcast
 	class BitCastInst			< Instruction; end
+	
+	# @LLVMInst br
 	class BranchInst			< Instruction; end
+	
+	# @LLVMInst br
 	class CondBranchInst		< Instruction; end
+	
+	# @LLVMInst sdiv
 	class ExactSDivInst			< Instruction; end
+	
+	# @LLVMInst extractelement
 	class ExtractElementInst		< Instruction; end
+	
+	# @LLVMInst extractvalue
 	class ExtractValueInst		< Instruction; end
+	
+	# @LLVMInst fadd
 	class FAddInst				< Instruction; end
+	
+	# @LLVMInst fcmp
 	class FCmpInst				< Instruction; end
+	
+	# @LLVMInst fdiv
 	class FDivInst				< Instruction; end
+	
+	# @LLVMInst fmul
 	class FMulInst				< Instruction; end
+	
+	# @LLVMInst fsub
 	class FNegInst				< Instruction; end
+	
+	# @LLVMInst fptosi
 	class FPToSIInst			< Instruction; end
+	
+	# @LLVMInst fptoui
 	class FPToUIInst			< Instruction; end
+	
 	class FPCastInst			< Instruction; end
+	
+	# @LLVMInst fpext
 	class FPExtendInst			< Instruction; end
+	
+	# @LLVMInst fptrunc
 	class FPTruncInst			< Instruction; end
+	
 	class FreeInst				< Instruction; end
+	
+	# @LLVMInst frem
 	class FRemInst				< Instruction; end
+	
+	# @LLVMInst fsub
 	class FSubInst				< Instruction; end
+	
+	# @LLVMInst gep
+	# @see http://llvm.org/docs/GetElementPtr.html
 	class GetElementPtrInst		< Instruction; end
+	
 	class GlobalStringInst		< Instruction; end
 	class GlobalStringPtrInst	< Instruction; end
+	
+	# @LLVMInst gep
+	# @see http://llvm.org/docs/GetElementPtr.html
 	class InBoundsGEPInst		< Instruction; end
+	
+	# @LLVMInst insertelement
 	class InsertElementInst		< Instruction; end
+	
+	# @LLVMInst insertvalue
 	class InsertValueInst		< Instruction; end
+	
+	# @LLVMInst inttoptr
 	class IntToPtrInst			< Instruction; end
+	
 	class IntCastInst			< Instruction; end
+	
+	# @LLVMInst icmp
 	class IntCmpInst			< Instruction; end
+	
+	# @LLVMInst invoke
 	class InvokeInst			< Instruction; end
+	
 	class IsNotNullInst			< Instruction; end
 	class IsNullInstInst		< Instruction; end
+	
+	# @LLVMInst shl
 	class LeftShiftInst			< Instruction; end
+	
+	# @LLVMInst load
 	class LoadInst				< Instruction; end
+	
+	# @LLVMInst lshr
 	class LRightShiftInst		< Instruction; end
+	
 	class MallocInst			< Instruction; end
+	
+	# @LLVMInst mul
 	class MulInst				< Instruction; end
+	
+	# @LLVMInst sub
 	class NegInst				< Instruction; end
+	
 	class NotInst				< Instruction; end
+	
+	# @LLVMInst add
 	class NSWAddInst			< Instruction; end
+	
+	# @LLVMInst mul
 	class NSWMulInst			< Instruction; end
+	
+	# @LLVMInst sub
 	class NSWNegInst			< Instruction; end
+	
+	# @LLVMInst sub
 	class NSWSubInst			< Instruction; end
+	
+	# @LLVMInst add
 	class NUWAddInst			< Instruction; end
+	
+	# @LLVMInst mul
 	class NUWMulInst			< Instruction; end
+	
+	# @LLVMInst sub
 	class NUWNegInst			< Instruction; end
+	
+	# @LLVMInst sub
 	class NUWSubInst			< Instruction; end
+	
+	# @LLVMInst or
 	class OrInst				< Instruction; end
+	
+	# @LLVMInst ptrtoint
 	class PtrToIntInst			< Instruction; end
+	
 	class PtrCastInst			< Instruction; end
 	class PtrDiffInst			< Instruction; end
+	
+	# @LLVMInst ret
 	class ReturnInst			< Instruction; end
+	
+	# @LLVMInst ret
 	class ReturnAggregateInst	< Instruction; end
+	
+	# @LLVMInst ret
 	class ReturnVoidInst		< Instruction; end
+	
+	# @LLVMInst sdiv
 	class SDivInst				< Instruction; end
+	
+	# @LLVMInst select
 	class SelectInst			< Instruction; end
+	
+	# @LLVMInst shufflevector
 	class ShuffleVectorInst		< Instruction; end
+	
+	# @LLVMInst sext
 	class SignExtendInst		< Instruction; end
+	
+	# @LLVMInst sext
+	# @LLVMInst bitcast
 	class SignExtendOrBitCastInst	< Instruction; end
+	
+	# @LLVMInst sitofp
 	class SIToFPInst			< Instruction; end
+	
+	# @LLVMInst srem
 	class SRemInst				< Instruction; end
+	
+	# @LLVMInst store
 	class StoreInst			< Instruction; end
+	
+	# @LLVMInst gep
+	# @see http://llvm.org/docs/GetElementPtr.html
 	class StructGEPInst			< Instruction; end
+	
+	# @LLVMInst sub
 	class SubInst				< Instruction; end
+	
+	# @LLVMInst trunc
 	class TruncateInst			< Instruction; end
+	
+	# @LLVMInst trunc
+	# @LLVMInst bitcast
 	class TruncateOrBitCastInst	< Instruction; end
+	
+	# @LLVMInst udiv
 	class UDivInst				< Instruction; end
+	
+	# @LLVMInst uitofp
 	class UIToFPInst			< Instruction; end
+	
+	# @LLVMInst unreachable
 	class UnreachableInst		< Instruction; end
+	
+	# @LLVMInst urem
 	class URemInst				< Instruction; end
+	
+	# @LLVMInst xor
 	class XOrInst				< Instruction; end
+	
+	# @LLVMInst zext
 	class ZeroExtendInst		< Instruction; end
+	
+	# @LLVMInst zext
+	# @LLVMInst bitcast
 	class ZeroExtendOrBitCastInst	< Instruction; end
 end

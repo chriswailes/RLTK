@@ -1,12 +1,12 @@
 # Welcome to the Ruby Language Toolkit
 
-RLTK is a collection of classes designed to help programmers work with languages in an easy to use and straightforward manner.  This toolkit provides the following features:
+RLTK is a collection of classes and methods designed to help programmers work with languages in an easy to use and straightforward manner.  This toolkit provides the following features:
 
 * Lexer generator
 * Parser generator
 * AST node baseclass
 * Class for representing context free grammars
-* [Low Level Virtual Machine](http://llvm.org) (LLVM) bindings
+* [Low Level Virtual Machine](http://llvm.org) (LLVM) bindings for code generation
 
 In addition, RLTK includes several ready-made lexers and parsers and a Turing-complete language called Kazoo for use in your code and as examples for how to use the toolkit.
 
