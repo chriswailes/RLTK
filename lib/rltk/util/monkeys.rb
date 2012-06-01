@@ -13,7 +13,7 @@
 
 # A helper method for type checking Ruby values.
 #
-# @param [Object]		o		Object to be type checked.
+# @param [Object]		o		Object to type check.
 # @param [Class]		type		Class the object should be an instance of.
 # @param [String, nil]	blame	Variable name to blame for failed type checks.
 # @param [Boolean]		strict	Strict or non-strict checking.  Uses `instance_of?` and `is_a?` respectively.
@@ -35,7 +35,7 @@ end
 
 # A helper method for type checking Ruby array values.
 #
-# @param [Array<Object>]	array	Array of objects to be type checked.
+# @param [Array<Object>]	array	Array of objects to type check.
 # @param [Class]		type		Class the objects should be an instance of.
 # @param [String, nil]	blame	Variable name to blame for failed type checks.
 # @param [Boolean]		strict	Strict or non-strict checking.  Uses `instance_of?` and `is_a?` respectively.

@@ -15,12 +15,26 @@ require 'rltk/cg/type'
 # Classes and Modules #
 #######################
 
-module RLTK::CG
+module RLTK::CG # :nodoc:
+	
+	# GenericValue objects are used to pass parameters into
+	# {ExecutionEngine ExecutionEngines} as well as retreive an evaluated
+	# function's result.  They may contain values of several different types:
+	# 
+	#  * Integer
+	#  * Float
+	#  * Boolean
 	class GenericValue
 		include BindingClass
 		
+		# @return [Type] LLVM type of this GenericValue.
 		attr_reader :type
 		
+		# Creates a new GenericValue from a given Ruby value.
+		#
+		# @param [FFI::Pointer, Integer, ::Float, Boolean]	ruby_val
+		# @param [Type]								type		Type of Integer or Float to create.
+		# @param [Boolean]								signed	Signed or unsigned Integer.
 		def initialize(ruby_val, type = nil, signed = true)
 			@ptr, @type =
 			case ruby_val
@@ -45,28 +59,39 @@ module RLTK::CG
 			end
 		end
 		
+		# Frees the resources used by LLVM for this value.
+		#
+		# @return [void]
 		def dispose
 			if @ptr
 				Bindings.dispose_generic_value(@ptr)
 				@ptr = nil
 			end
 		end
-	
+		
+		# @param [Boolean] signed Treat the GenericValue as a signed integer.
+		#
+		# @return [Integer]
 		def to_i(signed = true)
 			val = Bindings.generic_value_to_int(@ptr, signed.to_i)
 			
 			if signed and val >= 2**63 then val - 2**64 else val end
 		end
-	
+		
+		# @param [FloatType] type Type of the real value stored in this GenericValue.
+		#
+		# @return [Float]
 		def to_f(type = RLTK::CG::FloatType)
 			Bindings.generic_value_to_float(@type || check_cg_type(type, RLTK::CG::NumberType), @ptr)
 		end
-	
+		
+		# @return [Boolean]
 		def to_b
 			self.to_i(false).to_bool
 		end
-	
-		def to_value_ptr
+		
+		# @return [FFI::Pointer] GenericValue as a pointer.
+		def to_ptr_value
 			Bindings.generic_value_to_pointer(@ptr)
 		end
 	end

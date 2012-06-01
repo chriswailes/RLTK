@@ -6,6 +6,12 @@ module RLTK::CG::Bindings
   extend FFI::Library
   ffi_lib 'LLVM-ECB-3.0'
   
+  def self.attach_function(name, *_)
+    begin; super; rescue FFI::NotFoundError => e
+      (class << self; self; end).class_eval { define_method(name) { |*_| raise e } }
+    end
+  end
+  
   ECB_VERSION = 0
   
   TARGET_VERSION_MAJOR = 3

@@ -196,7 +196,7 @@ module RLTK # :nodoc:
 		end
 		
 		# This function is responsible for calculating the *first* set of
-		# individual symbols.  {CFG.first_set} is a wrapper around this
+		# individual symbols.  {CFG#first_set} is a wrapper around this
 		# function to provide support for calculating the *first* set for
 		# sentences.
 		#

@@ -15,8 +15,19 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG
+module RLTK::CG # :nodoc:
+	
+	# This module contains global operations on the LLVM compiler infrastructure.
 	module LLVM
+		# Initialize LLVM to generate code for a given architecture.
+		#
+		# @see Bindings::ARCHS
+		#
+		# @param [Symbol] arch Architecture to initialize LLVM for.
+		#
+		# @raise [RuntimeError] An error is raised if an unsupported architecture is specified.
+		#
+		# @return [true]
 		def self.init(arch)
 			if Bindings::ARCHS.include?(arch) or Bindings::ARCHS.map { |sym| sym.to_s.downcase.to_sym }.include?(arch)
 				arch = Bindings.get_bname(arch)
@@ -31,7 +42,8 @@ module RLTK::CG
 				raise "Unsupported architecture specified: #{arch}"
 			end
 		end
-	
+		
+		# @return [String] String representing the version of LLVM targeted by these bindings.
 		def self.version
 			RLTK::LLVM_TARGET_VERSION
 		end

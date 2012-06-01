@@ -8,4 +8,8 @@ ast.rb:
 
 tokens.rb:
 
+Code generation:
+	Add the ability to print a IR to an IO object or a file.
+	Add the ability to dump generated native code to an IO object or a file.
+
 Misc:

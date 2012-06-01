@@ -69,8 +69,9 @@ module RLTK::CG # :nodoc:
 		# method is executed inside the context of a {Builder} object, either
 		# the one passed in the *builder* parameter or one created for this
 		# call.  Arguments may be passed into this block via the *block_args*
-		# parameter.  Example:
+		# parameter.
 		#
+		# @example
 		#     fun = Function.new(...)
 		#     block.build do
 		#          ret add(fun.params[0], fun.params[1])
@@ -126,7 +127,7 @@ module RLTK::CG # :nodoc:
 			if (ptr = Bindings.get_previous_basic_block(@ptr)).null? then nil else BasicBlock.new(ptr) end
 		end
 		
-		# This class is used to represent all of the {Instruction Instructions} that have been built inside a {BasicBlock}.
+		# This class is used to access all of the {Instruction Instructions} that have been added to a {BasicBlock}.
 		class InstructionCollection
 			include Enumerable
 			
@@ -137,7 +138,9 @@ module RLTK::CG # :nodoc:
 			
 			# Iterate over each {Instruction} in this collection.
 			#
-			# @return [Enumerator]
+			# @yieldparam inst [Instruction]
+			#
+			# @return [Enumerator] An Enumerator is returned if no block is given.
 			def each
 				return to_enum(:each) unless block_given?
 				

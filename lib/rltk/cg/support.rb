@@ -14,10 +14,16 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG
+module RLTK::CG # :nodoc:
+
+	# Support functionality for LLVM code generation.
 	module Support
+		# Load a shared library into memory and make its exported symbols
+		# available to execution engines.
+		#
+		# @param [String] lib Path to the shared library to load.
 		def self.load_library(lib)
-			not Bindings.load_library_permanently(lib).zero?
+			Bindings.load_library_permanently(lib).to_bool
 		end
 	end
 end

@@ -19,7 +19,16 @@ begin
 	YARD::Rake::YardocTask.new do |t|
 		yardlib = File.join(File.dirname(__FILE__), 'yardlib/rltk.rb')
 		
-		t.options	= ['-e', yardlib, '--title', 'The Ruby Language Toolkit', '-m', 'markdown', '-M', 'redcarpet', '-c', '.yardoc/cache']
+		t.options	= [
+			'-e',		yardlib,
+			'--title',	'The Ruby Language Toolkit',
+			'-m',		'markdown',
+			'-M',		'redcarpet',
+			'-c',		'.yardoc/cache',
+			'--private'
+		]
+		
+		
 		t.files	= Dir['lib/**/*.rb']
 	end
 	
@@ -52,7 +61,7 @@ end
 # Bundler tasks.
 Bundler::GemHelper.install_tasks
 
-desc 'Generate the bindings for LLVM'
+desc 'Generate the bindings for LLVM.'
 task :gen_bindings do
 	require 'ffi_gen'
 	
@@ -102,13 +111,13 @@ task :gen_bindings do
 	]
 	
 	FFIGen.generate(
-		:ruby_module => 'RLTK::CG::Bindings',
-		:ffi_lib     => "LLVM-#{RLTK::LLVM_TARGET_VERSION}",
-		:headers     => headers,
-		:cflags      => `llvm-config --cflags`.split,
-		:prefixes    => ['LLVM'],
-		:blacklist   => blacklist + deprecated,
-		:output      => 'lib/rltk/cg/generated_bindings.rb'
+		:module_name	=> 'RLTK::CG::Bindings',
+		:ffi_lib		=> "LLVM-#{RLTK::LLVM_TARGET_VERSION}",
+		:headers		=> headers,
+		:cflags		=> `llvm-config --cflags`.split,
+		:prefixes		=> ['LLVM'],
+		:blacklist	=> blacklist + deprecated,
+		:output		=> 'lib/rltk/cg/generated_bindings.rb'
 	)
 	
 	# Generate the extended LLVM bindings.
@@ -121,12 +130,12 @@ task :gen_bindings do
 	
 	begin
 		FFIGen.generate(
-			:ruby_module => 'RLTK::CG::Bindings',
-			:ffi_lib     => "LLVM-ECB-#{RLTK::LLVM_TARGET_VERSION}",
-			:headers     => headers,
-			:cflags      => `llvm-config --cflags`.split,
-			:prefixes    => ['LLVM'],
-			:output      => 'lib/rltk/cg/generated_extended_bindings.rb'
+			:module_name	=> 'RLTK::CG::Bindings',
+			:ffi_lib		=> "LLVM-ECB-#{RLTK::LLVM_TARGET_VERSION}",
+			:headers		=> headers,
+			:cflags		=> `llvm-config --cflags`.split,
+			:prefixes		=> ['LLVM'],
+			:output		=> 'lib/rltk/cg/generated_extended_bindings.rb'
 		)
 	rescue
 	end

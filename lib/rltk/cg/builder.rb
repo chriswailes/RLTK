@@ -36,7 +36,7 @@ module RLTK::CG # :nodoc:
 			position_at_end(block) if block
 		end
 		
-		# Cleans up the memory used by LLVM for this Build.er
+		# Frees the resources used by LLVM for this Builder.
 		#
 		# @return [void]
 		def dispose
@@ -78,9 +78,6 @@ module RLTK::CG # :nodoc:
 		#
 		# @return [Builder] self
 		def position(block, instruction)
-			raise 'Block must not be nil.'		if block.nil?
-			raise 'Instruction must not be nil.'	if instruction.nil?
-			
 			Bindings.position_builder(@ptr, block, instruction)
 			self
 		end
@@ -91,8 +88,6 @@ module RLTK::CG # :nodoc:
 		#
 		# @return [Bulder] self
 		def position_at_end(block)
-			raise 'Block must not be nil.' if block.nil?
-			
 			Bindings.position_builder_at_end(@ptr, block)
 			self
 		end
@@ -103,8 +98,6 @@ module RLTK::CG # :nodoc:
 		#
 		# @return [Builder] self
 		def position_before(instruction)
-			raise 'Instruction must not be nil.' if instruction.nil?
-			
 			Bindings.position_builder_before(@ptr, instruction)
 			self
 		end
@@ -574,13 +567,14 @@ module RLTK::CG # :nodoc:
 		# A wrapper method around the {#shift_left} and {#shift_right}
 		# methods.
 		#
-		# @param [:left, :right]	dir	The direction to shift.
-		# @param [Value]		lhs	Integer or vector of integers.
-		# @param [Value]		rhs	Integer or vector of integers.
-		# @param [String]		name	Name of the result in LLVM IR.
+		# @param [:left, :right]			dir	The direction to shift.
+		# @param [Value]				lhs	Integer or vector of integers.
+		# @param [Value]				rhs	Integer or vector of integers.
+		# @param [:arithmetic, :logical]	mode	Shift mode for right shifts.
+		# @param [String]				name	Name of the result in LLVM IR.
 		#
 		# @return [LeftShiftInst, ARightShiftInst, LRightShiftInst] An integer instruction.
-		def shift(dir, lhs, rhs, mode = :arithmatic, name = '')
+		def shift(dir, lhs, rhs, mode = :arithmetic, name = '')
 			case dir
 			when :left	then shift_left(lhs, rhs, name)
 			when :right	then shift_right(lhs, rhs, mode, name)
@@ -601,15 +595,14 @@ module RLTK::CG # :nodoc:
 		#
 		# @param [Value]				lhs	Integer or vector of integers
 		# @param [Value]				rhs	Integer or vector of integers
-		# @param [:arithmatic, :logical]	mode The filling mode.
+		# @param [:arithmetic, :logical]	mode The filling mode.
 		# @param [String]				name	Name of the result in LLVM IR
 		#
 		# @return [LeftShiftInst] An integer instruction.
-		def shift_right(lhs, rhs, mode = :arithmatic, name = '')
+		def shift_right(lhs, rhs, mode = :arithmetic, name = '')
 			case mode
-			when :arithmatic	then ashr(lhs, rhs, name)
+			when :arithmetic	then ashr(lhs, rhs, name)
 			when :logical		then lshr(lhs, rhs, name)
-			else raise 'The mode parameter must be either :arithmatic or :logical.'
 			end 
 		end
 		
@@ -1037,9 +1030,10 @@ module RLTK::CG # :nodoc:
 		# Builds an icmp instruction. Compares lhs to rhs using the given
 		# symbol predicate.
 		#
+		# @see Bindings._enum_int_predicate_
 		# @LLVMInst icmp
 		#
-		# @param [Symbol]	pred	A predicate.
+		# @param [Symbol]	pred	An integer predicate.
 		# @param [Value]	lhs	Left hand side of the comparison, of integer or pointer type.
 		# @param [Value]	rhs	Right hand side of the comparison, of the same type as lhs.
 		# @param [String]	name	Name of the result in LLVM IR.
@@ -1053,9 +1047,10 @@ module RLTK::CG # :nodoc:
 		# Builds an fcmp instruction. Compares lhs to rhs as reals using the
 		# given symbol predicate.
 		#
+		# @see Bindings._enum_real_predicate_
 		# @LLVMInst fcmp
 		#
-		# @param [Symbol]	pred	A predicate.
+		# @param [Symbol]	pred	A real predicate.
 		# @param [Value]	lhs	Left hand side of the comparison, of floating point type.
 		# @param [Value]	rhs	Right hand side of the comparison, of the same type as lhs.
 		# @param [String]	name Name of the result in LLVM IR.

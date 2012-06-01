@@ -6,6 +6,12 @@ module RLTK::CG::Bindings
   extend FFI::Library
   ffi_lib 'LLVM-3.0'
   
+  def self.attach_function(name, *_)
+    begin; super; rescue FFI::NotFoundError => e
+      (class << self; self; end).class_eval { define_method(name) { |*_| raise e } }
+    end
+  end
+  
   DISASSEMBLER_VARIANT_KIND_NONE = 0
   
   DISASSEMBLER_VARIANT_KIND_ARM_HI16 = 1
@@ -26,51 +32,62 @@ module RLTK::CG::Bindings
   
   # The top-level container for all LLVM global data.  See the LLVMContext class.
   class OpaqueContext < FFI::Struct
+    layout :dummy, :char
   end
   
   # The top-level container for all other LLVM Intermediate Representation (IR)
   # objects. See the llvm::Module class.
   class OpaqueModule < FFI::Struct
+    layout :dummy, :char
   end
   
   # Each value in the LLVM IR has a type, an LLVMTypeRef. See the llvm::Type
   # class.
   class OpaqueType < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)
   class OpaqueValue < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)
   class OpaqueBasicBlock < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)
   class OpaqueBuilder < FFI::Struct
+    layout :dummy, :char
   end
   
   # Interface used to provide a module to JIT or interpreter.  This is now just a
   # synonym for llvm::Module, but we have to keep using the different type to
   # keep binary compatibility.
   class OpaqueModuleProvider < FFI::Struct
+    layout :dummy, :char
   end
   
   # Used to provide a module to JIT or interpreter.
   # See the llvm::MemoryBuffer class.
   class OpaqueMemoryBuffer < FFI::Struct
+    layout :dummy, :char
   end
   
   # See the llvm::PassManagerBase class.
   class OpaquePassManager < FFI::Struct
+    layout :dummy, :char
   end
   
   # See the llvm::PassRegistry class.
   class OpaquePassRegistry < FFI::Struct
+    layout :dummy, :char
   end
   
   # Used to get the users and usees of a Value. See the llvm::Use class.
   class OpaqueUse < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)
@@ -78,11 +95,89 @@ module RLTK::CG::Bindings
   # <em>This entry is only for documentation and no real method. The FFI::Enum can be accessed via #enum_type(:attribute).</em>
   # 
   # === Options:
+  # :z_ext_attribute ::
+  #   
+  # :s_ext_attribute ::
+  #   
+  # :no_return_attribute ::
+  #   
+  # :in_reg_attribute ::
+  #   
+  # :struct_ret_attribute ::
+  #   
+  # :no_unwind_attribute ::
+  #   
+  # :no_alias_attribute ::
+  #   
+  # :by_val_attribute ::
+  #   
+  # :nest_attribute ::
+  #   
+  # :read_none_attribute ::
+  #   
+  # :read_only_attribute ::
+  #   
+  # :no_inline_attribute ::
+  #   
+  # :always_inline_attribute ::
+  #   
+  # :optimize_for_size_attribute ::
+  #   
+  # :stack_protect_attribute ::
+  #   
+  # :stack_protect_req_attribute ::
+  #   
+  # :alignment ::
+  #   
+  # :no_capture_attribute ::
+  #   
+  # :no_red_zone_attribute ::
+  #   
+  # :no_implicit_float_attribute ::
+  #   
+  # :naked_attribute ::
+  #   
+  # :inline_hint_attribute ::
+  #   
+  # :stack_alignment ::
+  #   
+  # :returns_twice ::
+  #   
+  # :uw_table ::
+  #   
+  # :non_lazy_bind ::
+  #   
   # 
   # @method _enum_attribute_
   # @return [Symbol]
   # @scope class
   enum :attribute, [
+    :z_ext_attribute, 1,
+    :s_ext_attribute, 2,
+    :no_return_attribute, 4,
+    :in_reg_attribute, 8,
+    :struct_ret_attribute, 16,
+    :no_unwind_attribute, 32,
+    :no_alias_attribute, 64,
+    :by_val_attribute, 128,
+    :nest_attribute, 256,
+    :read_none_attribute, 512,
+    :read_only_attribute, 1024,
+    :no_inline_attribute, 2048,
+    :always_inline_attribute, 4096,
+    :optimize_for_size_attribute, 8192,
+    :stack_protect_attribute, 16384,
+    :stack_protect_req_attribute, 32768,
+    :alignment, 2031616,
+    :no_capture_attribute, 2097152,
+    :no_red_zone_attribute, 4194304,
+    :no_implicit_float_attribute, 8388608,
+    :naked_attribute, 16777216,
+    :inline_hint_attribute, 33554432,
+    :stack_alignment, 469762048,
+    :returns_twice, 536870912,
+    :uw_table, 1073741824,
+    :non_lazy_bind, 2147483648
   ]
   
   # (Not documented)
@@ -132,9 +227,9 @@ module RLTK::CG::Bindings
   #   
   # :a_shr ::
   #   
-  # :and ::
+  # :and_ ::
   #   
-  # :or ::
+  # :or_ ::
   #   
   # :xor ::
   #   
@@ -234,8 +329,8 @@ module RLTK::CG::Bindings
     :shl, 20,
     :l_shr, 21,
     :a_shr, 22,
-    :and, 23,
-    :or, 24,
+    :and_, 23,
+    :or_, 24,
     :xor, 25,
     :alloca, 26,
     :load, 27,
@@ -314,21 +409,21 @@ module RLTK::CG::Bindings
   # @return [Symbol]
   # @scope class
   enum :type_kind, [
-    :void,
-    :float,
-    :double,
-    :x86_fp80,
-    :fp128,
-    :ppc_fp128,
-    :label,
-    :integer,
-    :function,
-    :struct,
-    :array,
-    :pointer,
-    :vector,
-    :metadata,
-    :x86_mmx
+    :void, 0,
+    :float, 1,
+    :double, 2,
+    :x86_fp80, 3,
+    :fp128, 4,
+    :ppc_fp128, 5,
+    :label, 6,
+    :integer, 7,
+    :function, 8,
+    :struct, 9,
+    :array, 10,
+    :pointer, 11,
+    :vector, 12,
+    :metadata, 13,
+    :x86_mmx, 14
   ]
   
   # (Not documented)
@@ -378,23 +473,23 @@ module RLTK::CG::Bindings
   # @return [Symbol]
   # @scope class
   enum :linkage, [
-    :external,
-    :available_externally,
-    :link_once_any,
-    :link_once_odr,
-    :weak_any,
-    :weak_odr,
-    :appending,
-    :internal,
-    :private,
-    :dll_import,
-    :dll_export,
-    :external_weak,
-    :ghost,
-    :common,
-    :linker_private,
-    :linker_private_weak,
-    :linker_private_weak_def_auto
+    :external, 0,
+    :available_externally, 1,
+    :link_once_any, 2,
+    :link_once_odr, 3,
+    :weak_any, 4,
+    :weak_odr, 5,
+    :appending, 6,
+    :internal, 7,
+    :private, 8,
+    :dll_import, 9,
+    :dll_export, 10,
+    :external_weak, 11,
+    :ghost, 12,
+    :common, 13,
+    :linker_private, 14,
+    :linker_private_weak, 15,
+    :linker_private_weak_def_auto, 16
   ]
   
   # (Not documented)
@@ -413,9 +508,9 @@ module RLTK::CG::Bindings
   # @return [Symbol]
   # @scope class
   enum :visibility, [
-    :default,
-    :hidden,
-    :protected
+    :default, 0,
+    :hidden, 1,
+    :protected, 2
   ]
   
   # (Not documented)
@@ -476,15 +571,15 @@ module RLTK::CG::Bindings
   # @scope class
   enum :int_predicate, [
     :eq, 32,
-    :ne,
-    :ugt,
-    :uge,
-    :ult,
-    :ule,
-    :sgt,
-    :sge,
-    :slt,
-    :sle
+    :ne, 33,
+    :ugt, 34,
+    :uge, 35,
+    :ult, 36,
+    :ule, 37,
+    :sgt, 38,
+    :sge, 39,
+    :slt, 40,
+    :sle, 41
   ]
   
   # (Not documented)
@@ -529,22 +624,22 @@ module RLTK::CG::Bindings
   # @return [Symbol]
   # @scope class
   enum :real_predicate, [
-    :predicate_false,
-    :oeq,
-    :ogt,
-    :oge,
-    :olt,
-    :ole,
-    :one,
-    :ord,
-    :uno,
-    :ueq,
-    :ugt,
-    :uge,
-    :ult,
-    :ule,
-    :une,
-    :predicate_true
+    :predicate_false, 0,
+    :oeq, 1,
+    :ogt, 2,
+    :oge, 3,
+    :olt, 4,
+    :ole, 5,
+    :one, 6,
+    :ord, 7,
+    :uno, 8,
+    :ueq, 9,
+    :ugt, 10,
+    :uge, 11,
+    :ult, 12,
+    :ule, 13,
+    :une, 14,
+    :predicate_true, 15
   ]
   
   # (Not documented)
@@ -561,8 +656,8 @@ module RLTK::CG::Bindings
   # @return [Symbol]
   # @scope class
   enum :landing_pad_clause_ty, [
-    :catch,
-    :filter
+    :catch, 0,
+    :filter, 1
   ]
   
   # (Not documented)
@@ -1942,6 +2037,23 @@ module RLTK::CG::Bindings
   # @return [String] 
   # @scope class
   attach_function :get_md_string, :LLVMGetMDString, [OpaqueValue, :pointer], :string
+  
+  # (Not documented)
+  # 
+  # @method get_md_node_num_operands(v)
+  # @param [OpaqueValue] v 
+  # @return [Integer] 
+  # @scope class
+  attach_function :get_md_node_num_operands, :LLVMGetMDNodeNumOperands, [OpaqueValue], :int
+  
+  # (Not documented)
+  # 
+  # @method get_md_node_operand(v, i)
+  # @param [OpaqueValue] v 
+  # @param [Integer] i 
+  # @return [FFI::Pointer(*ValueRef)] 
+  # @scope class
+  attach_function :get_md_node_operand, :LLVMGetMDNodeOperand, [OpaqueValue, :uint], :pointer
   
   # (Not documented)
   # 
@@ -3628,21 +3740,21 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   # 
-  # @method build_cond_br(opaque_builder, if, then, else)
+  # @method build_cond_br(opaque_builder, if_, then_, else_)
   # @param [OpaqueBuilder] opaque_builder 
-  # @param [OpaqueValue] if 
-  # @param [OpaqueBasicBlock] then 
-  # @param [OpaqueBasicBlock] else 
+  # @param [OpaqueValue] if_ 
+  # @param [OpaqueBasicBlock] then_ 
+  # @param [OpaqueBasicBlock] else_ 
   # @return [OpaqueValue] 
   # @scope class
   attach_function :build_cond_br, :LLVMBuildCondBr, [OpaqueBuilder, OpaqueValue, OpaqueBasicBlock, OpaqueBasicBlock], OpaqueValue
   
   # (Not documented)
   # 
-  # @method build_switch(opaque_builder, v, else, num_cases)
+  # @method build_switch(opaque_builder, v, else_, num_cases)
   # @param [OpaqueBuilder] opaque_builder 
   # @param [OpaqueValue] v 
-  # @param [OpaqueBasicBlock] else 
+  # @param [OpaqueBasicBlock] else_ 
   # @param [Integer] num_cases 
   # @return [OpaqueValue] 
   # @scope class
@@ -3660,12 +3772,12 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   # 
-  # @method build_invoke(opaque_builder, fn, args, num_args, then, catch, name)
+  # @method build_invoke(opaque_builder, fn, args, num_args, then_, catch, name)
   # @param [OpaqueBuilder] opaque_builder 
   # @param [OpaqueValue] fn 
   # @param [FFI::Pointer(*ValueRef)] args 
   # @param [Integer] num_args 
-  # @param [OpaqueBasicBlock] then 
+  # @param [OpaqueBasicBlock] then_ 
   # @param [OpaqueBasicBlock] catch 
   # @param [String] name 
   # @return [OpaqueValue] 
@@ -4459,11 +4571,11 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   # 
-  # @method build_select(opaque_builder, if, then, else, name)
+  # @method build_select(opaque_builder, if_, then_, else_, name)
   # @param [OpaqueBuilder] opaque_builder 
-  # @param [OpaqueValue] if 
-  # @param [OpaqueValue] then 
-  # @param [OpaqueValue] else 
+  # @param [OpaqueValue] if_ 
+  # @param [OpaqueValue] then_ 
+  # @param [OpaqueValue] else_ 
   # @param [String] name 
   # @return [OpaqueValue] 
   # @scope class
@@ -4591,7 +4703,7 @@ module RLTK::CG::Bindings
   # @method create_memory_buffer_with_contents_of_file(path, out_mem_buf, out_message)
   # @param [String] path 
   # @param [FFI::Pointer(*MemoryBufferRef)] out_mem_buf 
-  # @param [FFI::Pointer(**Char_S)] out_message 
+  # @param [FFI::Pointer(**CharS)] out_message 
   # @return [Integer] 
   # @scope class
   attach_function :create_memory_buffer_with_contents_of_file, :LLVMCreateMemoryBufferWithContentsOfFile, [:string, :pointer, :pointer], :int
@@ -4600,7 +4712,7 @@ module RLTK::CG::Bindings
   # 
   # @method create_memory_buffer_with_stdin(out_mem_buf, out_message)
   # @param [FFI::Pointer(*MemoryBufferRef)] out_mem_buf 
-  # @param [FFI::Pointer(**Char_S)] out_message 
+  # @param [FFI::Pointer(**CharS)] out_message 
   # @return [Integer] 
   # @scope class
   attach_function :create_memory_buffer_with_stdin, :LLVMCreateMemoryBufferWithSTDIN, [:pointer, :pointer], :int
@@ -4640,6 +4752,14 @@ module RLTK::CG::Bindings
   # @return [OpaquePassManager] 
   # @scope class
   attach_function :create_function_pass_manager_for_module, :LLVMCreateFunctionPassManagerForModule, [OpaqueModule], OpaquePassManager
+  
+  # Deprecated: Use LLVMCreateFunctionPassManagerForModule instead.
+  # 
+  # @method create_function_pass_manager(mp)
+  # @param [OpaqueModuleProvider] mp 
+  # @return [OpaquePassManager] 
+  # @scope class
+  attach_function :create_function_pass_manager, :LLVMCreateFunctionPassManager, [OpaqueModuleProvider], OpaquePassManager
   
   # Initializes, executes on the provided module, and finalizes all of the
   #     passes scheduled in the pass manager. Returns 1 if any of the passes
@@ -4710,9 +4830,9 @@ module RLTK::CG::Bindings
   # @return [Symbol]
   # @scope class
   enum :verifier_failure_action, [
-    :abort_process,
-    :print_message,
-    :return_status
+    :abort_process, 0,
+    :print_message, 1,
+    :return_status, 2
   ]
   
   # Verifies that a module is valid, taking the specified action if not.
@@ -4722,7 +4842,7 @@ module RLTK::CG::Bindings
   # @method verify_module(m, action, out_message)
   # @param [OpaqueModule] m 
   # @param [Symbol from _enum_verifier_failure_action_] action 
-  # @param [FFI::Pointer(**Char_S)] out_message 
+  # @param [FFI::Pointer(**CharS)] out_message 
   # @return [Integer] 
   # @scope class
   attach_function :verify_module, :LLVMVerifyModule, [OpaqueModule, :verifier_failure_action, :pointer], :int
@@ -4759,7 +4879,7 @@ module RLTK::CG::Bindings
   # @method parse_bitcode(mem_buf, out_module, out_message)
   # @param [OpaqueMemoryBuffer] mem_buf 
   # @param [FFI::Pointer(*ModuleRef)] out_module 
-  # @param [FFI::Pointer(**Char_S)] out_message 
+  # @param [FFI::Pointer(**CharS)] out_message 
   # @return [Integer] 
   # @scope class
   attach_function :parse_bitcode, :LLVMParseBitcode, [OpaqueMemoryBuffer, :pointer, :pointer], :int
@@ -4770,7 +4890,7 @@ module RLTK::CG::Bindings
   # @param [OpaqueContext] context_ref 
   # @param [OpaqueMemoryBuffer] mem_buf 
   # @param [FFI::Pointer(*ModuleRef)] out_module 
-  # @param [FFI::Pointer(**Char_S)] out_message 
+  # @param [FFI::Pointer(**CharS)] out_message 
   # @return [Integer] 
   # @scope class
   attach_function :parse_bitcode_in_context, :LLVMParseBitcodeInContext, [OpaqueContext, OpaqueMemoryBuffer, :pointer, :pointer], :int
@@ -4783,7 +4903,7 @@ module RLTK::CG::Bindings
   # @param [OpaqueContext] context_ref 
   # @param [OpaqueMemoryBuffer] mem_buf 
   # @param [FFI::Pointer(*ModuleRef)] out_m 
-  # @param [FFI::Pointer(**Char_S)] out_message 
+  # @param [FFI::Pointer(**CharS)] out_message 
   # @return [Integer] 
   # @scope class
   attach_function :get_bitcode_module_in_context, :LLVMGetBitcodeModuleInContext, [OpaqueContext, OpaqueMemoryBuffer, :pointer, :pointer], :int
@@ -4793,10 +4913,31 @@ module RLTK::CG::Bindings
   # @method get_bitcode_module(mem_buf, out_m, out_message)
   # @param [OpaqueMemoryBuffer] mem_buf 
   # @param [FFI::Pointer(*ModuleRef)] out_m 
-  # @param [FFI::Pointer(**Char_S)] out_message 
+  # @param [FFI::Pointer(**CharS)] out_message 
   # @return [Integer] 
   # @scope class
   attach_function :get_bitcode_module, :LLVMGetBitcodeModule, [OpaqueMemoryBuffer, :pointer, :pointer], :int
+  
+  # Deprecated: Use LLVMGetBitcodeModuleInContext instead.
+  # 
+  # @method get_bitcode_module_provider_in_context(context_ref, mem_buf, out_mp, out_message)
+  # @param [OpaqueContext] context_ref 
+  # @param [OpaqueMemoryBuffer] mem_buf 
+  # @param [FFI::Pointer(*ModuleProviderRef)] out_mp 
+  # @param [FFI::Pointer(**CharS)] out_message 
+  # @return [Integer] 
+  # @scope class
+  attach_function :get_bitcode_module_provider_in_context, :LLVMGetBitcodeModuleProviderInContext, [OpaqueContext, OpaqueMemoryBuffer, :pointer, :pointer], :int
+  
+  # Deprecated: Use LLVMGetBitcodeModule instead.
+  # 
+  # @method get_bitcode_module_provider(mem_buf, out_mp, out_message)
+  # @param [OpaqueMemoryBuffer] mem_buf 
+  # @param [FFI::Pointer(*ModuleProviderRef)] out_mp 
+  # @param [FFI::Pointer(**CharS)] out_message 
+  # @return [Integer] 
+  # @scope class
+  attach_function :get_bitcode_module_provider, :LLVMGetBitcodeModuleProvider, [OpaqueMemoryBuffer, :pointer, :pointer], :int
   
   # (Not documented)
   # 
@@ -4817,6 +4958,16 @@ module RLTK::CG::Bindings
   # @return [Integer] 
   # @scope class
   attach_function :write_bitcode_to_fd, :LLVMWriteBitcodeToFD, [OpaqueModule, :int, :int, :int], :int
+  
+  # Deprecated for LLVMWriteBitcodeToFD. Writes a module to an open file
+  #     descriptor. Returns 0 on success. Closes the Handle.
+  # 
+  # @method write_bitcode_to_file_handle(m, handle)
+  # @param [OpaqueModule] m 
+  # @param [Integer] handle 
+  # @return [Integer] 
+  # @scope class
+  attach_function :write_bitcode_to_file_handle, :LLVMWriteBitcodeToFileHandle, [OpaqueModule, :int], :int
   
   # The type for the operand information call back function.  This is called to
   # get the symbolic information for an operand of an instruction.  Typically
@@ -4913,7 +5064,7 @@ module RLTK::CG::Bindings
   # @param [Integer] reference_value 
   # @param [FFI::Pointer(*Uint64T)] reference_type 
   # @param [Integer] reference_pc 
-  # @param [FFI::Pointer(**Char_S)] reference_name 
+  # @param [FFI::Pointer(**CharS)] reference_name 
   # @return [FFI::Pointer(*Void)] 
   # @scope class
   callback :symbol_lookup_callback, [:ulong, :pointer, :ulong, :pointer], :pointer
@@ -4967,30 +5118,58 @@ module RLTK::CG::Bindings
   # <em>This entry is only for documentation and no real method. The FFI::Enum can be accessed via #enum_type(:byte_ordering).</em>
   # 
   # === Options:
-  # :big ::
+  # :big_endian ::
   #   
-  # :little ::
+  # :little_endian ::
   #   
   # 
   # @method _enum_byte_ordering_
   # @return [Symbol]
   # @scope class
   enum :byte_ordering, [
-    :big,
-    :little
+    :big_endian, 0,
+    :little_endian, 1
   ]
   
   # (Not documented)
   class OpaqueTargetData < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)
   class OpaqueTargetLibraryInfotData < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)
   class StructLayout < FFI::Struct
+    layout :dummy, :char
   end
+  
+  # (Not documented)
+  # 
+  # @method initialize_all_target_infos()
+  # @return [nil] 
+  # @scope class
+  attach_function :initialize_all_target_infos, :LLVMInitializeAllTargetInfos, [], :void
+  
+  # LLVMInitializeAllTargets - The main program should call this function if it
+  #     wants to link in all available targets that LLVM is configured to
+  #     support.
+  # 
+  # @method initialize_all_targets()
+  # @return [nil] 
+  # @scope class
+  attach_function :initialize_all_targets, :LLVMInitializeAllTargets, [], :void
+  
+  # LLVMInitializeNativeTarget - The main program should call this function to
+  #     initialize the native target corresponding to the host.  This is useful 
+  #     for JIT applications to ensure that the target gets linked in correctly.
+  # 
+  # @method initialize_native_target()
+  # @return [Integer] 
+  # @scope class
+  attach_function :initialize_native_target, :LLVMInitializeNativeTarget, [], :int
   
   # Creates target data from a target layout string.
   #     See the constructor llvm::TargetData::TargetData.
@@ -5178,10 +5357,12 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   class OpaqueGenericValue < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)
   class OpaqueExecutionEngine < FFI::Struct
+    layout :dummy, :char
   end
   
   # ===-- Operations on generic values --------------------------------------===
@@ -5258,7 +5439,7 @@ module RLTK::CG::Bindings
   # @method create_execution_engine_for_module(out_ee, m, out_error)
   # @param [FFI::Pointer(*ExecutionEngineRef)] out_ee 
   # @param [OpaqueModule] m 
-  # @param [FFI::Pointer(**Char_S)] out_error 
+  # @param [FFI::Pointer(**CharS)] out_error 
   # @return [Integer] 
   # @scope class
   attach_function :create_execution_engine_for_module, :LLVMCreateExecutionEngineForModule, [:pointer, OpaqueModule, :pointer], :int
@@ -5268,7 +5449,7 @@ module RLTK::CG::Bindings
   # @method create_interpreter_for_module(out_interp, m, out_error)
   # @param [FFI::Pointer(*ExecutionEngineRef)] out_interp 
   # @param [OpaqueModule] m 
-  # @param [FFI::Pointer(**Char_S)] out_error 
+  # @param [FFI::Pointer(**CharS)] out_error 
   # @return [Integer] 
   # @scope class
   attach_function :create_interpreter_for_module, :LLVMCreateInterpreterForModule, [:pointer, OpaqueModule, :pointer], :int
@@ -5279,10 +5460,41 @@ module RLTK::CG::Bindings
   # @param [FFI::Pointer(*ExecutionEngineRef)] out_jit 
   # @param [OpaqueModule] m 
   # @param [Integer] opt_level 
-  # @param [FFI::Pointer(**Char_S)] out_error 
+  # @param [FFI::Pointer(**CharS)] out_error 
   # @return [Integer] 
   # @scope class
   attach_function :create_jit_compiler_for_module, :LLVMCreateJITCompilerForModule, [:pointer, OpaqueModule, :uint, :pointer], :int
+  
+  # Deprecated: Use LLVMCreateExecutionEngineForModule instead.
+  # 
+  # @method create_execution_engine(out_ee, mp, out_error)
+  # @param [FFI::Pointer(*ExecutionEngineRef)] out_ee 
+  # @param [OpaqueModuleProvider] mp 
+  # @param [FFI::Pointer(**CharS)] out_error 
+  # @return [Integer] 
+  # @scope class
+  attach_function :create_execution_engine, :LLVMCreateExecutionEngine, [:pointer, OpaqueModuleProvider, :pointer], :int
+  
+  # Deprecated: Use LLVMCreateInterpreterForModule instead.
+  # 
+  # @method create_interpreter(out_interp, mp, out_error)
+  # @param [FFI::Pointer(*ExecutionEngineRef)] out_interp 
+  # @param [OpaqueModuleProvider] mp 
+  # @param [FFI::Pointer(**CharS)] out_error 
+  # @return [Integer] 
+  # @scope class
+  attach_function :create_interpreter, :LLVMCreateInterpreter, [:pointer, OpaqueModuleProvider, :pointer], :int
+  
+  # Deprecated: Use LLVMCreateJITCompilerForModule instead.
+  # 
+  # @method create_jit_compiler(out_jit, mp, opt_level, out_error)
+  # @param [FFI::Pointer(*ExecutionEngineRef)] out_jit 
+  # @param [OpaqueModuleProvider] mp 
+  # @param [Integer] opt_level 
+  # @param [FFI::Pointer(**CharS)] out_error 
+  # @return [Integer] 
+  # @scope class
+  attach_function :create_jit_compiler, :LLVMCreateJITCompiler, [:pointer, OpaqueModuleProvider, :uint, :pointer], :int
   
   # (Not documented)
   # 
@@ -5314,8 +5526,8 @@ module RLTK::CG::Bindings
   # @param [OpaqueExecutionEngine] ee 
   # @param [OpaqueValue] f 
   # @param [Integer] arg_c 
-  # @param [FFI::Pointer(**Char_S)] arg_v 
-  # @param [FFI::Pointer(**Char_S)] env_p 
+  # @param [FFI::Pointer(**CharS)] arg_v 
+  # @param [FFI::Pointer(**CharS)] env_p 
   # @return [Integer] 
   # @scope class
   attach_function :run_function_as_main, :LLVMRunFunctionAsMain, [OpaqueExecutionEngine, OpaqueValue, :uint, :pointer, :pointer], :int
@@ -5349,16 +5561,36 @@ module RLTK::CG::Bindings
   # @scope class
   attach_function :add_module, :LLVMAddModule, [OpaqueExecutionEngine, OpaqueModule], :void
   
+  # Deprecated: Use LLVMAddModule instead.
+  # 
+  # @method add_module_provider(ee, mp)
+  # @param [OpaqueExecutionEngine] ee 
+  # @param [OpaqueModuleProvider] mp 
+  # @return [nil] 
+  # @scope class
+  attach_function :add_module_provider, :LLVMAddModuleProvider, [OpaqueExecutionEngine, OpaqueModuleProvider], :void
+  
   # (Not documented)
   # 
   # @method remove_module(ee, m, out_mod, out_error)
   # @param [OpaqueExecutionEngine] ee 
   # @param [OpaqueModule] m 
   # @param [FFI::Pointer(*ModuleRef)] out_mod 
-  # @param [FFI::Pointer(**Char_S)] out_error 
+  # @param [FFI::Pointer(**CharS)] out_error 
   # @return [Integer] 
   # @scope class
   attach_function :remove_module, :LLVMRemoveModule, [OpaqueExecutionEngine, OpaqueModule, :pointer, :pointer], :int
+  
+  # Deprecated: Use LLVMRemoveModule instead.
+  # 
+  # @method remove_module_provider(ee, mp, out_mod, out_error)
+  # @param [OpaqueExecutionEngine] ee 
+  # @param [OpaqueModuleProvider] mp 
+  # @param [FFI::Pointer(*ModuleRef)] out_mod 
+  # @param [FFI::Pointer(**CharS)] out_error 
+  # @return [Integer] 
+  # @scope class
+  attach_function :remove_module_provider, :LLVMRemoveModuleProvider, [OpaqueExecutionEngine, OpaqueModuleProvider, :pointer, :pointer], :int
   
   # (Not documented)
   # 
@@ -5405,6 +5637,14 @@ module RLTK::CG::Bindings
   # @return [FFI::Pointer(*Void)] 
   # @scope class
   attach_function :get_pointer_to_global, :LLVMGetPointerToGlobal, [OpaqueExecutionEngine, OpaqueValue], :pointer
+  
+  # (Not documented)
+  # 
+  # @method initialize_core(r)
+  # @param [OpaquePassRegistry] r 
+  # @return [nil] 
+  # @scope class
+  attach_function :initialize_core, :LLVMInitializeCore, [OpaquePassRegistry], :void
   
   # (Not documented)
   # 
@@ -5480,10 +5720,12 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   class OpaqueObjectFile < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)
   class OpaqueSectionIterator < FFI::Struct
+    layout :dummy, :char
   end
   
   # (Not documented)

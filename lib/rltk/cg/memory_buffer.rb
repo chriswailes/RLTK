@@ -14,10 +14,17 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG
+module RLTK::CG # :nodoc:
+
+	# This class is used by the {Module} class to dump and load LLVM bitcode.
 	class MemoryBuffer
 		include BindingClass
 		
+		# Create a new memory buffer.
+		#
+		# @param [FFI::Pointer, String, nil] overloaded This parameter may be either a pointer to an existing memory
+		#   buffer, the name of a file containing LLVM bitcode, or nil.  If it is nil the memory buffer will read
+		#   from standard in.
 		def initialize(overloaded = nil)
 			@ptr =
 			case overloaded
@@ -41,6 +48,9 @@ module RLTK::CG
 			end
 		end
 		
+		# Frees the resources used by LLVM for this memory buffer.
+		#
+		# @return [void]
 		def dispose
 			if @ptr
 				Bindings.dispose_memory_buffer(@ptr)
