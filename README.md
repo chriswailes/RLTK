@@ -566,9 +566,9 @@ What follows is an in-depth example of how to use the Ruby Language Toolkit.  Th
 * 2) use a lexer and parser generator and
 * III) use a language that I call Kazoo, which is really just a cleaned up and simplified version of the Kaleidoscope language used in the LLVM tutorial (as opposed to the [Kaleidoscope language](http://en.wikipedia.org/wiki/Kaleidoscope_%28programming_language%29) from the 90′s).
 
-The Kazoo toy language is a procedural language that allows you to define functions, use conditionals, and perform basic mathematical operations. Over the course of the tutorial we’ll extend Kazoo to support the if/then/else construct, for loops, JIT compilation, and a simple command line interface to the JIT.
+The Kazoo toy language is a procedural language that allows you to define functions, use conditionals, and perform basic mathematical operations.  Over the course of the tutorial we’ll extend Kazoo to support the if/then/else construct, for loops, JIT compilation, and a simple command line interface to the JIT.
 
-Because we want to keep things simple the only datatype in Kazoo is a 64-bit floating point type (a C double or a Ruby float). As such, all values are implicitly double precision and the language doesn’t require type declarations. This gives the language a very nice and simple syntax. For example, the following example computes Fibonacci numbers:
+Because we want to keep things simple the only datatype in Kazoo is a 64-bit floating point type (a C double or a Ruby float).  As such, all values are implicitly double precision and the language doesn’t require type declarations.  This gives the language a very nice and simple syntax.  For example, the following example computes Fibonacci numbers:
 
 	def fib(x)
 		if x < 3 then
@@ -587,7 +587,7 @@ The tutorial is organized as follows:
   * [Chapter 7: Playtime](file.Chapter7.html)
   * [Chapter 8: Mutable Variables](file.Chapter8.html)
 
-Before starting this tutorial you should know about regular expressions, the basic ideas behind lexing and parsing, and be able to read context-free grammar (CFG) definitions. By the end of this tutorial we will have written 372 lines of source code and have a JIT compiler for a Turing complete language.
+Before starting this tutorial you should know about regular expressions, the basic ideas behind lexing and parsing, and be able to read context-free grammar (CFG) definitions.  By the end of this tutorial we will have written 372 lines of source code and have a JIT compiler for a Turing complete language.
 
 ## Provided Lexers and Parsers
 
