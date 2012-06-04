@@ -44,7 +44,7 @@ To create your own lexer using RLTK you simply need to subclass the {RLTK::Lexer
 
 	class Calculator < RLTK::Lexer
 		rule(/\+/)	{ :PLS }
-		rule(/-/)		{ :SUB }
+		rule(/-/)	{ :SUB }
 		rule(/\*/)	{ :MUL }
 		rule(/\//)	{ :DIV }
 
@@ -335,11 +335,197 @@ Lastly, the type of a child or value can be defined as an array of objects of a 
 		value :strings, [String]
 	end
 
+## Code Generation
+
+RLTK supports the generation of native code and LLVM IR, as well as JIT compilation and execution, through the {RLTK::CG} module.  This module is built on top of bindings to [LLVM](http://llvm.org) and provides much, though not all, of the functionality of the LLVM libraries.
+
+A very small amount of the functionality of the RLTK::CG module (currently only the {RLTK::CG::Support.load_library} method) requires the [LLVM Extended C Bindings](https://github.com/chriswailes/llvm-ecb) library.  If this library is missing the rest of the module should behave properly, but this functionality will be missing.
+
+### Acknowledgments and Discussion
+
+Before we get started with the details, I would like to thank [Jeremy Voorhis](https://github.com/jvoorhis/).  The bindings present in RLTK are really a fork of the great work that he did on [ruby-llvm](https://github.com/jvoorhis/ruby-llvm).
+
+Why did I fork ruby-llvm, and why might you want to use the RLTK bindings over ruby-llvm?  There are a couple of reasons:
+
+* **Cleaner Codebase** - The RLTK bindings present a cleaner interface to the LLVM library by conforming to more standard Ruby programming practices, providing better abstractions and cleaner inheritance hierarchies, overloading constructors and other methods properly, and performing type checking on objects to better aid in debugging.
+* **Documentation** - RLTK's bindings provide slightly better documentation.
+* **Completeness** - The RLTK bindings provide several features that are missing from the ruby-llvm project.  These include the ability to initialize LLVM for architectures besides x86 (RLTK supports all architectures supported by LLVM) and the presence of all of LLVM's optimization passes.
+* **Ease of Use** - Several features have been added to make generating code easier.
+* **Speed** - The RLTK bindings are ever so slightly faster due to avoiding unnecessary FFI calls.
+
+Before you dive into generating code, here are some resources you might want to look over to build up some background knowledge on how LLVM works:
+
+* [Static Single Assignment Form](http://en.wikipedia.org/wiki/Static_single_assignment_form)
+* [LLVM Intermediate Representation](http://llvm.org/docs/LangRef.html)
+
+### LLVM
+
+Since RLTK's code generation functionality is built on top of LLVM the first step in generating code is to inform LLVM of the target architecture.  This is accomplished via the {RLTK::CG::LLVM.init} method, which is used like this: `RLTK::CG::LLVM.init(:PPC)`.  The {RLTK::CG::Bindings::ARCHS} constant provides a list of supported architectures.  This call must appear before any other calls to the RLTK::CG module.
+
+If you would like to see what version of LLVM is targeted by your version of RLTK you can either call the {RLTK::CG::LLVM.version} method or looking at the {RLTK::LLVM\_TARGET\_VERSION} constant.
+
+### Modules
+
+Modules are one of the core building blocks of the code generation module.  Functions, constants, and global variables all exist inside a particular module and, if you use the JIT compiler, a module provides the context for your executing code.  New modules can be created using the {RLTK::CG::Module#initialize RLTK::CG::Module.new} method.  While this method is overloaded you, as a library user, will always pass it a string as its first argument.  This allows you to name your modules for easier debugging later.
+
+Once you have created you can serialize the code inside of it into *bitcode* via the {RLTK::CG::Module#write\_bitcode} method.  This allows you to save partially generated code and then use it later.  To load a module from *bitcode* you use the {RLTK::CG::Module.read\_bitcode} method.
+
+### Types
+
+Types are an important part of generating code using LLVM.  Functions, operations, and other constructs use types to make sure that the generated code is sane.  All types in RLTK are subclasses of the {RLTK::CG::Type} class, and have class names that end in "Type".  Types can be grouped into to categories: fundamental and composite.
+
+Fundamental types are those like {RLTK::CG::Int32Type} and {RLTK::CG::FloatType} that don't take any arguments when they are created.  Indeed, these types are represented using a Singleton class, and so the `new` method is disabled.  Instead you can use the `instance` method to get an instantiated type, or simply pass in the class itself whenever you need to reference the type.  In this last case, the method you pass the class to will instantiate the type for you.
+
+Composite types are constructed from other types.  These include the {RLTK::CG::ArrayType}, {RLTK::CG::FunctionType}, and other classes.  These types you must instantiate directly before they can be used, and you may not simply pass the type class as the type argument to functions inside the RLTK::CG module.
+
+For convenience, the native integer type of the host platform is made available via {RLTK::CG::NativeIntType}.
+
+### Values
+
+The {RLTK::CG::Value} class is the common ancestor of many classes inside the RLTK::CG module.  The main way in which you, the library user, will interact with them is when creating constant values.  Here is a list of some of value classes you might use:
+
+* {RLTK::CG::Int1}
+* {RLTK::CG::Int8}
+* {RLTK::CG::Int16}
+* {RLTK::CG::Int32}
+* {RLTK::CG::Int64}
+* {RLTK::CG::Float}
+* {RLTK::CG::Double}
+* {RLTK::CG::ConstantArray}
+* {RLTK::CG::ConstantStruct}
+
+Again, for convenience, the native integer class of the host platform is made available via {RLTK::CG::NativeInt}.
+
+### Functions
+
+Functions in LLVM are much like C functions; they have a return type, argument types, and a body.  Functions may be created in several ways, though they all require a module in which to place the function.
+
+The first way to create functions is via a module's function collection:
+
+	mod.functions.add('my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+
+Here we have defined a function named 'my function' in the `mod` module.  It takes two native integers as arguments and returns a native integer.  It is also possible to define the type of a function ahead of time and pass it to this method:
+
+	type = RLTK::CG::FunctionType.new(RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	mod.functions.add('my function', type)
+
+Functions may also be created directly via the {RLTK::CG::Function#initialize RLTK::CG::Function.new} method, though a reference to a module is still necessary:
+
+	mod = Module.new('my module')
+	fun = Function.new(mod, 'my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+
+or
+	
+	mod  = Module.new('my module')
+	type = RLTK::CG::FunctionType.new(RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	fun  = Function.new(mod, 'my function', type)
+
+Lastly, whenever you use one of these methods to create a function you may give it a block to be executed inside the context of the function object.  This allows for easier building of functions:
+
+	mod.functions.add('my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+		bb = blocks.append('entry)'
+		...
+	end
+
+### Basic Blocks
+
+Once a function has been added to a module you will need to add {RLTK::CG::BasicBlock BasicBlocks} to the function.  This can be done easily:
+
+	bb = fun.blocks.append('entry')
+
+We now have a basic block that we can use to add instructions to our function and get it to actually do something.  You can also instantiate basic blocks directly:
+
+	bb = RLTK::CG::BasicBlock.new(fun, 'entry')
+
+### The Builder
+
+Now that you have a basic block you need to add instructions to it.  This is accomplished using a {RLTK::CG::Builder builder}, either directly or indirectly.
+
+To add instructions using a builder directly (this is most similar to how it is done using C/C++) you create the builder, position it where you want to add instructions, and then build them:
+
+	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	bb  = fun.blocks.append('entry')
+	
+	builder = RLTK::CG::Builder.new
+	
+	builder.position_at_end(bb)
+	
+	# Generate an add instruction.
+	inst0 = builder.add(fun.params[0], fun.params[1])
+	
+	# Generate a return instruction.
+	builder.ret(inst0)
+
+You can get rid of some of those references to the builder by using the {RLTK::CG::Builder#build} method:
+
+	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	bb  = fun.blocks.append('entry')
+	
+	builder = RLTK::CG::Builder.new
+	
+	builder.build(fun) do |fun|
+		ret add(fun.params[0], fun.params[1])
+	end
+
+To get rid of more code:
+
+	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	bb  = fun.blocks.append('entry')
+	
+	RLTK::CG::Builder.new do
+		ret add(fun.params[0], fun.params[1])
+	end
+
+Or:
+
+	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	fun.blocks.append('entry') do |fun|
+		ret add(fun.params[0], fun.params[1])
+	end
+
+Or even:
+
+	mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+		blocks.append('entry', nil, nil, self) do |fun|
+			ret add(fun.params[0], fun.params[1])
+		end
+	end
+
+In the last two examples a new builder object is created for the block.  It is possible to specify the builder to be used:
+
+	builder = RLTK::CG::Builder.new
+	
+	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	fun.blocks.append('entry', nil, builder) do |fun|
+		ret add(fun.params[0], fun.params[1])
+	end
+
+For an example of where this is useful, see the Kazoo tutorial.
+
+### Execution Engines
+
+Once you have generated your code you may want to run it.  RLTK provides bindings to both the LLVM interpreter and JIT compiler to help you do just that.  Creating a JIT compiler is pretty simple.
+
+	mod = RLTK::CG::Module.new('my module')
+	jit = RLTK::CG::JITCompiler(mod)
+	
+	mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+		blocks.append('entry', nil, nil, self) do |fun|
+			ret add(fun.params[0], fun.params[1])
+		end
+	end
+
+Now you can run your 'add' function like this:
+
+	jit.run(fun, 1, 2)
+
+The result will be a {RLTK::CG::GenericValue} object, and you will want to use its {RLTK::CG::GenericValue#to\_i #to\_i} and {RLTK::CG::GenericValue#to\_f #to\_f} methods to get the Ruby value result.
+
 ## Context-Free Grammars
 
 The {RLTK::CFG} class provides an abstraction for context-free grammars.  For the purpose of this class terminal symbols appear in **ALL CAPS**, and non-terminal symbols appear in **all lowercase**.  Once a grammar is defined the {RLTK::CFG#first_set} and {RLTK::CFG#follow_set} methods can be used to find *first* and *follow* sets.
 
-=== Defining Grammars
+### Defining Grammars
 
 A grammar is defined by first instantiating the {RLTK::CFG} class.  The {RLTK::CFG#production} and {RLTK::CFG#clause} methods may then be used to define the productions of the grammar.  The `production` method can take a Symbol denoting the left-hand side of the production and a string describing the right-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the `clause` method, each call producing a new production with the same left-hand side but different right-hand sides.  {RLTK::CFG#clause} may not be called outside of {RLTK::CFG#production}.  Bellow we see a grammar definition that uses both methods:
 
@@ -371,6 +557,37 @@ Once a grammar has been defined you can use the following functions to obtain in
 * **RLTK::CFG.productions** - Provides either a hash or array of the grammar's productions.
 * **RLTK::CFG.symbols** - Returns a list of all symbols used in the grammar's definition.
 * **RLTK::CFG.terms** - Returns a list of the terminal symbols used in the grammar's definition.
+
+## Tutorial
+
+What follows is an in-depth example of how to use the Ruby Language Toolkit.  This tutorial will show you how to use RLTK to build a lexer, parser, AST nodes, and compiler to create a toy language called Kazoo. The tutorial is based on the LLVM [Kaleidoscope](http://llvm.org/docs/tutorial/) tutorial, but has been modified to:
+
+* a) be done in Ruby
+* 2) use a lexer and parser generator and
+* III) use a language that I call Kazoo, which is really just a cleaned up and simplified version of the Kaleidoscope language used in the LLVM tutorial (as opposed to the [Kaleidoscope language](http://en.wikipedia.org/wiki/Kaleidoscope_%28programming_language%29) from the 90′s).
+
+The Kazoo toy language is a procedural language that allows you to define functions, use conditionals, and perform basic mathematical operations. Over the course of the tutorial we’ll extend Kazoo to support the if/then/else construct, for loops, JIT compilation, and a simple command line interface to the JIT.
+
+Because we want to keep things simple the only datatype in Kazoo is a 64-bit floating point type (a C double or a Ruby float). As such, all values are implicitly double precision and the language doesn’t require type declarations. This gives the language a very nice and simple syntax. For example, the following example computes Fibonacci numbers:
+
+	def fib(x)
+		if x < 3 then
+			1
+		else
+			fib(x-1) + fib(x-2)
+
+The tutorial is organized as follows:
+
+  * [Chapter 1: The Lexer](file.Chapter1.html)
+  * [Chapter 2: The AST Nodes](file.Chapter2.html)
+  * [Chapter 3: The Parser](file.Chapter3.html)
+  * [Chapter 4: AST Translation](file.Chapter4.html)
+  * [Chapter 5: JIT Compilation](file.Chapter5.html)
+  * [Chapter 6: Adding Control Flow](file.Chapter6.html)
+  * [Chapter 7: Playtime](file.Chapter7.html)
+  * [Chapter 8: Mutable Variables](file.Chapter8.html)
+
+Before starting this tutorial you should know about regular expressions, the basic ideas behind lexing and parsing, and be able to read context-free grammar (CFG) definitions. By the end of this tutorial we will have written 372 lines of source code and have a JIT compiler for a Turing complete language.
 
 ## Provided Lexers and Parsers
 

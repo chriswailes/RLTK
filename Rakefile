@@ -29,7 +29,7 @@ begin
 		]
 		
 		
-		t.files	= Dir['lib/**/*.rb']
+		t.files	= Dir['lib/**/*.rb'] + ['-'] + Dir['examples/kazoo/**/*.md'].sort
 	end
 	
 rescue LoadError
