@@ -35,7 +35,11 @@ loop do
 	begin
 		ast = Kazoo::Parser.parse(Kazoo::Lexer.lex(line))
 		ir  = jit.add(ast)
-		
+
+		puts "Before optimization:"
+		ir.dump
+
+		puts "After optimization:"
 		jit.optimize(ir).dump
 		
 		if ast.is_a?(Kazoo::Expression)

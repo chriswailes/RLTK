@@ -496,7 +496,7 @@ In the last two examples a new builder object is created for the block.  It is p
 	builder = RLTK::CG::Builder.new
 	
 	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	fun.blocks.append('entry', nil, builder) do |fun|
+	fun.blocks.append('entry', nil, builder) do
 		ret add(fun.params[0], fun.params[1])
 	end
 
@@ -551,12 +551,12 @@ As these additional productions are added internally to the grammar a callback f
 
 Once a grammar has been defined you can use the following functions to obtain information about it:
 
-* **RLTK::CFG.first_set** - Returns the *first set* for the provided symbol or sentence.
-* **RLTK::CFG.follow_set** - Returns the *follow set* for the provided symbol.
-* **RLTK::CFG.nonterms** - Returns a list of the non-terminal symbols used in the grammar's definition.
-* **RLTK::CFG.productions** - Provides either a hash or array of the grammar's productions.
-* **RLTK::CFG.symbols** - Returns a list of all symbols used in the grammar's definition.
-* **RLTK::CFG.terms** - Returns a list of the terminal symbols used in the grammar's definition.
+* {RLTK::CFG#first_set} - Returns the *first set* for the provided symbol or sentence.
+* {RLTK::CFG#follow_set} - Returns the *follow set* for the provided symbol.
+* {RLTK::CFG#nonterms} - Returns a list of the non-terminal symbols used in the grammar's definition.
+* {RLTK::CFG#productions} - Provides either a hash or array of the grammar's productions.
+* {RLTK::CFG#symbols} - Returns a list of all symbols used in the grammar's definition.
+* {RLTK::CFG#terms} - Returns a list of the terminal symbols used in the grammar's definition.
 
 ## Tutorial
 

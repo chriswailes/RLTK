@@ -266,7 +266,7 @@ module Kazoo
 			# Name each of the function paramaters.
 			returning(fun) do
 				node.arg_names.each_with_index do |name, i|
-					(@st[name] = fun.params[i]).name = name
+					fun.params[i].name = name
 				end
 			end
 		end

@@ -53,5 +53,5 @@ Lastly, we add definitions for AST nodes representing function prototypes and de
 		child :body, Expression
 	end
 
-In the [next_chapter](file.Chapter3.html) we will write a parser that takes input from our lexer and uses the AST node definitions to build an AST from our input. The full code for this chapter can be found in the `examples/kazoo/chapter 2` directory.
+In the [next chapter](file.Chapter3.html) we will write a parser that takes input from our lexer and uses the AST node definitions to build an AST from our input. The full code for this chapter can be found in the "`examples/kazoo/chapter 2`" directory.
 
