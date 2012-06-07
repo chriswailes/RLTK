@@ -34,12 +34,12 @@ Gem::Specification.new do |s|
 	s.add_dependency('ffi', '>= 1.0.0')
 	
 	s.add_development_dependency('bundler')
-	s.add_development_dependency('ffi_gen')
+	s.add_development_dependency('ffi_gen', '>= 1.1.0')
 	s.add_development_dependency('minitest')
 	s.add_development_dependency('rake')
 	s.add_development_dependency('rcov')
 	s.add_development_dependency('simplecov')
-	s.add_development_dependency('yard')
+	s.add_development_dependency('yard', '>= 0.8.1')
 	
 	s.test_files	= Dir.glob('test/tc_*.rb') + Dir.glob('test/ts_*.rb')
 end
