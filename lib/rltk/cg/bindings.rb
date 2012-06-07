@@ -64,7 +64,7 @@ module RLTK::CG # :nodoc:
 		
 			@ecb = true
 		
-		rescue FFI::NotFoundError
+		rescue LoadError
 			@ecb = false
 		end
 	

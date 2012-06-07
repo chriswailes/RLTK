@@ -8,7 +8,7 @@ require 'rltk/cg/llvm'
 require 'rltk/cg/module'
 require 'rltk/cg/execution_engine'
 require 'rltk/cg/value'
-
+			
 # Inform LLVM that we will be targeting an x86 architecture.
 RLTK::CG::LLVM.init(:X86)
 
@@ -162,8 +162,8 @@ module Kazoo
 				cond_value = translate_expression(node.cond)
 				cond_value = @builder.fcmp(:one, cond_value, ZERO, 'ifcond')
 				
-				start_bb = @builder.current_block
-				fun = start_bb.parent
+				start_bb	= @builder.current_block
+				fun		= start_bb.parent
 				
 				then_bb = fun.blocks.append('then')
 				@builder.position_at_end(then_bb)
@@ -233,7 +233,7 @@ module Kazoo
 		
 		def translate_prototype(node)
 			if fun = @module.functions[node.name]
-				if fun.basic_blocks.size != 0
+				if fun.blocks.size != 0
 					raise "Redefinition of function #{node.name}."
 				elsif fun.params.size != node.arg_names.length
 					raise "Redefinition of function #{node.name} with different number of arguments."

@@ -84,8 +84,7 @@ module RLTK::CG # :nodoc:
 		# @return [Object] Value the block evaluates to.  Usually an {Instruction}
 		def build(builder = nil, *block_args, &block)
 			if builder
-				builder.build(builder, *block_args, &block)
-				builder.position_at_end(self).build(*block_args, &block)
+				builder.build(self, *block_args, &block)
 				
 			else
 				builder	= Builder.new

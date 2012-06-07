@@ -119,7 +119,7 @@ module Kazoo
 		
 		def translate_prototype(node)
 			if fun = @module.functions[node.name]
-				if fun.basic_blocks.size != 0
+				if fun.blocks.size != 0
 					raise "Redefinition of function #{node.name}."
 					
 				elsif fun.params.size != node.arg_names.length
