@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
 	s.files = [
 			'LICENSE',
 			'AUTHORS',
-			'README',
+			'README.md',
 			'Rakefile',
 			] +
 			Dir.glob('lib/rltk/**/*.rb')
