@@ -9,6 +9,7 @@
 module RLTK
 	autoload :AST,		'rltk/ast'
 	autoload :CFG,		'rltk/cfg'
+	autoload :CG,		'rltk/cg'
 	autoload :Lexer,	'rltk/lexer'
 	autoload :Parser,	'rltk/parser'
 	autoload :Token,	'rltk/token'

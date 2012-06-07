@@ -61,6 +61,18 @@ end
 # Bundler tasks.
 Bundler::GemHelper.install_tasks
 
+# Rubygems Taks
+begin
+	require 'rubygems/tasks'
+	
+	Gem::Tasks.new do |t|
+		t.console.command = 'pry'
+	end
+	
+rescue LoadError
+	'rubygems-tasks not installed.'
+end
+
 desc 'Generate the bindings for LLVM.'
 task :gen_bindings do
 	require 'ffi_gen'
