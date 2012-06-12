@@ -20,7 +20,7 @@ require 'rltk/cg/llvm'
 
 class LLVMTester < Test::Unit::TestCase
 	def test_init
-		assert_raise(RuntimeError)	{ RLTK::CG::LLVM.init(:foo) }
+		assert_raise(ArgumentError)	{ RLTK::CG::LLVM.init(:foo) }
 		assert_nothing_raised		{ RLTK::CG::LLVM.init(:X86) }
 	end
 	
