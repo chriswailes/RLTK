@@ -137,7 +137,9 @@ task :gen_bindings do
 	headers = [
 		'llvm-ecb.h',
 		
-		'llvm-ecb/support.h'
+		'llvm-ecb/module.h',
+		'llvm-ecb/support.h',
+		'llvm-ecb/value.h'
 	]
 	
 	begin

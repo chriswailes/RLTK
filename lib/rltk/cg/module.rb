@@ -82,11 +82,33 @@ module RLTK::CG # :nodoc:
 			end
 		end
 		
-		# Print the IR of this module to standard out.
+		# Print the LLVM IR representation of this value to standard error.
+		# This function is the debugging version of the more general purpose
+		# {#print} method.
+		#
+		# @see #print
 		#
 		# @return [void]
 		def dump
 			Bindings.dump_module(@ptr)
+		end
+		
+		# Print the LLVM IR representation of this module to a file.  The
+		# file may be specified via a file name (which will be created or
+		# truncated) or an object that responds to #fileno.
+		#
+		# @param [String, #fileno] io File name or object with a file descriptor to print to.
+		#
+		# @return [void]
+		def print(io = $stdout)
+			case io
+			when String
+				File.open(io, 'w') do |f|
+					Bindings.print_module(@ptr, f.fileno)
+				end
+			else
+				Bindings.print_module(@ptr, io.fileno)
+			end
 		end
 		
 		# @return [FunctionCollection] Proxy object for inspecting this module's functions.

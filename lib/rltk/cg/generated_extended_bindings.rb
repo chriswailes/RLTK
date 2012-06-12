@@ -34,10 +34,28 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   # 
+  # @method print_module(mod, fd)
+  # @param [FFI::Pointer(ModuleRef)] mod 
+  # @param [Integer] fd 
+  # @return [nil] 
+  # @scope class
+  attach_function :print_module, :LLVMPrintModule, [:pointer, :int], :void
+  
+  # (Not documented)
+  # 
   # @method load_library_permanently(filename)
   # @param [String] filename 
   # @return [Integer] 
   # @scope class
   attach_function :load_library_permanently, :LLVMLoadLibraryPermanently, [:string], :int
+  
+  # (Not documented)
+  # 
+  # @method print_value(val, fd)
+  # @param [FFI::Pointer(ValueRef)] val 
+  # @param [Integer] fd 
+  # @return [nil] 
+  # @scope class
+  attach_function :print_value, :LLVMPrintValue, [:pointer, :int], :void
   
 end

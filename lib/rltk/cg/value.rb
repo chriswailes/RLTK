@@ -60,7 +60,11 @@ module RLTK::CG # :nodoc:
 			Bindings.is_constant(@ptr).to_bool
 		end
 		
-		# Print the LLVM IR representation of this value to standard out.
+		# Print the LLVM IR representation of this value to standard error.
+		# This function is the debugging version of the more general purpose
+		# {#print} method.
+		#
+		# @see #print
 		#
 		# @return [void]
 		def dump
@@ -89,6 +93,24 @@ module RLTK::CG # :nodoc:
 		# @return [Boolean] If the value is null or not.
 		def null?
 			Bindings.is_null(@ptr).to_bool
+		end
+		
+		# Print the LLVM IR representation of this value to a file.  The file
+		# may be specified via a file name (which will be created or
+		# truncated) or an object that responds to #fileno.
+		#
+		# @param [String, #fileno] io File name or object with a file descriptor to print to.
+		#
+		# @return [void]
+		def print(io = $stdout)
+			case io
+			when String
+				File.open(io, 'w') do |f|
+					Bindings.print_value(@ptr, f.fileno)
+				end
+			else
+				Bindings.print_value(@ptr, io.fileno)
+			end
 		end
 		
 		# Truncate a value to a given type.

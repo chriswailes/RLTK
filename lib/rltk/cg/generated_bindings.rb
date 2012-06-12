@@ -5102,16 +5102,10 @@ module RLTK::CG::Bindings
   # function returns the number of bytes in the instruction or zero if there was
   # no valid instruction.
   # 
-  # @method disasm_instruction(dc, bytes, bytes_size, pc, out_string, out_string_size)
-  # @param [FFI::Pointer(DisasmContextRef)] dc 
-  # @param [FFI::Pointer(*Uint8T)] bytes 
-  # @param [Integer] bytes_size 
-  # @param [Integer] pc 
-  # @param [String] out_string 
-  # @param [Integer] out_string_size 
+  # @method disasm_instruction()
   # @return [Integer] 
   # @scope class
-  attach_function :disasm_instruction, :LLVMDisasmInstruction, [:pointer, :pointer, :ulong, :ulong, :string, :ulong], :ulong
+  attach_function :disasm_instruction, :LLVMDisasmInstruction, [], :int
   
   # (Not documented)
   # 
