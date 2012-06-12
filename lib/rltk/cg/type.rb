@@ -442,7 +442,7 @@ end
 # @param [String]		blame	Variable name to blame for failed type checks.
 # @param [Boolean]		strict	Strict or non-strict checking.  Uses `instance_of?` and `is_a?` respectively.
 #
-# @raise [RuntimeError] An error is raise if a class is passed in parameter *o*
+# @raise [ArgumentError] An error is raise if a class is passed in parameter *o*
 #   that hasn't included the Singleton class, if the class passed in parameter
 #   *type* isn't a sub-class of {RLTK::CG::Type Type}, or if the type check
 #   fails.
@@ -476,7 +476,7 @@ end
 # @param [String]			blame	Variable name to blame for failed type checks.
 # @param [Boolean]			strict	Strict or non-strict checking.  Uses `instance_of?` and `is_a?` respectively.
 #
-# @raise [RuntimeError] An error is raise if a class is passed in *array* that
+# @raise [ArgumentError] An error is raise if a class is passed in *array* that
 #   hasn't included the Singleton class, if the class passed in parameter
 #   *type* isn't a sub-class of {RLTK::CG::Type Type}, or if the type check
 #   fails.

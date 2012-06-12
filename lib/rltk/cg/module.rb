@@ -124,6 +124,22 @@ module RLTK::CG # :nodoc:
 			@globals ||= GlobalCollection.new(self)
 		end
 		
+		# Set the module's target triple.
+		#
+		# @param [String] triple Triple value to set.
+		#
+		# @return [void]
+		def target=(triple)
+			Bindings.set_target(@ptr, triple)
+		end
+		
+		# Get the module's target triple.
+		#
+		# @return [String]
+		def target
+			Bindings.get_target(@ptr)
+		end
+		
 		# Write the module as LLVM bitcode to a file.
 		#
 		# @param [#path, #fileno, Integer, String] overloaded Where to write the bitcode.

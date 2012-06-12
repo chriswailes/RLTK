@@ -43,6 +43,48 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   # 
+  # @method initialize_all_asm_parsers()
+  # @return [nil] 
+  # @scope class
+  attach_function :initialize_all_asm_parsers, :LLVMInitializeAllAsmParsers, [], :void
+  
+  # (Not documented)
+  # 
+  # @method initialize_all_asm_printers()
+  # @return [nil] 
+  # @scope class
+  attach_function :initialize_all_asm_printers, :LLVMInitializeAllAsmPrinters, [], :void
+  
+  # (Not documented)
+  # 
+  # @method initialize_native_target_asm_parser()
+  # @return [nil] 
+  # @scope class
+  attach_function :initialize_native_target_asm_parser, :LLVMInitializeNativeTargetAsmParser, [], :void
+  
+  # (Not documented)
+  # 
+  # @method initialize_native_target_asm_printer()
+  # @return [nil] 
+  # @scope class
+  attach_function :initialize_native_target_asm_printer, :LLVMInitializeNativeTargetAsmPrinter, [], :void
+  
+  # (Not documented)
+  # 
+  # @method ecb_initialize_all_targets()
+  # @return [nil] 
+  # @scope class
+  attach_function :ecb_initialize_all_targets, :LLVMECBInitializeAllTargets, [], :void
+  
+  # (Not documented)
+  # 
+  # @method ecb_initialize_native_target()
+  # @return [nil] 
+  # @scope class
+  attach_function :ecb_initialize_native_target, :LLVMECBInitializeNativeTarget, [], :void
+  
+  # (Not documented)
+  # 
   # @method load_library_permanently(filename)
   # @param [String] filename 
   # @return [Integer] 

@@ -74,23 +74,47 @@ module RLTK::CG # :nodoc:
 		
 		# List of architectures supported by LLVM.
 		ARCHS = [
-			:ARM,
 			:Alpha,
+			:ARM,
 			:Blackfin,
 			:CBackend,
 			:CellSPU,
 			:CppBackend,
 			:MBlaze,
-			:MSP430,
 			:Mips,
-			:PTX,
+			:MSP430,
 			:PowerPC,
+			:PTX,
 			:Sparc,
 			:SystemZ,
-			:XCore,
+			:X86,
+			:XCore
+		]
+		
+		# List of assembly parsers.
+		ASM_PARSERS = [
+			:ARM,
+			:MBLaze,
 			:X86
 		]
-	
+		
+		# List of assembly printers.
+		ASM_PRINTERS = [
+			:Alpha,
+			:ARM,
+			:Blackfin,
+			:CellSPU,
+			:MBLaze,
+			:Mips,
+			:MSP430,
+			:PowerPC,
+			:PTX,
+			:Sparc,
+			:SystemZ,
+			:X86,
+			:XCore
+		]
+		
 		###########
 		# Methods #
 		###########
@@ -129,6 +153,14 @@ module RLTK::CG # :nodoc:
 			add_binding("LLVMInitialize#{arch}Target", [], :void)
 			add_binding("LLVMInitialize#{arch}TargetInfo", [], :void)
 			add_binding("LLVMInitialize#{arch}TargetMC", [], :void)
+		end
+		
+		ASM_PARSERS.each do |asm|
+			add_binding("LLVMInitialize#{asm}AsmParser", [], :void)
+		end
+		
+		ASM_PRINTERS.each do |asm|
+			add_binding("LLVMInitialize#{asm}AsmPrinter", [], :void)
 		end
 		
 		add_binding(:LLVMDisposeMessage, [:pointer], :void)
