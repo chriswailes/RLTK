@@ -456,10 +456,10 @@ def check_cg_type(o, type = RLTK::CG::Type, blame = 'type', strict = false)
 			if o.includes_module?(Singleton)
 				o.instance
 			else
-				raise "The #{o.name} class (passed as parameter #{blame}) must be instantiated directly."
+				raise ArgumentError, "The #{o.name} class (passed as parameter #{blame}) must be instantiated directly."
 			end
 		else
-			raise "The #{o.name} class (passed as parameter #{blame} does not inherit from the #{type.name} class." 
+			raise ArgumentError, "The #{o.name} class (passed as parameter #{blame} does not inherit from the #{type.name} class." 
 		end
 	else
 		check_type(o, type, blame, strict)
@@ -491,10 +491,10 @@ def check_cg_array_type(array, type = RLTK::CG::Type, blame = 'el_types', strict
 				if o.includes_module?(Singleton)
 					o.instance
 				else
-					raise "The #{o.name} class (passed in parameter #{blame}) must be instantiated directly."
+					raise ArgumentError, "The #{o.name} class (passed in parameter #{blame}) must be instantiated directly."
 				end
 			else
-				raise "The #{o.name} class (passed in parameter #{blame}) does not inherit from the #{type.name} class."
+				raise ArgumentError, "The #{o.name} class (passed in parameter #{blame}) does not inherit from the #{type.name} class."
 			end
 			
 		else
@@ -503,7 +503,7 @@ def check_cg_array_type(array, type = RLTK::CG::Type, blame = 'el_types', strict
 			if type_ok
 				o
 			else
-				raise "Parameter #{blame} must contain instances of the #{type.name} class."
+				raise ArgumentError, "Parameter #{blame} must contain instances of the #{type.name} class."
 			end
 		end
 	end

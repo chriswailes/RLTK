@@ -26,9 +26,9 @@ def check_type(o, type, blame = nil, strict = false)
 		o
 	else
 		if blame
-			raise "Parameter #{blame} must be an instance of the #{type.name} class.  Received an instance of #{o.class.name}."
+			raise ArgumentError, "Parameter #{blame} must be an instance of the #{type.name} class.  Received an instance of #{o.class.name}."
 		else
-			raise "Expected an object of type #{type.name}.  Received an instance of #{o.class.name}."
+			raise ArgumentError, "Expected an object of type #{type.name}.  Received an instance of #{o.class.name}."
 		end
 	end
 end
@@ -47,9 +47,9 @@ def check_array_type(array, type, blame = nil, strict = false)
 		
 		if not type_ok
 			if blame
-				raise "Parameter #{blame} must contain instances of the #{type.name} class."
+				raise ArgumentError, "Parameter #{blame} must contain instances of the #{type.name} class."
 			else
-				raise "Expected an object of type #{type.name}."
+				raise ArgumentError, "Expected an object of type #{type.name}."
 			end
 		end
 	end

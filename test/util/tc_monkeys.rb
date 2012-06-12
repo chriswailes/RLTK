@@ -41,8 +41,8 @@ class MonkeyTester < Test::Unit::TestCase
 		assert(check_type(1, Fixnum, nil, true))
 		assert(check_type(1, Integer))
 		
-		assert_raise(RuntimeError) { check_type(1, Integer, nil, true) }
-		assert_raise(RuntimeError) { check_type(1, Array) }
+		assert_raise(ArgumentError) { check_type(1, Integer, nil, true) }
+		assert_raise(ArgumentError) { check_type(1, Array) }
 	end
 	
 	def test_check_array_type
@@ -50,8 +50,8 @@ class MonkeyTester < Test::Unit::TestCase
 		assert(check_array_type([1, 2, 3], Fixnum, nil, true))
 		assert(check_array_type([1, 2, 3], Integer))
 		
-		assert_raise(RuntimeError) { check_array_type([1, 2, 3], Integer, nil, true) }
-		assert_raise(RuntimeError) { check_array_type([1, :hello, 'world'], Fixnum) }
+		assert_raise(ArgumentError) { check_array_type([1, 2, 3], Integer, nil, true) }
+		assert_raise(ArgumentError) { check_array_type([1, :hello, 'world'], Fixnum) }
 	end
 	
 	def test_class
