@@ -1,6 +1,9 @@
 pkg/*
 doc/*
 coverage/*
+examples/kazoo/**/*.o
+examples/kazoo/**/*.so
+examples/kazoo/**/*.tbl
 
 .yardoc/*
 
