@@ -349,7 +349,7 @@ Why did I fork ruby-llvm, and why might you want to use the RLTK bindings over r
 
 * **Cleaner Codebase** - The RLTK bindings present a cleaner interface to the LLVM library by conforming to more standard Ruby programming practices, providing better abstractions and cleaner inheritance hierarchies, overloading constructors and other methods properly, and performing type checking on objects to better aid in debugging.
 * **Documentation** - RLTK's bindings provide slightly better documentation.
-* **Completeness** - The RLTK bindings provide several features that are missing from the ruby-llvm project.  These include the ability to initialize LLVM for architectures besides x86 (RLTK supports all architectures supported by LLVM) and the presence of all of LLVM's optimization passes.
+* **Completeness** - The RLTK bindings provide several features that are missing from the ruby-llvm project.  These include the ability to initialize LLVM for architectures besides x86 (RLTK supports all architectures supported by LLVM), the presence of all of LLVM's optimization passes, and the ability to print the LLVM IR representation of modules and values to files.
 * **Ease of Use** - Several features have been added to make generating code easier.
 * **Speed** - The RLTK bindings are ever so slightly faster due to avoiding unnecessary FFI calls.
 
