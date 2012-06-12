@@ -97,6 +97,8 @@ module RLTK::CG # :nodoc:
 		# file may be specified via a file name (which will be created or
 		# truncated) or an object that responds to #fileno.
 		#
+		# @LLVMECB
+		#
 		# @param [String, #fileno] io File name or object with a file descriptor to print to.
 		#
 		# @return [void]
