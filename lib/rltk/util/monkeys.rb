@@ -18,6 +18,8 @@
 # @param [String, nil]	blame	Variable name to blame for failed type checks.
 # @param [Boolean]		strict	Strict or non-strict checking.  Uses `instance_of?` and `is_a?` respectively.
 #
+# @raise [ArgumentError] An error is raise if the type checking fails.
+#
 # @return [Object] The object passed as parameter o.
 def check_type(o, type, blame = nil, strict = false)
 	type_ok = if strict then o.instance_of?(type) else o.is_a?(type) end
@@ -39,6 +41,8 @@ end
 # @param [Class]		type		Class the objects should be an instance of.
 # @param [String, nil]	blame	Variable name to blame for failed type checks.
 # @param [Boolean]		strict	Strict or non-strict checking.  Uses `instance_of?` and `is_a?` respectively.
+#
+# @raise [ArgumentError] An error is raise if the type checking fails.
 #
 # @return [Object] The object passed in parameter o.
 def check_array_type(array, type, blame = nil, strict = false)
