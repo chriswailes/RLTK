@@ -26,7 +26,7 @@ module RLTK::CG # :nodoc:
 		#
 		# @see MemoryBuffer#initialize
 		#
-		# @param [MemoryBuffer, FFI::Pointer, String, nil] overloaded Where to read the bytecode from.
+		# @param [MemoryBuffer, FFI::Pointer, String, nil] overloaded Where to read the bitecode from.
 		#
 		# @return [Module]
 		def self.read_bitcode(overloaded)
