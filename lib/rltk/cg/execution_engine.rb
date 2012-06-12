@@ -38,6 +38,8 @@ module RLTK::CG # :nodoc:
 		#
 		# @raise [RuntimeError] An error is raised if something went horribly wrong inside LLVM during the creation of this engine.
 		def initialize(mod, &block)
+			check_type(mod, Module, 'mod')
+			
 			block = Proc.new { |ptr, error| Bindings.create_execution_engine_for_module(ptr, mod, error) } if block == nil
 			
 			ptr		= FFI::MemoryPointer.new(:pointer)
