@@ -34,15 +34,6 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   # 
-  # @method print_module(mod, fd)
-  # @param [FFI::Pointer(ModuleRef)] mod 
-  # @param [Integer] fd 
-  # @return [nil] 
-  # @scope class
-  attach_function :print_module, :LLVMPrintModule, [:pointer, :int], :void
-  
-  # (Not documented)
-  # 
   # @method initialize_all_asm_parsers()
   # @return [nil] 
   # @scope class
@@ -71,17 +62,12 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   # 
-  # @method ecb_initialize_all_targets()
+  # @method print_module(mod, fd)
+  # @param [FFI::Pointer(ModuleRef)] mod 
+  # @param [Integer] fd 
   # @return [nil] 
   # @scope class
-  attach_function :ecb_initialize_all_targets, :LLVMECBInitializeAllTargets, [], :void
-  
-  # (Not documented)
-  # 
-  # @method ecb_initialize_native_target()
-  # @return [nil] 
-  # @scope class
-  attach_function :ecb_initialize_native_target, :LLVMECBInitializeNativeTarget, [], :void
+  attach_function :print_module, :LLVMPrintModule, [:pointer, :int], :void
   
   # (Not documented)
   # 
@@ -99,5 +85,60 @@ module RLTK::CG::Bindings
   # @return [nil] 
   # @scope class
   attach_function :print_value, :LLVMPrintValue, [:pointer, :int], :void
+  
+  # (Not documented)
+  class OpaqueTarget < FFI::Struct
+    layout :dummy, :char
+  end
+  
+  # (Not documented)
+  class OpaqueTriple < FFI::Struct
+    layout :dummy, :char
+  end
+  
+  # // Functions
+  # 
+  # @method get_host_triple_string()
+  # @return [String] 
+  # @scope class
+  attach_function :get_host_triple_string, :LLVMGetHostTripleString, [], :string
+  
+  # (Not documented)
+  # 
+  # @method triple_create(string)
+  # @param [String] string 
+  # @return [OpaqueTriple] 
+  # @scope class
+  attach_function :triple_create, :LLVMTripleCreate, [:string], OpaqueTriple
+  
+  # (Not documented)
+  # 
+  # @method ecb_initialize_all_targets()
+  # @return [nil] 
+  # @scope class
+  attach_function :ecb_initialize_all_targets, :LLVMECBInitializeAllTargets, [], :void
+  
+  # (Not documented)
+  # 
+  # @method ecb_initialize_native_target()
+  # @return [nil] 
+  # @scope class
+  attach_function :ecb_initialize_native_target, :LLVMECBInitializeNativeTarget, [], :void
+  
+  # (Not documented)
+  # 
+  # @method get_target_from_name(name)
+  # @param [String] name 
+  # @return [OpaqueTarget] 
+  # @scope class
+  attach_function :get_target_from_name, :LLVMGetTargetFromName, [:string], OpaqueTarget
+  
+  # (Not documented)
+  # 
+  # @method get_target_from_triple(triple)
+  # @param [OpaqueTriple] triple 
+  # @return [OpaqueTarget] 
+  # @scope class
+  attach_function :get_target_from_triple, :LLVMGetTargetFromTriple, [OpaqueTriple], OpaqueTarget
   
 end
