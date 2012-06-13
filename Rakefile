@@ -137,9 +137,16 @@ task :gen_bindings do
 	headers = [
 		'llvm-ecb.h',
 		
+		'llvm-ecb/asm.h',
 		'llvm-ecb/module.h',
 		'llvm-ecb/support.h',
-		'llvm-ecb/value.h'
+		
+		'llvm-ecb/value.h',
+		'llvm-ecb/target.h'
+
+		# This causes value.h to not be included.
+		#'llvm-ecb/target.h',
+		#'llvm-ecb/value.h'
 	]
 	
 	begin

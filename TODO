@@ -11,5 +11,6 @@ tokens.rb:
 Code generation:
 	Figure out what an AssemblyAnnotationWriter is and what it is used for.
 	Add the ability to dump generated native code to an IO object or a file.
+	Add ability to set tail call info on call instructions.
 
 Misc:
