@@ -22,6 +22,10 @@ module RLTK::CG # :nodoc:
 	class Module
 		include BindingClass
 		
+		# @!attribute [rw] engine
+		#   @return [ExecutionEngine, nil] Execution engine associated with this module.
+		attr_accessor :engine
+		
 		# Load a module from LLVM bitcode.
 		#
 		# @see MemoryBuffer#initialize
@@ -92,6 +96,18 @@ module RLTK::CG # :nodoc:
 		def dump
 			Bindings.dump_module(@ptr)
 		end
+		
+		# @return [FunctionPassManager] Function pass manager for this module.
+		def function_pass_manager
+			@function_pass_manager ||= FunctionPassManager.new(self)
+		end
+		alias :fpm :function_pass_manager
+		
+		# @return [PassManager] Pass manager for this module.
+		def pass_manager
+			@pass_manager ||= PassManager.new(self)
+		end
+		alias :pm :pass_manager
 		
 		# Print the LLVM IR representation of this module to a file.  The
 		# file may be specified via a file name (which will be created or

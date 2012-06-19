@@ -56,8 +56,8 @@ class TransformTester < Test::Unit::TestCase
 		assert(funs.include?(fn1))
 		assert(funs.include?(main))
 		
-		@jit.pass_manager << :GDCE
-		assert(@jit.pass_manager.run)
+		@mod.pass_manager << :GDCE
+		assert(@mod.pass_manager.run)
 		
 		funs = @mod.functions.to_a
 		

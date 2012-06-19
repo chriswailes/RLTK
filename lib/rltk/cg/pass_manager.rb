@@ -69,17 +69,20 @@ module RLTK::CG # :nodoc:
 		}
 		
 		# Creat a new pass manager.  You should never have to do this as
-		# {ExecutionEngine ExecutionEngines} creates a PassManager whenever
-		# one is requested.
+		# {Module Modules} should create PassManagers for you whenever they
+		# are requested.
 		#
-		# @param [ExecutionEngine]	engine	ExecutionEngine this pass manager belongs to.
-		# @param [Module]			mod		Module this pass manager belongs to.
-		def initialize(engine, mod)
+		# @see Module#pass_manager
+		# @see Module#function_pass_manager
+		#
+		# @param [Module] mod Module this pass manager belongs to.
+		def initialize(mod)
 			# LLVM Initialization
 			@ptr = Bindings.create_pass_manager
 			@mod = mod
 			
-			Bindings.add_target_data(Bindings.get_execution_engine_target_data(engine), @ptr)
+			# Set the target data if the module is associated with a execution engine.
+			self.target_data = Bindings.get_execution_engine_target_data(mod.engine) if mod.engine
 			
 			# RLTK Initialization
 			@enabled = Array.new
@@ -152,6 +155,17 @@ module RLTK::CG # :nodoc:
 			Bindings.run_pass_manager(@ptr, @mod).to_bool
 		end
 		
+		# Set the target data for this pass manager.
+		#
+		# FIXME: This method needs to be made more useful and general.
+		#
+		# @param [FFI::Pointer] data
+		#
+		# @return [void]
+		def target_data=(data)
+			Bindings.add_target_data(data, @ptr)
+		end
+		
 		protected
 		# Empty method used by {FunctionPassManager} to clean up resources.
 		def finalize
@@ -161,7 +175,7 @@ module RLTK::CG # :nodoc:
 	# A FunctionPassManager is responsible for scheduling and running optimization
 	# passes on individual functions inside the context of a module.
 	class FunctionPassManager < PassManager
-		# Creat a new function pass manager.  You should never have to do
+		# Create a new function pass manager.  You should never have to do
 		# this as {ExecutionEngine ExecutionEngines} creates a
 		# FunctionPassManager whenever one is requested.
 		#

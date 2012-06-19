@@ -49,6 +49,9 @@ module RLTK::CG # :nodoc:
 			if status.zero?
 				@ptr		= ptr.read_pointer
 				@module	= mod
+				
+				# Associate this engine with the provided module.
+				@module.engine = self
 		
 			else
 				errorp  = error.read_pointer
@@ -72,18 +75,6 @@ module RLTK::CG # :nodoc:
 				@ptr = nil
 			end
 		end
-		
-		# @return [FunctionPassManager] Function pass manager for this engine.
-		def function_pass_manager
-			@function_pass_manager ||= FunctionPassManager.new(self, @module)
-		end
-		alias :fpm :function_pass_manager
-		
-		# @return [PassManager] Pass manager for this engine.
-		def pass_manager
-			@pass_manager ||= PassManager.new(self, @module)
-		end
-		alias :pm :pass_manager
 		
 		# Builds a pointer to a global value.
 		#

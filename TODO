@@ -12,7 +12,8 @@ Code generation:
 	Figure out what an AssemblyAnnotationWriter is and what it is used for.
 	Add the ability to dump generated native code to an IO object or a file.
 	Add ability to set tail call info on call instructions.
-	Change it so that pass managers belong to modules and not execution engines.
+	Change it so that pass managers belong to modules and not execution engines. (DONE)
 		Update tests and Kazoo examples to reflect this change.
+	Add some wrapper classes/code for TargetData.
 
 Misc:
