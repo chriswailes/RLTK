@@ -49,5 +49,10 @@ module RLTK::CG # :nodoc:
 			when String		then Bindings.triple_create(overloaded)
 			end
 		end
+		
+		# @return [String] String representation of this triple.
+		def to_s
+			Bindings.get_triple_string(@ptr)
+		end
 	end
 end
