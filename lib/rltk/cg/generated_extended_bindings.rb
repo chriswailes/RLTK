@@ -87,7 +87,81 @@ module RLTK::CG::Bindings
   attach_function :print_value, :LLVMPrintValue, [:pointer, :int], :void
   
   # (Not documented)
+  # 
+  # <em>This entry is only for documentation and no real method. The FFI::Enum can be accessed via #enum_type(:code_model).</em>
+  # 
+  # === Options:
+  # :default_cmodel ::
+  #   
+  # :kernel ::
+  #   
+  # :small ::
+  #   
+  # :medium ::
+  #   
+  # :large ::
+  #   
+  # 
+  # @method _enum_code_model_
+  # @return [Symbol]
+  # @scope class
+  enum :code_model, [
+    :default_cmodel, 0,
+    :kernel, 1,
+    :small, 2,
+    :medium, 3,
+    :large, 4
+  ]
+  
+  # (Not documented)
+  # 
+  # <em>This entry is only for documentation and no real method. The FFI::Enum can be accessed via #enum_type(:reloc_model).</em>
+  # 
+  # === Options:
+  # :default_rmodel ::
+  #   
+  # :static ::
+  #   
+  # :pic ::
+  #   
+  # :dynamic_no_pic ::
+  #   
+  # 
+  # @method _enum_reloc_model_
+  # @return [Symbol]
+  # @scope class
+  enum :reloc_model, [
+    :default_rmodel, 0,
+    :static, 1,
+    :pic, 2,
+    :dynamic_no_pic, 3
+  ]
+  
+  # (Not documented)
+  # 
+  # <em>This entry is only for documentation and no real method. The FFI::Enum can be accessed via #enum_type(:compile_type).</em>
+  # 
+  # === Options:
+  # :asm ::
+  #   
+  # :obj ::
+  #   
+  # 
+  # @method _enum_compile_type_
+  # @return [Symbol]
+  # @scope class
+  enum :compile_type, [
+    :asm, 0,
+    :obj, 1
+  ]
+  
+  # (Not documented)
   class OpaqueTarget < FFI::Struct
+    layout :dummy, :char
+  end
+  
+  # (Not documented)
+  class OpaqueTargetMachine < FFI::Struct
     layout :dummy, :char
   end
   
@@ -96,20 +170,28 @@ module RLTK::CG::Bindings
     layout :dummy, :char
   end
   
-  # // Functions
+  # // Utility
   # 
-  # @method get_host_triple_string()
+  # @method build_features_string(attrs, num_attrs)
+  # @param [FFI::Pointer(**CharS)] attrs 
+  # @param [Integer] num_attrs 
   # @return [String] 
   # @scope class
-  attach_function :get_host_triple_string, :LLVMGetHostTripleString, [], :string
+  attach_function :build_features_string, :LLVMBuildFeaturesString, [:pointer, :int], :string
   
   # (Not documented)
   # 
-  # @method triple_create(string)
-  # @param [String] string 
-  # @return [OpaqueTriple] 
+  # @method compile_module_to_file(mod, machine, pm, file_name, ctype, opt_level, no_verify)
+  # @param [FFI::Pointer(ModuleRef)] mod 
+  # @param [OpaqueTargetMachine] machine 
+  # @param [FFI::Pointer(PassManagerRef)] pm 
+  # @param [String] file_name 
+  # @param [Symbol from _enum_compile_type_] ctype 
+  # @param [Integer] opt_level 
+  # @param [Integer] no_verify 
+  # @return [nil] 
   # @scope class
-  attach_function :triple_create, :LLVMTripleCreate, [:string], OpaqueTriple
+  attach_function :compile_module_to_file, :LLVMCompileModuleToFile, [:pointer, OpaqueTargetMachine, :pointer, :string, :compile_type, :uint, :uint], :void
   
   # (Not documented)
   # 
@@ -125,7 +207,7 @@ module RLTK::CG::Bindings
   # @scope class
   attach_function :ecb_initialize_native_target, :LLVMECBInitializeNativeTarget, [], :void
   
-  # (Not documented)
+  # // Target
   # 
   # @method get_target_from_name(name)
   # @param [String] name 
@@ -140,5 +222,57 @@ module RLTK::CG::Bindings
   # @return [OpaqueTarget] 
   # @scope class
   attach_function :get_target_from_triple, :LLVMGetTargetFromTriple, [OpaqueTriple], OpaqueTarget
+  
+  # // Target Machine
+  # 
+  # @method create_target_machine(target, triple, mcpu, features, rmodel, cmodel)
+  # @param [OpaqueTarget] target 
+  # @param [String] triple 
+  # @param [String] mcpu 
+  # @param [String] features 
+  # @param [Symbol from _enum_reloc_model_] rmodel 
+  # @param [Symbol from _enum_code_model_] cmodel 
+  # @return [OpaqueTargetMachine] 
+  # @scope class
+  attach_function :create_target_machine, :LLVMCreateTargetMachine, [OpaqueTarget, :string, :string, :string, :reloc_model, :code_model], OpaqueTargetMachine
+  
+  # (Not documented)
+  # 
+  # @method set_target_machine_asm_verbosity(machine, boolean)
+  # @param [OpaqueTargetMachine] machine 
+  # @param [Integer] boolean 
+  # @return [nil] 
+  # @scope class
+  attach_function :set_target_machine_asm_verbosity, :LLVMSetTargetMachineASMVerbosity, [OpaqueTargetMachine, :int], :void
+  
+  # // Triple
+  # 
+  # @method get_host_triple()
+  # @return [OpaqueTriple] 
+  # @scope class
+  attach_function :get_host_triple, :LLVMGetHostTriple, [], OpaqueTriple
+  
+  # (Not documented)
+  # 
+  # @method get_host_triple_string()
+  # @return [String] 
+  # @scope class
+  attach_function :get_host_triple_string, :LLVMGetHostTripleString, [], :string
+  
+  # (Not documented)
+  # 
+  # @method get_triple_string(triple)
+  # @param [OpaqueTriple] triple 
+  # @return [String] 
+  # @scope class
+  attach_function :get_triple_string, :LLVMGetTripleString, [OpaqueTriple], :string
+  
+  # (Not documented)
+  # 
+  # @method triple_create(string)
+  # @param [String] string 
+  # @return [OpaqueTriple] 
+  # @scope class
+  attach_function :triple_create, :LLVMTripleCreate, [:string], OpaqueTriple
   
 end
