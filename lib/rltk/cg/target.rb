@@ -9,6 +9,7 @@
 
 # Ruby Language Toolkit
 require 'rltk/cg/bindings'
+require 'rltk/cg/triple'
 
 #######################
 # Classes and Modules #
@@ -20,7 +21,13 @@ module RLTK::CG # :nodoc:
 	class Target
 		include BindingClass
 		
+		# @return [Triple] Triple object for this target.
 		attr_reader :triple
+		
+		# @return [Target] Target object for the host architecture.
+		def self.host
+			@host ||= self.new(Triple.host)
+		end
 		
 		# Create an object representing a particular code generation target.
 		# You can create a target either from a string or a Triple.
@@ -29,8 +36,8 @@ module RLTK::CG # :nodoc:
 		def initialize(overloaded)
 			@ptr, @triple = 
 			case overloaded
-			when String	then [Bindings.get_target_from_string(overloaded), Triple.new(overloaded)]
-			when Triple	then [Bindings.get_target_from_triple(overloaded), overloaded]
+			when String	then puts 'Marker 1'; [Bindings.get_target_from_string(overloaded), Triple.new(overloaded)]
+			when Triple	then puts 'Marker 2'; [Bindings.get_target_from_triple(overloaded), overloaded]
 			end
 		end
 	end
@@ -49,6 +56,8 @@ module RLTK::CG # :nodoc:
 	# This class represents a specific architecture that wil be targeted by
 	# LLVM's compilation process.
 	class TargetMachine
+		include BindingClass
+		
 		# Convert an array of strings representing features of a target
 		# machine into a single string.
 		#
@@ -62,6 +71,11 @@ module RLTK::CG # :nodoc:
 			Bindings.build_features_string(strings_ptr, features.length)
 		end
 		
+		# @return [TargetMachine] TargetMachine representation of the host machine.
+		def self.host
+			@host ||= self.new(Target.host)
+		end
+		
 		# Create a new object describing a target machine.
 		#
 		# @see Bindings._enum_reloc_model_
@@ -72,7 +86,7 @@ module RLTK::CG # :nodoc:
 		# @param [Array<String>, String]	features		Features present for this target machine.
 		# @param [Symbol]				reloc_model	Code relocation model.
 		# @param [Symbol]				code_model	Code generation model.
-		def initialize(target, mcpu, features, reloc_model = :default, code_model = :default)
+		def initialize(target, mcpu = '', features = '', reloc_model = :default, code_model = :default)
 			# Just to make things easier on developers.
 			reloc_model = :default_rmodel if reloc_model == :default
 			code_model  = :default_cmodel if code_model  == :default

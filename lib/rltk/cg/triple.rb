@@ -25,13 +25,13 @@ module RLTK::CG # :nodoc:
 		#################
 		
 		# @return [Triple] Object representing the host architecture, vendor, OS, and environment.
-		def self.host_triple
-			@host_triple ||= Triple.new(Bindings.get_host_triple)
+		def self.host
+			@host ||= self.new(Bindings.get_host_triple)
 		end
 		
 		# @return [String] String representation of the host architecture, vendor, OS, and environment.
-		def self.host_triple_string
-			@host_triple_string ||= Bindings.get_host_triple_string
+		def self.host_string
+			@host_string ||= Bindings.get_host_triple_string
 		end
 		
 		####################

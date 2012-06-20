@@ -60,16 +60,16 @@ module RLTK::CG # :nodoc:
 		#
 		# @return [void]
 		def self.init_asm_parser(asm)
-			if arch == :all
+			if asm == :all
 				Bindings.initialize_all_asm_parsers
 			
-			elsif Bindings::ASM_PARSERS.include?(arch) or Bindings::ASM_PARSERS.map { |sym| sym.to_s.downcase.to_sym }.include?(arch)
+			elsif Bindings::ASM_PARSERS.include?(asm) or Bindings::ASM_PARSERS.map { |sym| sym.to_s.downcase.to_sym }.include?(asm)
 				asm = Bindings.get_bname(asm)
 				
 				Bindings.send("initialize_#{asm}_asm_parser".to_sym)
 			
 			else
-				raise ArgumentError, "Unsupported assembler type specified: #{arch}"
+				raise ArgumentError, "Unsupported assembler type specified: #{asm}"
 			end
 		end
 		
@@ -85,19 +85,19 @@ module RLTK::CG # :nodoc:
 		#
 		# @return [void]
 		def self.init_asm_printer(asm)
-			if arch == :all
+			if asm == :all
 				Bindings.initialize_all_asm_printers
 			
-			elsif arch == :native
+			elsif asm == :native
 				Bindings.initialize_native_asm_printer
 			
-			elsif Bindings::ASM_PRINTERS.include?(arch) or Bindings::ASM_PRINTERS.map { |sym| sym.to_s.downcase.to_sym }.include?(arch)
+			elsif Bindings::ASM_PRINTERS.include?(asm) or Bindings::ASM_PRINTERS.map { |sym| sym.to_s.downcase.to_sym }.include?(asm)
 				asm = Bindings.get_bname(asm)
 				
 				Bindings.send("initialize_#{asm}_asm_printer".to_sym)
 			
 			else
-				raise ArgumentError, "Unsupported assembler type specified: #{arch}"
+				raise ArgumentError, "Unsupported assembler type specified: #{asm}"
 			end
 		end
 		

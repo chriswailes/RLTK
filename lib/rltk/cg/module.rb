@@ -70,6 +70,23 @@ module RLTK::CG # :nodoc:
 			self.instance_exec(&block) if block
 		end
 		
+		# Compile this module to an assembly or object file.
+		#
+		# @param [String]		file_name		Name of output file.
+		# @param [:asm, :object]	mode			Generate assembly or object file?
+		# @param [TargetMachine]	target_machine	Machine type to target.
+		# @param [0, 1, 2, 3]	opt_level		Optimization level to use during compilation.
+		# @param [Boolean]		verify		Verify the module before compilation or not.
+		#
+		# @return [void]
+		def compile(file_name, mode = :object, machine = TargetMachine.host, opt_level = 2, verify = true)
+			puts "Module: #{@ptr}"
+			puts "Target Machine: #{machine.ptr}"
+			puts "Pass Manager: #{self.pm.ptr}"
+			
+			Bindings.compile_module_to_file(@ptr, machine, self.pm, file_name, mode, opt_level, (!verify).to_i)
+		end
+		
 		# @return [Context] Context in which this module exists.
 		def context
 			Context.new(Bindings.get_module_context(@ptr))

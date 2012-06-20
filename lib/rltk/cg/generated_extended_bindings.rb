@@ -144,7 +144,7 @@ module RLTK::CG::Bindings
   # === Options:
   # :asm ::
   #   
-  # :obj ::
+  # :object ::
   #   
   # 
   # @method _enum_compile_type_
@@ -152,7 +152,7 @@ module RLTK::CG::Bindings
   # @scope class
   enum :compile_type, [
     :asm, 0,
-    :obj, 1
+    :object, 1
   ]
   
   # (Not documented)
