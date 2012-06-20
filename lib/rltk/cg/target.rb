@@ -35,6 +35,19 @@ module RLTK::CG # :nodoc:
 		end
 	end
 	
+	# This class represents data about a specific architecture.  Currently it
+	# is for internal use only and should not be instantiated by users.
+	class TargetData
+		include BindingClass
+		
+		# @param [FFI::Pointer] ptr
+		def initialize(ptr)
+			@ptr = ptr
+		end
+	end
+	
+	# This class represents a specific architecture that wil be targeted by
+	# LLVM's compilation process.
 	class TargetMachine
 		# Convert an array of strings representing features of a target
 		# machine into a single string.

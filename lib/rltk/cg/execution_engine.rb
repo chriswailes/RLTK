@@ -134,6 +134,11 @@ module RLTK::CG # :nodoc:
 			GenericValue.new(Bindings.run_function_as_main(@ptr, fun, args.length, argv, env))
 		end
 		alias :run_main :run_function_as_main
+		
+		# @return [TargetData] Information about the target architecture for this execution engine.
+		def target_data
+			TargetData.new(Bindings.get_execution_engine_target_data(@ptr))
+		end
 	end
 	
 	# An execution engine that interprets the given code.
