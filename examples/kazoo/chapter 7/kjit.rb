@@ -29,7 +29,7 @@ module Kazoo
 			@engine = RLTK::CG::JITCompiler.new(@module)
 			
 			# Add passes to the Function Pass Manager.
-			@engine.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify)
+			@module.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify)
 		end
 		
 		def add(ast)
@@ -46,7 +46,7 @@ module Kazoo
 		end
 		
 		def optimize(fun)
-			@engine.fpm.run(fun)
+			@module.fpm.run(fun)
 			
 			fun
 		end

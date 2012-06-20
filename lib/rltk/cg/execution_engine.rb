@@ -12,6 +12,7 @@
 require 'rltk/util/abstract_class'
 require 'rltk/cg/bindings'
 require 'rltk/cg/pass_manager'
+require 'rltk/cg/target'
 
 #######################
 # Classes and Modules #
