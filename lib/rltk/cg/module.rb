@@ -48,6 +48,15 @@ module RLTK::CG # :nodoc:
 			end
 		end
 		
+		# Load a Module form an LLVM IR file.
+		#
+		# @param [String] file_name Name of file containing LLVM IR module.
+		#
+		# @return [Module]
+		def self.read_ir_file(file_name, context = Context.global)
+			self.new(Bindings.load_module_from_ir_file(file_name, context))
+		end
+		
 		# Create a new LLVM module.
 		#
 		# @param [FFI::Pointer, String]	overloaded	Pointer to existing module or name of new module. 

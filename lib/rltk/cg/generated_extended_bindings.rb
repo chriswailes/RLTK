@@ -62,6 +62,15 @@ module RLTK::CG::Bindings
   
   # (Not documented)
   # 
+  # @method load_module_from_ir_file(file_name, context)
+  # @param [String] file_name 
+  # @param [FFI::Pointer(ContextRef)] context 
+  # @return [FFI::Pointer(ModuleRef)] 
+  # @scope class
+  attach_function :load_module_from_ir_file, :LLVMLoadModuleFromIRFile, [:string, :pointer], :pointer
+  
+  # (Not documented)
+  # 
   # @method print_module(mod, fd)
   # @param [FFI::Pointer(ModuleRef)] mod 
   # @param [Integer] fd 
