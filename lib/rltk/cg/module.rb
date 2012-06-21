@@ -80,10 +80,6 @@ module RLTK::CG # :nodoc:
 		#
 		# @return [void]
 		def compile(file_name, mode = :object, machine = TargetMachine.host, opt_level = 2, verify = true)
-			puts "Module: #{@ptr}"
-			puts "Target Machine: #{machine.ptr}"
-			puts "Pass Manager: #{self.pm.ptr}"
-			
 			Bindings.compile_module_to_file(@ptr, machine, self.pm, file_name, mode, opt_level, (!verify).to_i)
 		end
 		

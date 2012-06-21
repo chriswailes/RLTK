@@ -36,8 +36,8 @@ module RLTK::CG # :nodoc:
 		def initialize(overloaded)
 			@ptr, @triple = 
 			case overloaded
-			when String	then puts 'Marker 1'; [Bindings.get_target_from_string(overloaded), Triple.new(overloaded)]
-			when Triple	then puts 'Marker 2'; [Bindings.get_target_from_triple(overloaded), overloaded]
+			when String	then [Bindings.get_target_from_string(overloaded), Triple.new(overloaded)]
+			when Triple	then [Bindings.get_target_from_triple(overloaded), overloaded]
 			end
 		end
 	end
