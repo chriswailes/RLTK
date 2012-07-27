@@ -14,7 +14,7 @@ module RLTK # :nodoc:
 	# generation functionality is provided by bindings to
 	# [LLVM](http://llvm.org).
 	module CG
-		autoload :BasicBloc,		'rltk/cg/basic_block'
+		autoload :BasicBlock,		'rltk/cg/basic_block'
 		autoload :Bindings,			'rltk/cg/bindings'
 		autoload :Builder,			'rltk/cg/builder'
 		autoload :Context,			'rltk/cg/context'
