@@ -1,16 +1,38 @@
 parser.rb:
 	Composable parsers.
+	Add shortcuts for common productions like:
+		* Empty lists
+		* Non-empty lists
+	
+	Auto-generate as much of the AST as possible, including AST node classes.
+	Add a simple way to lexically scope the language.
 	
 lexer.rb:
 	Composable lexers.
 
 ast.rb:
+	Add the ability to traverse the AST in pre-order, post-order, or topological-order.
+	Add ability to serialize/dump an AST to any IO object.
 
 tokens.rb:
 
 Code generation:
 	Figure out what an AssemblyAnnotationWriter is and what it is used for.
-	Add the ability to dump generated native code to an IO object or a file.
 	Add ability to set tail call info on call instructions.
+
+Semantics:
+	Fill in the remaining semantic tools:
+		* Actor
+		* Axiomatic
+		* Big-Step Operational
+		* Denotational
+		* Hoare Logic
+		* Join Calculus
+		* Lambda Calculus
+		* Operational
+		* Pi Calculus
+		* Small-Step Operational
+	
+	Add the ability to translate between different semantics.
 
 Misc:
