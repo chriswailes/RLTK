@@ -11,7 +11,6 @@ lexer.rb:
 	Composable lexers.
 
 ast.rb:
-	Add the ability to traverse the AST in pre-order, post-order, or topological-order.
 
 tokens.rb:
 

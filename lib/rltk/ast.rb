@@ -289,11 +289,34 @@ module RLTK # :nodoc:
 			end
 		end
 		
-		# An iterator over the node's children.
+		# An iterator over the node's children.  The AST may be traversed in
+		# the following orders:
+		#	* Pre-order (:pre)
+		#	* Post-order (:post)
+		#	* Level-order (:level)
 		#
 		# @return [void]
-		def each
-			self.children.each { |c| yield c }
+		def each(order = :pre, &block)
+			case order
+			when :pre
+				yield self
+				
+				self.children.compact.each { |c| c.each(:pre, &block) }
+				
+			when :post
+				self.children.compact.each { |c| c.each(:post, &block) }
+				
+				yield self
+				
+			when :level
+				level_queue = [self]
+				
+				while node = level_queue.shift
+					yield node
+					
+					level_queue += node.children.compact
+				end
+			end
 		end
 		
 		# Tests to see if a note named *key* is present at this node.
@@ -316,6 +339,10 @@ module RLTK # :nodoc:
 			else
 				@notes	= Hash.new()
 				@parent	= nil
+				
+				# Pad out the objects array with nil values.
+				max_args = self.class.value_names.length + self.class.child_names.length
+				objects.fill(nil, objects.length...max_args)
 				
 				pivot = self.class.value_names.length
 				
