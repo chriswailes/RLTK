@@ -12,7 +12,6 @@ lexer.rb:
 
 ast.rb:
 	Add the ability to traverse the AST in pre-order, post-order, or topological-order.
-	Add ability to serialize/dump an AST to any IO object.
 
 tokens.rb:
 

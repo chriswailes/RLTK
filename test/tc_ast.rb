@@ -57,6 +57,14 @@ class ASTNodeTester < Test::Unit::TestCase
 		assert_equal(node.children, expected_children.reverse)
 	end
 	
+	def test_dump
+		tree0_string = @tree0.dump
+		
+		reloaded_tree = Marshal.load(tree0_string)
+		
+		assert_equal(@tree0, reloaded_tree)
+	end
+	
 	def test_equal
 		assert_equal(@tree0, @tree1)
 		assert_not_equal(@tree0, @tree2)

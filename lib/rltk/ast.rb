@@ -272,6 +272,23 @@ module RLTK # :nodoc:
 			@notes.delete(key)
 		end
 		
+		# This method is a simple wrapper around Marshal.dump, and is used
+		# to serialize an AST.  You can use Marshal.load to reconstruct a
+		# serialized AST.
+		#
+		# @param [nil, IO, String]	dest		Where the serialized version of the AST will end up.  If nil, this method will return the AST as a string.
+		# @param [Fixnum]			limit	Recursion depth.  If -1 is specified there is no limit on the recursion depth.
+		#
+		# @return [void, String] String if *dest* is nil, void otherwise.
+		def dump(dest = nil, limit = -1)
+			case dest
+			when nil		then Marshal.dump(self, limit)
+			when String	then File.open(dest, 'w') { |f| Marshal.dump(self, f, limit) }
+			when IO		then Marshal.dump(self, dest, limit)
+			else	raise TypeError, "AST#dump expects nil, a String, or an IO object for the dest parameter."
+			end
+		end
+		
 		# An iterator over the node's children.
 		#
 		# @return [void]
