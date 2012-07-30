@@ -31,6 +31,17 @@ class ParserTester < Test::Unit::TestCase
 		rule(/\s/)
 	end
 	
+	class AlphaLexer < RLTK::Lexer
+		rule(/a/) { |t| [t.upcase.to_sym, t] }
+		rule(/b/) { |t| [t.upcase.to_sym, t] }
+		rule(/c/) { |t| [t.upcase.to_sym, t] }
+		rule(/d/) { |t| [t.upcase.to_sym, t] }
+		
+		rule(/,/) { :COMMA }
+		
+		rule(/\s/)
+	end
+	
 	class APlusBParser < RLTK::Parser
 		production(:a, 'A+ B') { |a, _| a.length }
 		
@@ -73,6 +84,30 @@ class ParserTester < Test::Unit::TestCase
 			clause('MUL e e') { |v| v[1] * v[2] }
 			clause('DIV e e') { |v| v[1] / v[2] }
 		end
+		
+		finalize
+	end
+	
+	class EmptyListParser < RLTK::Parser
+		empty_list('list', ['A'], :COMMA)
+		
+		finalize
+	end
+	
+	class NonEmptyListParser0 < RLTK::Parser
+		nonempty_list('list', ['A'], :COMMA)
+		
+		finalize
+	end
+	
+	class NonEmptyListParser1 < RLTK::Parser
+		nonempty_list('list', ['A', 'B'], :COMMA)
+		
+		finalize
+	end
+	
+	class NonEmptyListParser2 < RLTK::Parser
+		nonempty_list('list', ['A', 'B', 'C D'], :COMMA)
 		
 		finalize
 	end
@@ -193,6 +228,12 @@ class ParserTester < Test::Unit::TestCase
 		assert_equal(4, AStarBParser.parse(ABLexer.lex('aaaab')))
 	end
 	
+	def test_empty_list
+		expected	= []
+		actual	= EmptyListParser.parse(AlphaLexer.lex(''))
+		assert_equal(expected, actual)
+	end
+	
 	def test_environment
 		actual = RotatingCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
 		assert_equal(3, actual)
@@ -245,6 +286,71 @@ class ParserTester < Test::Unit::TestCase
 	
 	def test_input
 		assert_raise(RLTK::BadToken) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::EBNF.lex('A B C')) }
+	end
+	
+	def test_nonempty_list
+		#######################
+		# NonEmptyListParser0 #
+		#######################
+		
+		expected	= ['a']
+		actual	= NonEmptyListParser0.parse(AlphaLexer.lex('a'))
+		assert_equal(expected, actual)
+		
+		expected	= ['a', 'a']
+		actual	= NonEmptyListParser0.parse(AlphaLexer.lex('a, a'))
+		assert_equal(expected, actual)
+		
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(''))   }
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(','))  }
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('aa')) }
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('a,')) }
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(',a')) }
+		
+		#######################
+		# NonEmptyListParser1 #
+		#######################
+		
+		expected	= ['a']
+		actual	= NonEmptyListParser1.parse(AlphaLexer.lex('a'))
+		assert_equal(expected, actual)
+		
+		expected	= ['b']
+		actual	= NonEmptyListParser1.parse(AlphaLexer.lex('b'))
+		assert_equal(expected, actual)
+		
+		expected	= ['a', 'b', 'a', 'b']
+		actual	= NonEmptyListParser1.parse(AlphaLexer.lex('a, b, a, b'))
+		assert_equal(expected, actual)
+		
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a b')) }
+		
+		#######################
+		# NonEmptyListParser2 #
+		#######################
+		
+		expected	= ['a']
+		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('a'))
+		assert_equal(expected, actual)
+		
+		expected	= ['b']
+		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('b'))
+		assert_equal(expected, actual)
+		
+		expected	= [['c', 'd']]
+		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('c d'))
+		assert_equal(expected, actual)
+		
+		expected	= [['c', 'd'], ['c', 'd']]
+		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('c d, c d'))
+		assert_equal(expected, actual)
+		
+		expected	= ['a', 'b', ['c', 'd']]
+		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('a, b, c d'))
+		assert_equal(expected, actual)
+		
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('c')) }
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('d')) }
 	end
 	
 	def test_postfix_calc

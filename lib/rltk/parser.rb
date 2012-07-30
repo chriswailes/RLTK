@@ -100,25 +100,41 @@ module RLTK # :nodoc:
 				
 				@grammar.callback do |p, type, num|
 					@procs[p.id] =
-					[if type == :*
-						if num == :first
-							Proc.new { || [] }
-						else
-							Proc.new { |o, os| [o] + os }
-						end
-					elsif type == :+
-						if num == :first
-							Proc.new { |o| [o] }
-						else
-							Proc.new { |o, os| [o] + os }
-						end
-					elsif type == :'?'
-						if num == :first
-							Proc.new { || nil }
-						else
-							Proc.new { |o| o }
-						end
-					end, p.rhs.length]
+					[
+						case type
+						when :*
+							case num
+							when :first then	Proc.new { ||           [] }
+							else				Proc.new { |os, o| os << o }
+							end
+							
+						when :+
+							case num
+							when :first then	Proc.new { |o|         [o] }
+							else				Proc.new { |os, o| os << o }
+							end
+							
+						when :'?'
+							case num
+							when :first then	Proc.new { ||  nil }
+							else				Proc.new { |o|   o }
+							end
+							
+						when :elp
+							case num
+							when :first then	Proc.new { ||         [] }
+							else				Proc.new { |prime| prime }
+							end
+							
+						when :nelp
+							case num
+							when :first	then	Proc.new { |el|                                         [el] }
+							when :second	then	Proc.new { |els, _, el|                           els + [el] }
+							else				Proc.new { |*el| if el.length == 1 then el.first else el end }
+							end
+						end,
+						p.rhs.length
+					]
 					
 					@production_precs[p.id] = p.last_terminal
 				end
@@ -163,25 +179,41 @@ module RLTK # :nodoc:
 					
 					@grammar.callback do |p, type, num|
 						@procs[p.id] =
-						[if type == :*
-							if num == :first
-								Proc.new { |v| [] }
-							else
-								Proc.new { |v| [v[0]] + v[1] }
-							end
-						elsif type == :+
-							if num == :first
-								Proc.new { |v| v[0] }
-							else
-								Proc.new { |v| [v[0]] + v[1] }
-							end
-						elsif type == :'?'
-							if num == :first
-								Proc.new { |v| nil }
-							else
-								Proc.new { |v| v[0] }
-							end
-						end, p.rhs.length]
+						[
+							case type
+							when :*
+								case num
+								when :first then	Proc.new { |v|           [] }
+								else				Proc.new { |v| v[0] << v[1] }
+								end
+							
+							when :+
+								case num
+								when :first then	Proc.new { |v|       [v[0]] }
+								else				Proc.new { |v| v[0] << v[1] }
+								end
+							
+							when :'?'
+								case num
+								when :first then	Proc.new { |v|  nil }
+								else				Proc.new { |v| v[0] }
+								end
+							
+							when :elp
+								case num
+								when :first then	Proc.new { |v|   [] }
+								else				Proc.new { |v| v[0] }
+								end
+							
+							when :nelp
+								case num
+								when :first	then	Proc.new { |v|            v }
+								when :second	then	Proc.new { |v|         v[0] }
+								else				Proc.new { |v| v[0] << v[2] }
+								end
+							end,
+							p.rhs.length
+						]
 						
 						@production_precs[p.id] = p.last_terminal
 					end
@@ -365,6 +397,14 @@ module RLTK # :nodoc:
 				@states.each { |state| state.clean }
 			end
 			
+			# Adds productions and actions for parsing empty lists.
+			#
+			# @see CFG#empty_list_production
+			def empty_list_production(symbol, list_elements, separator)
+				@grammar.empty_list(symbol, list_elements, separator)
+			end
+			alias :empty_list :empty_list_production 
+			
 			# This function will print a description of the parser to the
 			# provided IO object.
 			#
@@ -507,7 +547,9 @@ module RLTK # :nodoc:
 				opts = build_finalize_opts(opts)
 				
 				# Get the name of the file in which the parser is defined.
-				def_file = caller()[2].split(':')[0]
+				#
+				# FIXME: See why this is failing for the simple ListParser example.
+				def_file = caller()[2].split(':')[0] if opts[:use]
 				
 				# Check to make sure we can load the necessary information
 				# from the specified object.
@@ -724,6 +766,14 @@ module RLTK # :nodoc:
 					@token_precs[sym] = [:non, prec_level]
 				end
 			end
+			
+			# Adds productions and actions for parsing nonempty lists.
+			#
+			# @see CFG#nonempty_list_production
+			def nonempty_list_production(symbol, list_elements, separator)
+				@grammar.nonempty_list(symbol, list_elements, separator)
+			end
+			alias :nonempty_list :nonempty_list_production 
 			
 			# This function is where actual parsing takes place.  The
 			# _tokens_ argument must be an array of Token objects, the last
