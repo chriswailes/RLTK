@@ -81,11 +81,11 @@ module RLTK::CG # :nodoc:
 		
 		# Compile this module to an assembly or object file.
 		#
-		# @param [String]		file_name		Name of output file.
-		# @param [:asm, :object]	mode			Generate assembly or object file?
-		# @param [TargetMachine]	target_machine	Machine type to target.
-		# @param [0, 1, 2, 3]	opt_level		Optimization level to use during compilation.
-		# @param [Boolean]		verify		Verify the module before compilation or not.
+		# @param [String]		file_name	Name of output file.
+		# @param [:asm, :object]	mode		Generate assembly or object file?
+		# @param [TargetMachine]	machine	Machine type to target.
+		# @param [0, 1, 2, 3]	opt_level	Optimization level to use during compilation.
+		# @param [Boolean]		verify	Verify the module before compilation or not.
 		#
 		# @return [void]
 		def compile(file_name, mode = :object, machine = TargetMachine.host, opt_level = 2, verify = true)

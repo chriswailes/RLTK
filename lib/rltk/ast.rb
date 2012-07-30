@@ -291,9 +291,10 @@ module RLTK # :nodoc:
 		
 		# An iterator over the node's children.  The AST may be traversed in
 		# the following orders:
-		#	* Pre-order (:pre)
-		#	* Post-order (:post)
-		#	* Level-order (:level)
+		#
+		# * Pre-order (:pre)
+		# * Post-order (:post)
+		# * Level-order (:level)
 		#
 		# @return [void]
 		def each(order = :pre, &block)
