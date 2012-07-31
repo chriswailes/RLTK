@@ -1,9 +1,5 @@
 parser.rb:
 	Composable parsers.
-	Add shortcuts for common productions like:
-		* Empty lists
-		* Non-empty lists
-	
 	Auto-generate as much of the AST as possible, including AST node classes.
 	Add a simple way to lexically scope the language.
 	
@@ -11,8 +7,6 @@ lexer.rb:
 	Composable lexers.
 
 ast.rb:
-	Add the ability to traverse the AST in pre-order, post-order, or topological-order.
-	Add ability to serialize/dump an AST to any IO object.
 
 tokens.rb:
 

@@ -96,11 +96,13 @@ module RLTK # :nodoc:
 		# @return [void]
 		def add_production(production)
 			@productions_sym[production.lhs] << (@productions_id[production.id] = production)
+			
+			production
 		end
 		
 		# Sets the EBNF callback to *callback*.
 		#
-		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded.
+		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded and list productions are added.
 		#
 		# @return [void]
 		def callback(&callback)
@@ -116,9 +118,7 @@ module RLTK # :nodoc:
 		#
 		# @return [Production]
 		def clause(expression)
-			if not @curr_lhs
-				raise GrammarError, 'CFG.clause called outside of CFG.production block.'
-			end
+			raise GrammarError, 'CFG#clause called outside of CFG#production block.' if not @curr_lhs
 			
 			lhs		= @curr_lhs.to_sym
 			rhs		= Array.new
@@ -144,17 +144,10 @@ module RLTK # :nodoc:
 						
 						rhs <<
 						case ttype1
-							when :'?'
-								self.get_question(tvalue0)
-							
-							when :*
-								self.get_star(tvalue0)
-							
-							when :+
-								self.get_plus(tvalue0)
-							
-							else
-								tvalue0
+						when :'?'	then self.get_question(tvalue0)						
+						when :*	then self.get_star(tvalue0)
+						when :+	then self.get_plus(tvalue0)
+						else			tvalue0
 						end
 					else
 						rhs << tvalue0
@@ -173,6 +166,34 @@ module RLTK # :nodoc:
 			
 			return production
 		end
+		
+		# This method adds the necessary productions for empty lists to the
+		# grammar.  These productions are named `symbol`, `symbol + '_prime'`
+		# and `symbol + '_elements'`
+		#
+		# @param [Symbol]		symbol		The name of the production to add.
+		# @param [Array<String>]	list_elements	An array of expressions that may appear in the list.
+		# @param [Symbol]		separator		The list separator symbol.
+		#
+		# @return [void]
+		def empty_list_production(symbol, list_elements, separator)
+			# Add the items for the following productions:
+			#
+			# symbol: | symbol_prime
+			
+			prime = symbol.to_s + '_prime'
+			
+			# 1st Production
+			production = self.production(symbol, '').first
+			@callback.call(production, :elp, :first)
+			
+			# 2nd Production
+			production = self.production(symbol, prime.to_s).first
+			@callback.call(production, :elp, :second)
+			
+			self.nonempty_list(prime, list_elements, separator)
+		end
+		alias :empty_list :empty_list_production
 		
 		# @param [Symbol, Array<Symbol>] sentence Sentence to find the *first set* for.
 		#
@@ -310,11 +331,11 @@ module RLTK # :nodoc:
 				# token_plus: token | token token_plus
 				
 				# 1st production
-				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol]))
+				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol]))
 				@callback.call(production, :+, :first)
 				
 				# 2nd production
-				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol, new_symbol]))
+				production = self.add_production(Production.new(self.next_id, new_symbol, [new_symbol, symbol]))
 				@callback.call(production, :+, :second)
 				
 				# Add the new symbol to the list of nonterminals.
@@ -338,11 +359,11 @@ module RLTK # :nodoc:
 				# nonterm_question: | nonterm
 				
 				# 1st (empty) production.
-				self.add_production(production = Production.new(self.next_id, new_symbol, []))
+				production = self.add_production(Production.new(self.next_id, new_symbol, []))
 				@callback.call(production, :'?', :first)
 				
 				# 2nd production
-				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol]))
+				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol]))
 				@callback.call(production, :'?', :second)
 				
 				# Add the new symbol to the list of nonterminals.
@@ -366,11 +387,11 @@ module RLTK # :nodoc:
 				# token_star: | token token_star
 				
 				# 1st (empty) production
-				self.add_production(production = Production.new(self.next_id, new_symbol, []))
+				production = self.add_production(Production.new(self.next_id, new_symbol, []))
 				@callback.call(production, :*, :first)
 				
 				# 2nd production
-				self.add_production(production = Production.new(self.next_id, new_symbol, [symbol, new_symbol]))
+				production = self.add_production(Production.new(self.next_id, new_symbol, [new_symbol, symbol]))
 				@callback.call(production, :*, :second)
 				
 				# Add the new symbol to the list of nonterminals.
@@ -384,6 +405,44 @@ module RLTK # :nodoc:
 		def next_id
 			@production_counter += 1
 		end
+		
+		# This method adds the necessary productions for non-empty lists to
+		# the grammar.  These productions are named `symbol` and
+		# `symbol + '_elements'`
+		#
+		# @param [Symbol]		symbol		The name of the production to add.
+		# @param [Array<String>]	list_elements	An array of expressions that may appear in the list.
+		# @param [Symbol]		separator		The list separator symbol.
+		#
+		# @return [void]
+		def nonempty_list_production(symbol, list_elements, separator)
+			# Add the items for the following productions:
+			#
+			# symbol_elements: list_elements.join('|')
+			#
+			# symbol: symbol_elements | symbol separator symbol_elements
+			
+			if not list_elements.is_a?(Array) or list_elements.empty?
+				raise ArgumentError, 'The list_elements parameter must be a non-empty array of terminal or non-terminal symbols.'
+			end
+			
+			el_symbol = (symbol.to_s + '_elements').to_sym
+			
+			# 1st Production
+			production = self.production(symbol, el_symbol.to_s).first
+			@callback.call(production, :nelp, :first)
+			
+			# 2nd Production
+			production = self.production(symbol, "#{symbol} #{separator} #{el_symbol}").first
+			@callback.call(production, :nelp, :second)
+			
+			# 3rd Productions
+			list_elements.each do |el|
+				production = self.production(el_symbol, el).first
+				@callback.call(production, :nelp, :third)
+			end
+		end
+		alias :nonempty_list :nonempty_list_production
 		
 		# @return [Array<Symbol>] All terminal symbols used in the grammar's definition.
 		def nonterms

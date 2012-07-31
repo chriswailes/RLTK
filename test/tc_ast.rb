@@ -29,32 +29,86 @@ class ASTNodeTester < Test::Unit::TestCase
 
 	class DNode < RLTK::ASTNode; end
 	
-	def setup
-		@leaf0 = CNode.new(nil, nil)
-		@tree0 = ANode.new(BNode.new(@leaf0, nil), BNode.new(nil, nil))
+	class SNode < RLTK::ASTNode
+		value :string, String
 		
-		@tree1 = ANode.new(BNode.new(CNode.new(nil, nil), nil), BNode.new(nil, nil))
-		@tree2 = ANode.new(BNode.new(nil, nil), BNode.new(CNode.new(nil, nil), nil))
+		child :left, SNode
+		child :right, SNode
+	end
+	
+	def setup
+		@leaf0 = CNode.new
+		@tree0 = ANode.new(BNode.new(@leaf0), BNode.new)
+		
+		@tree1 = ANode.new(BNode.new(CNode.new), BNode.new)
+		@tree2 = ANode.new(BNode.new, BNode.new(CNode.new))
+		
+		@tree3 =	SNode.new('F',
+					SNode.new('B',
+						SNode.new('A'),
+						SNode.new('D',
+							SNode.new('C'),
+							SNode.new('E')
+						),
+					),
+					SNode.new('G',
+						nil,
+						SNode.new('I',
+							SNode.new('H')
+						)
+					)
+				)
 	end
 	
 	def test_children
-		node = ANode.new(nil, nil)
+		node = ANode.new
 		
 		assert_equal(node.children, [nil, nil])
 		
-		node.children = (expected_children = [BNode.new(nil, nil), CNode.new(nil, nil)])
+		node.children = (expected_children = [BNode.new, CNode.new])
 		
 		assert_equal(node.children, expected_children)
 		
 		node.map do |child|
 			if child.is_a?(BNode)
-				CNode.new(nil, nil)
+				CNode.new
 			else
-				BNode.new(nil, nil)
+				BNode.new
 			end
 		end
 		
 		assert_equal(node.children, expected_children.reverse)
+	end
+	
+	def test_dump
+		tree0_string = @tree0.dump
+		
+		reloaded_tree = Marshal.load(tree0_string)
+		
+		assert_equal(@tree0, reloaded_tree)
+	end
+	
+	def test_each
+		# Test pre-order
+		nodes	= []
+		expected	= ['F', 'B', 'A', 'D', 'C', 'E', 'G', 'I', 'H']
+		@tree3.each(:pre) { |n| nodes << n.string }
+		
+		assert_equal(expected, nodes)
+		
+		# Test post-order
+		nodes	= []
+		expected	= ['A', 'C', 'E', 'D', 'B', 'H', 'I', 'G', 'F']
+		@tree3.each(:post) { |n| nodes << n.string }
+		
+		assert_equal(expected, nodes)
+		
+		# Test level-order
+		nodes	= []
+		expected	= ['F', 'B', 'G', 'A', 'D', 'I', 'C', 'E', 'H']
+		@tree3.each(:level) { |n| nodes << n.string }
+		
+		assert_equal(expected, nodes)
 	end
 	
 	def test_equal
