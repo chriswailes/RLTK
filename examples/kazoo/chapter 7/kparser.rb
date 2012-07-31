@@ -1,7 +1,7 @@
 # Author:		Chris Wailes <chris.wailes@gmail.com>
 # Project: 	Ruby Language Toolkit
 # Date:		2011/05/09
-# Description:	This file defines a simple parser for the Kaleidoscope language.
+# Description:	This file defines a simple parser for the Kazoo language.
 
 # RLTK Files
 require 'rltk/parser'
@@ -59,31 +59,15 @@ module Kazoo
 			clause('IF e THEN e ELSE e') { |_, e0, _, e1, _, e2| If.new(e0, e1, e2) }
 		end
 	
-		production(:args) do
-			clause('')		{ || [] }
-			clause('arg_list')	{ |args| args }
-		end
-	
-		production(:arg_list) do
-			clause('e')				{ |e| [e] }
-			clause('e COMMA arg_list')	{ |e, _, args| [e] + args }
-		end
-	
-		production(:p_body, 'IDENT LPAREN arg_defs RPAREN') { |name, _, arg_names, _| Prototype.new(name, arg_names) }
-	
-		production(:arg_defs) do
-			clause('')			{ || [] }
-			clause('arg_def_list')	{ |args| args }
-		end
-	
-		production(:arg_def_list) do
-			clause('IDENT')				{ |i| [i] }
-			clause('IDENT COMMA arg_def_list')	{ |i, _, defs| [i] + defs }
-		end
-	
+		empty_list(:args, :e, :COMMA)
+		
 		production(:ex, 'EXTERN p_body')	{ |_, p| p }
 		production(:p, 'DEF p_body')		{ |_, p| p }
 		production(:f, 'p e')			{ |p, e| Function.new(p, e) }
+		
+		production(:p_body, 'IDENT LPAREN arg_defs RPAREN') { |name, _, arg_names, _| Prototype.new(name, arg_names) }
+		
+		empty_list(:arg_defs, :IDENT, :COMMA)
 	
 		finalize({:use => 'kparser.tbl'})
 	end

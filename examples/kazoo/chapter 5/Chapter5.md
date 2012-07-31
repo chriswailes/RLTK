@@ -1,6 +1,6 @@
 # Kazoo - Chapter 5: JIT Compilation
 
-In the previous chapters we described the implementation of the lexer, parser, and AST for our simple language, Kazoo, and added support for generating LLVM IR for it.  This chapter describes two new techniques: adding optimizer support to your language, and adding JIT compiler support. These additions will demonstrate how to get nice, efficient code for the Kaleidoscope language.
+In the previous chapters we described the implementation of the lexer, parser, and AST for our simple language, Kazoo, and added support for generating LLVM IR for it.  This chapter describes two new techniques: adding optimizer support to your language, and adding JIT compiler support. These additions will demonstrate how to get nice, efficient code for the Kazoo language.
 
 ## LLVM Optimization Passes
 
@@ -8,7 +8,7 @@ LLVM provides many optimization passes which do many different sorts of things a
 
 As a concrete example, LLVM supports both "whole module" passes, which look across as large of body of code as they can (often a whole file, but if run at link time, this can be a substantial portion of the whole program).  It also supports and includes "per-function" passes which just operate on a single function at a time, without looking at other functions.  For more information on passes and how they are run, see the [How to Write a Pass](http://llvm.org/docs/WritingAnLLVMPass.html) document and the [List of LLVM Passes](http://llvm.org/docs/WritingAnLLVMPass.html).
 
-For Kazoo, we are currently generating functions on the fly, one at a time, as the user types them in.  We aren't shooting for the ultimate optimization experience in this setting, but we also want to catch the easy and quick stuff where possible.  As such, we will choose to run a few per-function optimizations as the user types the function in.  If we wanted to make a "static Kaleidoscope compiler", we would use exactly the code we have now, except that we would defer running the optimizer until the entire file has been parsed.
+For Kazoo, we are currently generating functions on the fly, one at a time, as the user types them in.  We aren't shooting for the ultimate optimization experience in this setting, but we also want to catch the easy and quick stuff where possible.  As such, we will choose to run a few per-function optimizations as the user types the function in.  If we wanted to make a "static Kazoo compiler", we would use exactly the code we have now, except that we would defer running the optimizer until the entire file has been parsed.
 
 In order to get per-function optimizations going, we will use a {RLTK::CG::FunctionPassManager FunctionPassManager} to hold and organize the LLVM optimizations that we want to run.  We can now add a set of optimizations to run.  We will be adding the manager to our JIT class's initialization method like so:
 
@@ -94,7 +94,7 @@ Once the {RLTK::CG::JITCompiler} is created the JIT is ready to be used.  There 
 
 Recall that we compile top-level expressions into a self-contained LLVM function that takes no arguments and returns the computed double.  Because the LLVM JIT compiler matches the native platform ABI you can just cast the result pointer to a function pointer of that type and call it directly.  This means there is no difference between JIT compiled code and native machine code that is statically linked into your application.
 
-With just these two changes, lets see how Kaleidoscope works now (the output below is slightly elided)!
+With just these two changes, lets see how Kazoo works now (the output below is slightly elided)!
 
 	Kazoo > 4 + 5;
 
@@ -198,4 +198,4 @@ To load this library (`libkazoo.so`) and inform LLVM about it we'll add the foll
 
 Now we can produce simple output to the console by using things like: "`extern putchard(x); putchard(120);`", which prints a lowercase 'x' on the console (120 is the ASCII code for 'x').  Similar code could be used to implement file I/O, console input, and many other capabilities in Kazoo.
 
-This completes the JIT and optimizer chapter of the Kaleidoscope tutorial. At this point, we can compile a non-Turing-complete programming language, optimize and JIT compile it in a user-driven way.  In the [next chapter](file.Chapter6.html) we'll look into extending the language with control flow constructs, tackling some interesting LLVM IR issues along the way.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 5`" directory.
+This completes the JIT and optimizer chapter of the Kazoo tutorial. At this point, we can compile a non-Turing-complete programming language, optimize and JIT compile it in a user-driven way.  In the [next chapter](file.Chapter6.html) we'll look into extending the language with control flow constructs, tackling some interesting LLVM IR issues along the way.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 5`" directory.
