@@ -822,9 +822,7 @@ module RLTK # :nodoc:
 				tokens.each do |token|
 					# Check to make sure this token was seen in the
 					# grammar definition.
-					if not @symbols.include?(token.type)
-						raise BadToken
-					end
+					raise BadToken if not @symbols.include?(token.type)
 					
 					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
 					
@@ -1315,7 +1313,7 @@ module RLTK # :nodoc:
 				@state_stack	<< state
 				@output_stack	<< o
 				@node_stack	<< @labels.length
-				@labels		<< node0
+				@labels		<< if CFG::is_terminal?(node0) and o then node0.to_s + "(#{o})" else node0 end
 				@positions	<< position
 				
 				if CFG::is_nonterminal?(node0)
