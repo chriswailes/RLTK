@@ -86,7 +86,7 @@ class ParserTester < Test::Unit::TestCase
 	end
 	
 	class EmptyListParser0 < RLTK::Parser
-		empty_list('list', ['A'], :COMMA)
+		empty_list('list', :A, :COMMA)
 		
 		finalize
 	end
@@ -100,13 +100,13 @@ class ParserTester < Test::Unit::TestCase
 	end
 	
 	class NonEmptyListParser0 < RLTK::Parser
-		nonempty_list('list', ['A'], :COMMA)
+		nonempty_list('list', :A, :COMMA)
 		
 		finalize
 	end
 	
 	class NonEmptyListParser1 < RLTK::Parser
-		nonempty_list('list', ['A', 'B'], :COMMA)
+		nonempty_list('list', [:A, :B], :COMMA)
 		
 		finalize
 	end
@@ -118,7 +118,7 @@ class ParserTester < Test::Unit::TestCase
 	end
 	
 	class NonEmptyListParser3 < RLTK::Parser
-		nonempty_list('list', ['A+'], :COMMA)
+		nonempty_list('list', 'A+', :COMMA)
 		
 		finalize
 	end

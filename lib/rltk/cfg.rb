@@ -410,9 +410,9 @@ module RLTK # :nodoc:
 		# the grammar.  These productions are named `symbol` and
 		# `symbol + '_elements'`
 		#
-		# @param [Symbol]		symbol		The name of the production to add.
-		# @param [Array<String>]	list_elements	An array of expressions that may appear in the list.
-		# @param [Symbol]		separator		The list separator symbol.
+		# @param [Symbol]						symbol		The name of the production to add.
+		# @param [String, Symbol, Array<String>]	list_elements	Expression(s) that may appear in the list.
+		# @param [Symbol]						separator		The list separator symbol.
 		#
 		# @return [void]
 		def nonempty_list_production(symbol, list_elements, separator)
@@ -422,8 +422,18 @@ module RLTK # :nodoc:
 			#
 			# symbol: symbol_elements | symbol separator symbol_elements
 			
-			if not list_elements.is_a?(Array) or list_elements.empty?
-				raise ArgumentError, 'The list_elements parameter must be a non-empty array of terminal or non-terminal symbols.'
+			if list_elements.is_a?(String) or list_elements.is_a?(Symbol)
+				list_elements = [list_elements.to_s]
+				
+			elsif list_elements.is_a?(Array)
+				if list_elements.empty?
+					raise ArgumentError, 'Parameter list_elements must not be empty.'
+				else
+					list_elements.map! { |el| el.to_s }
+				end
+				
+			else
+				raise ArgumentError, 'Parameter list_elements must be a String, Symbol, or array of Strings and Symbols.'
 			end
 			
 			el_symbol = (symbol.to_s + '_elements').to_sym

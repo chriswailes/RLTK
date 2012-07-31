@@ -177,7 +177,7 @@ RLTK provides several shortcuts for common grammar constructs.  Right now these 
 This example shows how these shortcuts may be used to define a list of integers separated by a `:COMMA` token:
 
 	class ListParser < RLTK::Parser
-		nonempty_list(:int_list, ['INT'], :COMMA)
+		nonempty_list(:int_list, :INT, :COMMA)
 		
 		finalize
 	end
@@ -185,7 +185,7 @@ This example shows how these shortcuts may be used to define a list of integers 
 If you wanted to define a list of floats or integers you could define your parser like this:
 
 	class ListParser < RLTK::Parser
-		nonempty_list(:mixed_list, ['INT', 'FLOAT'], :COMMA)
+		nonempty_list(:mixed_list, [:INT, :FLOAT], :COMMA)
 		
 		finalize
 	end
@@ -193,7 +193,7 @@ If you wanted to define a list of floats or integers you could define your parse
 A list may also contain multiple tokens between the separator:
 
 	class ListParser < RLTK::Parser
-		nonempty_list(:foo_bar_list, ['FOO BAR'], :COMMA)
+		nonempty_list(:foo_bar_list, 'FOO BAR', :COMMA)
 		
 		finalize
 	end
