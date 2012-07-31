@@ -1,9 +1,5 @@
 parser.rb:
 	Composable parsers.
-	Add shortcuts for common productions like:
-		* Empty lists
-		* Non-empty lists
-	
 	Auto-generate as much of the AST as possible, including AST node classes.
 	Add a simple way to lexically scope the language.
 	

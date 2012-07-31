@@ -32,10 +32,7 @@ class ParserTester < Test::Unit::TestCase
 	end
 	
 	class AlphaLexer < RLTK::Lexer
-		rule(/a/) { |t| [t.upcase.to_sym, t] }
-		rule(/b/) { |t| [t.upcase.to_sym, t] }
-		rule(/c/) { |t| [t.upcase.to_sym, t] }
-		rule(/d/) { |t| [t.upcase.to_sym, t] }
+		rule(/[A-Za-z]/) { |t| [t.upcase.to_sym, t] }
 		
 		rule(/,/) { :COMMA }
 		
@@ -88,8 +85,16 @@ class ParserTester < Test::Unit::TestCase
 		finalize
 	end
 	
-	class EmptyListParser < RLTK::Parser
+	class EmptyListParser0 < RLTK::Parser
 		empty_list('list', ['A'], :COMMA)
+		
+		finalize
+	end
+	
+	class EmptyListParser1 < RLTK::Parser
+		array_args
+		
+		empty_list('list', ['A', 'B', 'C D'], :COMMA)
 		
 		finalize
 	end
@@ -108,6 +113,12 @@ class ParserTester < Test::Unit::TestCase
 	
 	class NonEmptyListParser2 < RLTK::Parser
 		nonempty_list('list', ['A', 'B', 'C D'], :COMMA)
+		
+		finalize
+	end
+	
+	class NonEmptyListParser3 < RLTK::Parser
+		nonempty_list('list', ['A+'], :COMMA)
 		
 		finalize
 	end
@@ -229,8 +240,20 @@ class ParserTester < Test::Unit::TestCase
 	end
 	
 	def test_empty_list
+		####################
+		# EmptyListParser0 #
+		####################
+		
 		expected	= []
-		actual	= EmptyListParser.parse(AlphaLexer.lex(''))
+		actual	= EmptyListParser0.parse(AlphaLexer.lex(''))
+		assert_equal(expected, actual)
+		
+		####################
+		# EmptyListParser1 #
+		####################
+		
+		expected	= ['a', 'b', ['c', 'd']]
+		actual	= EmptyListParser1.parse(AlphaLexer.lex('a, b, c d'))
 		assert_equal(expected, actual)
 	end
 	
@@ -351,6 +374,14 @@ class ParserTester < Test::Unit::TestCase
 		
 		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('c')) }
 		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('d')) }
+		
+		#######################
+		# NonEmptyListParser3 #
+		#######################
+		
+		expected	= [['a'], ['a', 'a'], ['a', 'a', 'a']]
+		actual	= NonEmptyListParser3.parse(AlphaLexer.lex('a, aa, aaa'))
+		assert_equal(expected, actual)
 	end
 	
 	def test_postfix_calc

@@ -207,9 +207,9 @@ module RLTK # :nodoc:
 							
 							when :nelp
 								case num
-								when :first	then	Proc.new { |v|            v }
-								when :second	then	Proc.new { |v|         v[0] }
-								else				Proc.new { |v| v[0] << v[2] }
+								when :first	then	Proc.new { |v|                                        v }
+								when :second	then	Proc.new { |v|                            v[0] + [v[2]] }
+								else				Proc.new { |v| if v.length == 1 then v.first else v end }
 								end
 							end,
 							p.rhs.length

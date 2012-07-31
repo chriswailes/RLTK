@@ -144,17 +144,10 @@ module RLTK # :nodoc:
 						
 						rhs <<
 						case ttype1
-							when :'?'
-								self.get_question(tvalue0)
-							
-							when :*
-								self.get_star(tvalue0)
-							
-							when :+
-								self.get_plus(tvalue0)
-							
-							else
-								tvalue0
+						when :'?'	then self.get_question(tvalue0)						
+						when :*	then self.get_star(tvalue0)
+						when :+	then self.get_plus(tvalue0)
+						else			tvalue0
 						end
 					else
 						rhs << tvalue0
