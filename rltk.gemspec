@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
 			'README.md',
 			'Rakefile',
 			] +
-			Dir.glob('lib/rltk/**/*.rb')
+			Dir.glob('lib/**/*.rb')
 			
 			
 	s.require_path	= 'lib'
