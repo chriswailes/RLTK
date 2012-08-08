@@ -21,6 +21,9 @@ module RLTK::CG # :nodoc:
 	class PassManager
 		include BindingClass
 		
+		# The Proc object called by the garbage collector to free resources used by LLVM.
+		CLASS_FINALIZER = Proc.new { |id| Bindings.dispose_pass_manager(ptr) if ptr = ObjectSpace._id2ref(id).ptr }
+		
 		# A list of passes that are available to be added to the pass
 		# manager via the {PassManager#add} method.
 		PASSES = {
@@ -85,19 +88,10 @@ module RLTK::CG # :nodoc:
 			
 			# RLTK Initialization
 			@enabled = Array.new
-		end
-		
-		# Frees the resources used by LLVM for this pass manager.
-		#
-		# @return [void]
-		def dispose
-			if @ptr
-				self.finalize
-				
-				Bindings.dispose_pass_manager(@ptr)
-				
-				@ptr = nil
-			end
+			
+			# Define a finalizer to free the memory used by LLVM for this
+			# pass manager.
+			ObjectSpace.define_finalizer(self, CLASS_FINALIZER)
 		end
 		
 		# Add a pass or passes to this pass manager.  Passes may either be

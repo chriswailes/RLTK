@@ -22,6 +22,9 @@ module RLTK::CG # :nodoc:
 	class Module
 		include BindingClass
 		
+		# The Proc object called by the garbage collector to free resources used by LLVM.
+		CLASS_FINALIZER = Proc.new { |id| Bindings.dispose_module(ptr) if ptr = ObjectSpace._id2ref(id).ptr }
+		
 		# @!attribute [rw] engine
 		#   @return [ExecutionEngine, nil] Execution engine associated with this module.
 		attr_accessor :engine
@@ -76,6 +79,10 @@ module RLTK::CG # :nodoc:
 				end
 			end
 			
+			# Define a finalizer to free the memory used by LLVM for this
+			# module.
+			ObjectSpace.define_finalizer(self, CLASS_FINALIZER)
+			
 			self.instance_exec(&block) if block
 		end
 		
@@ -95,17 +102,6 @@ module RLTK::CG # :nodoc:
 		# @return [Context] Context in which this module exists.
 		def context
 			Context.new(Bindings.get_module_context(@ptr))
-		end
-		
-		# Frees the resources used by LLVM for this module.
-		#
-		# @return [void]
-		def dispose
-			if @ptr
-				Bindings.dispose_module(@ptr)
-				
-				@ptr = nil
-			end
 		end
 		
 		# Print the LLVM IR representation of this value to standard error.

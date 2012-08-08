@@ -27,6 +27,9 @@ module RLTK::CG # :nodoc:
 	class GenericValue
 		include BindingClass
 		
+		# The Proc object called by the garbage collector to free resources used by LLVM.
+		CLASS_FINALIZER = Proc.new { |id| Bindings.dispose_generic_value(ptr) if ptr = ObjectSpace._id2ref(id).ptr }
+		
 		# @return [Type] LLVM type of this GenericValue.
 		attr_reader :type
 		
@@ -57,16 +60,10 @@ module RLTK::CG # :nodoc:
 			when FalseClass
 				[Bindings.create_generic_value_of_int(Int1Type, 0, 0), Int1Type]
 			end
-		end
-		
-		# Frees the resources used by LLVM for this value.
-		#
-		# @return [void]
-		def dispose
-			if @ptr
-				Bindings.dispose_generic_value(@ptr)
-				@ptr = nil
-			end
+			
+			# Define a finalizer to free the memory used by LLVM for this
+			# generic value.
+			ObjectSpace.define_finalizer(self, CLASS_FINALIZER)
 		end
 		
 		# @param [Boolean] signed Treat the GenericValue as a signed integer.

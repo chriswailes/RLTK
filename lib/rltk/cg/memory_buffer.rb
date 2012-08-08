@@ -20,6 +20,9 @@ module RLTK::CG # :nodoc:
 	class MemoryBuffer
 		include BindingClass
 		
+		# The Proc object called by the garbage collector to free resources used by LLVM.
+		CLASS_FINALIZER = Proc.new { |id| Bindings.dispose_memory_buffer(ptr) if ptr = ObjectSpace._id2ref(id).ptr }
+		
 		# Create a new memory buffer.
 		#
 		# @param [FFI::Pointer, String, nil] overloaded This parameter may be either a pointer to an existing memory
@@ -46,17 +49,10 @@ module RLTK::CG # :nodoc:
 				
 				buf_ptr.get_pointer(0)
 			end
-		end
-		
-		# Frees the resources used by LLVM for this memory buffer.
-		#
-		# @return [void]
-		def dispose
-			if @ptr
-				Bindings.dispose_memory_buffer(@ptr)
-				
-				@ptr = nil
-			end
+			
+			# Define a finalizer to free the memory used by LLVM for this
+			# memory buffer.
+			ObjectSpace.define_finalizer(self, CLASS_FINALIZER)
 		end
 	end
 end

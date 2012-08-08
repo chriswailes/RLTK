@@ -21,6 +21,7 @@ module RLTK::CG # :nodoc:
 	class Builder
 		include BindingClass
 		
+		# The Proc object called by the garbage collector to free resources used by LLVM.
 		CLASS_FINALIZER = Proc.new { |id| Bindings.dispose_builder(ptr) if ptr = ObjectSpace._id2ref(id).ptr }
 		
 		# @return [Builder] A global Builder object.

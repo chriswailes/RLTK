@@ -29,6 +29,9 @@ module RLTK::CG # :nodoc:
 		include AbstractClass
 		include BindingClass
 		
+		# The Proc object called by the garbage collector to free resources used by LLVM.
+		CLASS_FINALIZER = Proc.new { |id| Bindings.dispose_execution_engine(ptr) if ptr = ObjectSpace._id2ref(id).ptr }
+		
 		# @return [Module]
 		attr_reader :module
 		
@@ -53,7 +56,10 @@ module RLTK::CG # :nodoc:
 				
 				# Associate this engine with the provided module.
 				@module.engine = self
-		
+				
+				# Define a finalizer to free the memory used by LLVM for
+				# this execution engine.
+				ObjectSpace.define_finalizer(self, CLASS_FINALIZER)
 			else
 				errorp  = error.read_pointer
 				message = errorp.null? ? 'Unknown' : errorp.read_string
@@ -63,17 +69,6 @@ module RLTK::CG # :nodoc:
 				Bindings.dispose_message(error)
 		
 				raise "Error creating execution engine: #{message}"
-			end
-		end
-		
-		# Frees the resources used by LLVM for this execution engine..
-		#
-		# @return [void]
-		def dispose
-			if @ptr
-				Bindings.dispose_execution_engine(@ptr)
-				
-				@ptr = nil
 			end
 		end
 		
@@ -95,24 +90,15 @@ module RLTK::CG # :nodoc:
 		#
 		# @return [GenericValue]
 		def run_function(fun, *args)
-			new_values = Array.new
-			
 			new_args =
 			fun.params.zip(args).map do |param, arg|
-				if arg.is_a?(GenericValue)
-					arg
-					
-				else
-					returning(GenericValue.new(arg)) { |val| new_values << val }
-				end
+				if arg.is_a?(GenericValue) then arg else GenericValue.new(arg) end
 			end
 			
 			args_ptr = FFI::MemoryPointer.new(:pointer, args.length)
 			args_ptr.write_array_of_pointer(new_args)
 			
-			returning(GenericValue.new(Bindings.run_function(@ptr, fun, args.length, args_ptr))) do
-				new_values.each { |val| val.dispose }
-			end
+			GenericValue.new(Bindings.run_function(@ptr, fun, args.length, args_ptr))
 		end
 		alias :run :run_function
 		
