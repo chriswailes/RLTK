@@ -120,15 +120,18 @@ module RLTK::CG # :nodoc:
 			
 			# Add a {BasicBlock} to the end of this function.
 			#
+			# @note The first argument to any proc passed to this function
+			#	will be the function the block is being appended to.
+			#
 			# @param [String]		name			Name of the block in LLVM IR.
-			# @param [Context, nil]	context		Context in which to create the block.
 			# @param [Builder, nil]	builder		Builder to be used in evaluating *block*.
-			# @param [Array<Object>]	block_args	Arguments to be passed to *block*.
+			# @param [Context, nil]	context		Context in which to create the block.
+			# @param [Array<Object>]	block_args	Arguments to be passed to *block*.  The function the block is appended to is automatically added to the front of this list.
 			# @param [Proc]		block		Block to be evaluated using *builder* after positioning it at the end of the new block.
 			#
 			# @return [BasicBlock] New BasicBlock.
-			def append(name = '', context = nil, builder = nil, *block_args, &block)
-				BasicBlock.new(@fun, name, context, builder, *block_args, &block)
+			def append(name = '', builder = nil, context = nil, *block_args, &block)
+				BasicBlock.new(@fun, name, builder, context, @fun, *block_args, &block)
 			end
 			
 			# An iterator for each block inside this collection.

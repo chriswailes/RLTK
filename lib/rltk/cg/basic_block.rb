@@ -35,11 +35,11 @@ module RLTK::CG # :nodoc:
 		# @param [FFI::Pointer, Function, BasicBlock] overloaded Overloaded paramater that determines creation behaviour.
 		#
 		# @param [String]		name			Name of this BasicBlock.
-		# @param [Context, nil]	context		Context in which to create the block.
 		# @param [Builder, nil]	builder		Builder to be used by {#build}.
+		# @param [Context, nil]	context		Context in which to create the block.
 		# @param [Array<Object>]	block_args	Arguments to be passed when block is invoked.
 		# @param [Proc]		block		Block to be invoked by {#build}.
-		def initialize(overloaded, name = '', context = nil, builder = nil, *block_args, &block)
+		def initialize(overloaded, name = '', builder = nil, context = nil, *block_args, &block)
 			check_type(context, Context, 'context') if context
 			
 			@ptr =
@@ -83,17 +83,7 @@ module RLTK::CG # :nodoc:
 		#
 		# @return [Object] Value the block evaluates to.  Usually an {Instruction}
 		def build(builder = nil, *block_args, &block)
-			if builder
-				builder.build(self, *block_args, &block)
-				
-			else
-				builder	= Builder.new
-				last_inst	= builder.build(self, *block_args, &block)
-				
-				builder.dispose
-				
-				last_inst
-			end
+			if builder then builder else Builder.new end.build(self, *block_args, &block)
 		end
 		
 		# Creates a new BasicBlock inserted immediately before this block.

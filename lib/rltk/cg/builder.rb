@@ -21,29 +21,28 @@ module RLTK::CG # :nodoc:
 	class Builder
 		include BindingClass
 		
+		CLASS_FINALIZER = Proc.new { |id| Bindings.dispose_builder(ptr) if ptr = ObjectSpace._id2ref(id).ptr }
+		
 		# @return [Builder] A global Builder object.
 		def self.global
 			@@global_builder ||= Builder.new
 		end
 		
 		# Creates a new Builder object, optionally positioning it at the end
-		# of *block*.
+		# of *block*.  If a block is given it will be executed as if it was
+		# passed to the #build method.
 		#
-		# @param [BasicBlock, nil] block BasicBlock used to position the Builder. 
-		def initialize(block = nil)
+		# @param [BasicBlock, nil]	bb			BasicBlock used to position the Builder.
+		# @param [Array<Object>]		block_args	Arguments to be passed to *block*.
+		# @param [Proc, nil]		block		Block to execute in the context of this Builder. 
+		def initialize(bb = nil, *block_args, &block)
 			@ptr = Bindings.create_builder
 			
-			position_at_end(block) if block
-		end
-		
-		# Frees the resources used by LLVM for this Builder.
-		#
-		# @return [void]
-		def dispose
-			if @ptr
-				Bindings.dispose_builder(@ptr)
-				@ptr = nil
-			end
+			# Define a finalizer to free the memory used by LLVM for this
+			# builder.
+			ObjectSpace.define_finalizer(self, CLASS_FINALIZER)
+			
+			if block then self.build(bb, *block_args, &block) elsif bb then position_at_end(bb) end
 		end
 		
 		# Executes a given block inside the context of this builder.  If the
@@ -73,22 +72,22 @@ module RLTK::CG # :nodoc:
 		
 		# Position the Builder after the given instruction.
 		#
-		# @param [BasicBlock]	block
+		# @param [BasicBlock]	bb
 		# @param [Instruction]	instruction
 		#
 		# @return [Builder] self
-		def position(block, instruction)
-			Bindings.position_builder(@ptr, block, instruction)
+		def position(bb, instruction)
+			Bindings.position_builder(@ptr, bb, instruction) if check_type(bb, BasicBlock, 'bb')
 			self
 		end
 		
 		# Position the Builder at the end of the given BasicBlock.
 		#
-		# @param [BasicBlock] block
+		# @param [BasicBlock] bb
 		#
 		# @return [Bulder] self
-		def position_at_end(block)
-			Bindings.position_builder_at_end(@ptr, block)
+		def position_at_end(bb)
+			Bindings.position_builder_at_end(@ptr, bb) if check_type(bb, BasicBlock, 'bb')
 			self
 		end
 		

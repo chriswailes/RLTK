@@ -79,7 +79,7 @@ class MathTester < Test::Unit::TestCase
 	end
 	
 	def run_binop(op, operand0, operand1, ret_type)
-		fun = @mod.functions.add(op.to_s + '_tester', ret_type, []) do |fun|
+		fun = @mod.functions.add(op.to_s + '_tester', ret_type, []) do
 			blocks.append { ret(self.send(op, operand0, operand1)) }
 		end
 		

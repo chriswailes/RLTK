@@ -487,7 +487,7 @@ Now that you have a basic block you need to add instructions to it.  This is acc
 
 To add instructions using a builder directly (this is most similar to how it is done using C/C++) you create the builder, position it where you want to add instructions, and then build them:
 
-	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
 	bb  = fun.blocks.append('entry')
 	
 	builder = RLTK::CG::Builder.new
@@ -502,35 +502,35 @@ To add instructions using a builder directly (this is most similar to how it is 
 
 You can get rid of some of those references to the builder by using the {RLTK::CG::Builder#build} method:
 
-	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
 	bb  = fun.blocks.append('entry')
 	
 	builder = RLTK::CG::Builder.new
 	
-	builder.build(fun) do |fun|
+	builder.build(bb) do
 		ret add(fun.params[0], fun.params[1])
 	end
 
 To get rid of more code:
 
-	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
 	bb  = fun.blocks.append('entry')
 	
-	RLTK::CG::Builder.new do
+	RLTK::CG::Builder.new(bb) do
 		ret add(fun.params[0], fun.params[1])
 	end
 
 Or:
 
-	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	fun.blocks.append('entry') do |fun|
+	fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+	fun.blocks.append('entry') do
 		ret add(fun.params[0], fun.params[1])
 	end
 
 Or even:
 
-	mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
-		blocks.append('entry', nil, nil, self) do |fun|
+	mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+		blocks.append('entry') do |fun|
 			ret add(fun.params[0], fun.params[1])
 		end
 	end
@@ -539,9 +539,10 @@ In the last two examples a new builder object is created for the block.  It is p
 
 	builder = RLTK::CG::Builder.new
 	
-	fun = mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	fun.blocks.append('entry', nil, builder) do
-		ret add(fun.params[0], fun.params[1])
+	mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+		blocks.append('entry', builder) do |fun|
+			ret add(fun.params[0], fun.params[1])
+		end
 	end
 
 For an example of where this is useful, see the Kazoo tutorial.
