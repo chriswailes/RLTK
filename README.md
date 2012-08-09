@@ -358,9 +358,9 @@ Here we can see the definition of several AST node classes that might be used to
 		child :right, Expression
 	end
 
-The assignment functions that are generated for the children and values perform type checking to make sure that the AST is well-formed.  The type of a child must be a subclass of the {RLTK::ASTNode} class, whereas the type of a value must NOT be a subclass of the {RLTK::ASTNode} class.  While child and value objects are stored as instance variables it is unsafe to assign to these variables directly, and it is strongly recommended to always use the accessor functions.
+The assignment functions that are generated for the children and values perform type checking to make sure that the AST is well-formed.  The type of a child must be a subclass of the {RLTK::ASTNode} class, whereas the type of a value must **NOT** be a subclass of the {RLTK::ASTNode} class.  While child and value objects are stored as instance variables it is unsafe to assign to these variables directly, and it is strongly recommended to always use the accessor functions.
 
-When instantiating a subclass of {RLTK::ASTNode} the arguments to the constructor should be the node's values (in order of definition) followed by the node's children (in order of definition).  Example:
+When instantiating a subclass of {RLTK::ASTNode} the arguments to the constructor should be the node's values (in order of definition) followed by the node's children (in order of definition).  If a constructor is given fewer arguments then the number of values and children the remaining arguments are assumed to be `nil`.  Example:
 
 	class Foo < RLTK::ASTNode
 		value :a, Fixnum
@@ -369,9 +369,11 @@ When instantiating a subclass of {RLTK::ASTNode} the arguments to the constructo
 		child :d, Bar
 	end
 	
-	Foo.new(1, 'baz', nil, nil)
-
-You may notice that in the above example the children were set to **nil** instead of an instance of the Bar class.  This allows you to specify optional children.
+	class Bar < RLTK::ASTNode
+		value :a, String
+	end
+	
+	Foo.new(1, 'baz', Bar.new)
 
 Lastly, the type of a child or value can be defined as an array of objects of a specific type as follows:
 
@@ -379,11 +381,30 @@ Lastly, the type of a child or value can be defined as an array of objects of a 
 		value :strings, [String]
 	end
 
+### Tree Iteration and Mapping
+
+RLTK Abstract Syntax Trees may be [traversed](http://en.wikipedia.org/wiki/Tree_traversal) in three different ways:
+
+* Pre-order
+* Post-order
+* Level-order
+
+The order you wish to traverse the tree can be specified by passing the appropriate symbol to {RLTK::ASTNode#each}: `:pre`, `:post`, or `:level`.
+
+You can also map one tree to another tree using the {RLTK::ASTNode#map} and {RLTK::ASTNode#map!} methods.  In the former case a new tree is created and returned; in the latter case the current tree is transformed and the result of calling the provided block on the root node is returned.  These methods will always visit nodes in *post-order*, so that all children of a node are visited before the node itself.
+
 ## Code Generation
 
 RLTK supports the generation of native code and LLVM IR, as well as JIT compilation and execution, through the {RLTK::CG} module.  This module is built on top of bindings to [LLVM](http://llvm.org) and provides much, though not all, of the functionality of the LLVM libraries.
 
-A very small amount of the functionality of the RLTK::CG module (currently only the {RLTK::CG::Support.load_library} method) requires the [LLVM Extended C Bindings](https://github.com/chriswailes/llvm-ecb) library.  If this library is missing the rest of the module should behave properly, but this functionality will be missing.
+A small amount of the functionality of the RLTK::CG module requires the [LLVM Extended C Bindings](https://github.com/chriswailes/llvm-ecb) library.  If this library is missing the rest of the module should behave properly, but this functionality will be missing.  The features that require this library are:
+
+* **Shared Library Loading** - Load shared libraries into the process so that their exported symbols are visible to LLVM via the {RLTK::CG::Support.load\_library} method.
+* **ASM Printer and Parser Initialization** - Available through the {RLTK::CG::LLVM.init\_asm\_parser} and {RLTK::CG::LLVM.init\_asm\_printer} methods.
+* **LLVM IR Loading** - LLVM IR files can be loaded into RLTK via the {RLTK::CG::Module.read\_ir\_file} method.
+* **Value Printing** - Print any value's LLVM IR to a given file descriptor using {RLTK::CG::Value#print}.
+* **Targets, Target Data, and Target Machines** - Manipulate LLVM structures that contain data about the target environment.
+* **Object File Generation** - LLVM Modules can be compiled to object files via the {RLTK::CG::Module#compile} method.
 
 ### Acknowledgments and Discussion
 
@@ -392,9 +413,9 @@ Before we get started with the details, I would like to thank [Jeremy Voorhis](h
 Why did I fork ruby-llvm, and why might you want to use the RLTK bindings over ruby-llvm?  There are a couple of reasons:
 
 * **Cleaner Codebase** - The RLTK bindings present a cleaner interface to the LLVM library by conforming to more standard Ruby programming practices, providing better abstractions and cleaner inheritance hierarchies, overloading constructors and other methods properly, and performing type checking on objects to better aid in debugging.
-* **Documentation** - RLTK's bindings provide slightly better documentation.
-* **Completeness** - The RLTK bindings provide several features that are missing from the ruby-llvm project.  These include the ability to initialize LLVM for architectures besides x86 (RLTK supports all architectures supported by LLVM), the presence of all of LLVM's optimization passes, and the ability to print the LLVM IR representation of modules and values to files.
-* **Ease of Use** - Several features have been added to make generating code easier.
+* **Documentation** - RLTK's bindings provide better documentation.
+* **Completeness** - The RLTK bindings provide several features that are missing from the ruby-llvm project.  These include the ability to initialize LLVM for architectures besides x86 (RLTK supports all architectures supported by LLVM), the presence of all of LLVM's optimization passes, the ability to print the LLVM IR representation of modules and values to files and load modules *from* files, easy initialization of native architectures, initialization for ASM printers and parsers, and compiling modules to object files.
+* **Ease of Use** - Several features have been added to make generating code easier such as automatic management of memory resources used by LLVM.
 * **Speed** - The RLTK bindings are ever so slightly faster due to avoiding unnecessary FFI calls.
 
 Before you dive into generating code, here are some resources you might want to look over to build up some background knowledge on how LLVM works:

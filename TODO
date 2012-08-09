@@ -7,6 +7,7 @@ lexer.rb:
 	Composable lexers.
 
 ast.rb:
+	Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors.
 
 tokens.rb:
 
