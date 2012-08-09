@@ -42,8 +42,9 @@ class ASTNodeTester < Test::Unit::TestCase
 		
 		@tree1 = ANode.new(BNode.new(CNode.new), BNode.new)
 		@tree2 = ANode.new(BNode.new, BNode.new(CNode.new))
+		@tree3 = ANode.new(CNode.new(BNode.new), CNode.new)
 		
-		@tree3 =	SNode.new('F',
+		@tree4 =	SNode.new('F',
 					SNode.new('B',
 						SNode.new('A'),
 						SNode.new('D',
@@ -58,6 +59,14 @@ class ASTNodeTester < Test::Unit::TestCase
 						)
 					)
 				)
+		
+		@bc_proc = Proc.new do |n|
+			case n
+			when BNode then	CNode.new(n.left, n.right)
+			when CNode then	BNode.new(n.left, n.right)
+			else				n
+			end
+		end
 	end
 	
 	def test_children
@@ -68,16 +77,6 @@ class ASTNodeTester < Test::Unit::TestCase
 		node.children = (expected_children = [BNode.new, CNode.new])
 		
 		assert_equal(node.children, expected_children)
-		
-		node.map do |child|
-			if child.is_a?(BNode)
-				CNode.new
-			else
-				BNode.new
-			end
-		end
-		
-		assert_equal(node.children, expected_children.reverse)
 	end
 	
 	def test_dump
@@ -92,21 +91,21 @@ class ASTNodeTester < Test::Unit::TestCase
 		# Test pre-order
 		nodes	= []
 		expected	= ['F', 'B', 'A', 'D', 'C', 'E', 'G', 'I', 'H']
-		@tree3.each(:pre) { |n| nodes << n.string }
+		@tree4.each(:pre) { |n| nodes << n.string }
 		
 		assert_equal(expected, nodes)
 		
 		# Test post-order
 		nodes	= []
 		expected	= ['A', 'C', 'E', 'D', 'B', 'H', 'I', 'G', 'F']
-		@tree3.each(:post) { |n| nodes << n.string }
+		@tree4.each(:post) { |n| nodes << n.string }
 		
 		assert_equal(expected, nodes)
 		
 		# Test level-order
 		nodes	= []
 		expected	= ['F', 'B', 'G', 'A', 'D', 'I', 'C', 'E', 'H']
-		@tree3.each(:level) { |n| nodes << n.string }
+		@tree4.each(:level) { |n| nodes << n.string }
 		
 		assert_equal(expected, nodes)
 	end
@@ -118,11 +117,31 @@ class ASTNodeTester < Test::Unit::TestCase
 	
 	def test_initialize
 		assert_raise(RuntimeError) { RLTK::ASTNode.new }
-		assert_nothing_raised(RuntimeError) { ANode.new(nil, nil) }
+		assert_nothing_raised(RuntimeError) { ANode.new }
+	end
+	
+	def test_map
+		mapped_tree = @tree1.map(&@bc_proc)
+		
+		assert_equal(@tree0, @tree1)
+		assert_equal(@tree3, mapped_tree)
+	end
+	
+	def test_map!
+		tree1_clone = @tree1.clone
+		tree1_clone.map!(&@bc_proc)
+		
+		assert_not_equal(@tree1, tree1_clone)
+		assert_equal(@tree3, tree1_clone)
+		
+		replace_node = BNode.new
+		replace_node = replace_node.map!(&@bc_proc)
+		
+		assert_equal(CNode.new, replace_node)
 	end
 	
 	def test_notes
-		node = ANode.new(nil, nil)
+		node = ANode.new
 		
 		assert_nil(node[:a])
 		assert_equal(node[:a] = :b, :b)

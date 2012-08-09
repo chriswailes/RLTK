@@ -333,6 +333,9 @@ module RLTK # :nodoc:
 		# were declared) and then the children as the remaining arguments (in
 		# the order they were declared).
 		#
+		# If a node has 2 values and 2 children and is passed only a single
+		# value the remaining values and children are assumed to be nil.
+		#
 		# @param [Array<Object>] objects The values and children of this node.
 		def initialize(*objects)
 			if self.class == RLTK::ASTNode
@@ -352,11 +355,34 @@ module RLTK # :nodoc:
 			end
 		end
 		
-		# Maps the children of the ASTNode from one value to another.
+		# Create a new tree by using the provided Proc object to map the
+		# nodes of this tree to new nodes.  This is always done in
+		# post-order, meaning that all children of a node are visited before
+		# the node itself.
 		#
-		# @return [void]
-		def map
-			self.children = self.children.map { |c| yield c }
+		# @note This does not modify the current tree.
+		#
+		# @return [Object] The result of calling the given block on the root node.
+		def map(&block)
+			new_children	= self.children.map { |c| if c.nil? then block.call(c) else c.map(&block) end }
+			new_node		= self.class.new(*self.values, *new_children)
+			
+			block.call(new_node)
+		end
+		
+		# Map the nodes in an AST to new nodes using the provided Proc
+		# object.  This is always done in post-order, meaning that all
+		# children of a node are visited before the node itself.
+		#
+		# @note The root node can not be replaced and as such the result of
+		#	calling the provided block on the root node is used as the
+		#	return value.
+		#
+		# @return [Object] The result of calling the given block on the root node.
+		def map!(&block)
+			self.children = self.children.map { |c| if c.nil? then block.call(c) else c.map!(&block) end }
+			
+			block.call(self)
 		end
 		
 		# @return [ASTNode] Root of the abstract syntax tree.
