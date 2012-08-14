@@ -10,7 +10,7 @@ Next we will define a set of rules inside the class definition that will tell th
 
 	rule(/\s/)
 
-This is simply a call the the {RLTK::Lexer.rule} class function.  The first argument is the regular expression that describes substrings of the input that match this rule.  Most of the rules we will define have actions associated with them that tell the lexer how to emit {RLTK::Token tokens}, but because we simply want to discard any whitespace we can can leave the action blank.  The default action associated with a rule returns `nil` and any action that returns `nil` emits no token.
+This is simply a call to the {RLTK::Lexer.rule} class function.  The first argument is the regular expression that describes substrings of the input that match this rule.  Most of the rules we will define have actions associated with them that tell the lexer how to emit {RLTK::Token tokens}, but because we simply want to discard any whitespace we can can leave the action blank.  The default action associated with a rule returns `nil` and any action that returns `nil` emits no token.
 
 Rules for keywords and operators can be added very simply:
 
