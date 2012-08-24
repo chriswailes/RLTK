@@ -15,9 +15,7 @@ module Kazoo
 		left :IN
 		left :LT, :ELSE
 		left :PLUS, :SUB
-
-		right; right
-		right :MUL, :DIV
+		left :MUL, :DIV
 	
 		production(:input, 'statement SEMI') { |s, _| s }
 	

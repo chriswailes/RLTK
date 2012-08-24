@@ -16,9 +16,7 @@ module Kazoo
 		left :SEQ
 		left :LT, :GT, :PIPE, :AMP, :EQL, :BANG, :NEG, :ELSE
 		left :PLUS, :SUB
-		
-		right; right; right
-		right :MUL, :DIV
+		left :MUL, :DIV
 	
 		production(:input, 'statement SEMI') { |s, _| s }
 	
