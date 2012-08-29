@@ -2,6 +2,11 @@ parser.rb:
 	Composable parsers.
 	Auto-generate as much of the AST as possible, including AST node classes.
 	Add a simple way to lexically scope the language.
+	Add a way of setting a default lexer for a parser.
+	Allow a parser to accept strings as an input (and take a lexer as an argument).
+	Allow the parser to parse one token at a time (thus allowing the lexer to be changed in the middle of parsing).
+	Allow the first argument to the associativity methods to be a integer to be used as the value for those tokens.  An error should be raised if associativity values are given in a non-increasing order.
+	Get token associativity information to line up in explain.
 	
 lexer.rb:
 	Composable lexers.
@@ -31,3 +36,4 @@ Semantics:
 	Add the ability to translate between different semantics.
 
 Misc:
+	Convert to Ruby 1.9 syntax.

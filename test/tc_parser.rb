@@ -127,6 +127,9 @@ class ParserTester < Test::Unit::TestCase
 	class DummyError2 < StandardError; end
 	
 	class ErrorCalc < RLTK::Parser
+		left :ERROR
+		right :PLS, :SUB, :MUL, :DIV, :NUM
+		
 		production(:e) do
 			clause('NUM') {|n| n}
 		
@@ -137,6 +140,8 @@ class ParserTester < Test::Unit::TestCase
 		
 			clause('e PLS ERROR') { |_, _, _| raise DummyError1 }
 			clause('e SUB ERROR') { |_, _, _| raise DummyError2 }
+			
+			clause('e PLS ERROR e') { |e0, _, _, e1| e0 + e1 }
 		end
 	
 		finalize
@@ -159,7 +164,7 @@ class ParserTester < Test::Unit::TestCase
 			clause('NEWLINE') { |_| nil }
 		
 			clause('WORD+ SEMI NEWLINE')	{ |w, _, _| w }
-			clause('WORD+ ERROR NEWLINE')	{ |w, e, _| error(pos(1).line_number); w }
+			clause('WORD+ ERROR')		{ |w, e| error(pos(1).line_number); w }
 		end
 	
 		finalize
@@ -289,8 +294,16 @@ class ParserTester < Test::Unit::TestCase
 		
 		begin
 			ErrorLine.parse(ELLexer.lex(test_string))
+			
 		rescue RLTK::HandledError => e
-			assert_equal(e.errors, [2,4])
+			assert_equal([2,4], e.errors)
+		end
+		
+		begin
+			ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 + + 1'))
+			
+		rescue RLTK::HandledError => e
+			assert_equal(2, e.result)
 		end
 	end
 	

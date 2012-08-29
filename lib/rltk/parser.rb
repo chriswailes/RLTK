@@ -860,7 +860,7 @@ module RLTK # :nodoc:
 									# We found a valid error state.
 									error_mode = reduction_guard = true
 									opts[:env].he = true
-									processing << stack
+									moving_on << stack
 									
 									v.puts('Invalid input encountered.  Entering error handling mode.') if v
 								else
