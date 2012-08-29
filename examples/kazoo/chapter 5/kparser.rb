@@ -13,7 +13,7 @@ module Kazoo
 	class Parser < RLTK::Parser
 		
 		left :PLUS, :SUB
-		right :MUL, :DIV
+		left :MUL, :DIV
 		
 		production(:input, 'statement SEMI') { |s, _| s }
 		
