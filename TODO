@@ -14,6 +14,9 @@ lexer.rb:
 ast.rb:
 	Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors.
 
+cfg.rb
+	Add the ability to print out grammars in a textual form.
+
 tokens.rb:
 
 Code generation:
