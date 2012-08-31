@@ -138,9 +138,6 @@ class ParserTester < Test::Unit::TestCase
 			clause('e MUL e') { |e0, _, e1| e0 * e1 }
 			clause('e DIV e') { |e0, _, e1| e0 / e1 }
 		
-			clause('e PLS ERROR') { |_, _, _| raise DummyError1 }
-			clause('e SUB ERROR') { |_, _, _| raise DummyError2 }
-			
 			clause('e PLS ERROR e') { |e0, _, _, e1| e0 + e1 }
 		end
 	
@@ -282,8 +279,8 @@ class ParserTester < Test::Unit::TestCase
 	end
 	
 	def test_error_productions
-		assert_raise(DummyError1) { ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 + +')) }
-		assert_raise(DummyError2) { ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 - +')) }
+		
+		# Test to see if error reporting is working correctly.
 		
 		test_string  = "first line;\n"
 		test_string += "second line\n"
@@ -299,8 +296,20 @@ class ParserTester < Test::Unit::TestCase
 			assert_equal([2,4], e.errors)
 		end
 		
+		# Test to see if we can continue parsing after errors are encounterd.
+		
 		begin
 			ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 + + 1'))
+			
+		rescue RLTK::HandledError => e
+			assert_equal(2, e.result)
+		end
+		
+		# Test to see if we pop tokens correctly after an error is
+		# encountered.
+		
+		begin
+			ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 + + + + + + 1'))
 			
 		rescue RLTK::HandledError => e
 			assert_equal(2, e.result)

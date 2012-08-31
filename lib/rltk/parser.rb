@@ -835,6 +835,8 @@ module RLTK # :nodoc:
 							# If we are already in error mode and there
 							# are no actions we skip this token.
 							if error_mode
+								v.puts("Discarding token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
+								
 								moving_on << stack
 								next
 							end
@@ -842,6 +844,16 @@ module RLTK # :nodoc:
 							# We would be dropping the last stack so we
 							# are going to go into error mode.
 							if accepted.empty? and moving_on.empty? and processing.empty?
+								
+								if v
+									v.puts
+									v.puts('Current stack:')
+									v.puts("\tID: #{stack.id}")
+									v.puts("\tState stack:\t#{stack.state_stack.inspect}")
+									v.puts("\tOutput Stack:\t#{stack.output_stack.inspect}")
+									v.puts
+								end
+								
 								# Try and find a valid error state.
 								while stack.state
 									if (actions = @states[stack.state].on?(:ERROR)).empty?
@@ -862,7 +874,10 @@ module RLTK # :nodoc:
 									opts[:env].he = true
 									moving_on << stack
 									
-									v.puts('Invalid input encountered.  Entering error handling mode.') if v
+									if v
+										v.puts('Invalid input encountered.  Entering error handling mode.')
+										v.puts("Discarding token: #{token.type}#{if token.value then "(#{token.value})" end}")
+									end
 								else
 									# No valid error states could be
 									# found.  Time to print a message
