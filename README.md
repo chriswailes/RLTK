@@ -312,28 +312,29 @@ Calls to {RLTK::Parser.parse} may raise one of four exceptions:
 
 **Warning: this is the lest tested feature of RLTK.  If you encounter any problems while using it, please let me know so I can fix any bugs as soon as possible.**
 
-When an RLTK parser encounters a token for which there are no more valid actions (and it is on the last parse stack / possible parse-tree path) it will enter error handling mode.  In this mode the parser pops states and input off of the parse stack (the parser is a pushdown automaton after all) until it finds a state that has a shift action for the `ERROR` terminal.  A dummy `ERROR` terminal is then placed onto the parse stack and the shift action is taken.  This error token will have the position information of the token that caused the parser to enter error handling mode.
+When an RLTK parser encounters a token for which there are no more valid actions (and it is on the last parse stack / possible parse-tree path) it will enter error handling mode.  In this mode the parser pops states and input off of the parse stack (the parser is a pushdown automaton after all) until it finds a state that has a shift action for the `ERROR` terminal.  A dummy `ERROR` terminal is then placed onto the parse stack and the shift action is taken.  This error token will have the position information of the token that caused the parser to enter error handling mode.  Additional tokens may have been discarded after this token.
 
-If the input (including the `ERROR` token) can be reduced immediately the associated error handling proc is evaluated and we continue parsing.  If the parser can't immediately reduce it will begin shifting tokens onto the input stack.  This may cause the parser to enter a state in which it again has no valid actions for an input.  When this happens it enters error handling mode again and pops states and input off of the stack until it reaches an error state again.  In this way it searches for the first substring after the error occurred for which it can resume parsing.
+If the input (including the `ERROR` token) can be reduced immediately the associated error handling proc is evaluated and we continue parsing.  If no shift or reduce action is available the parser will being shifting tokens off of the input stack until a token appears with a valid action in the current state, in which case parsing resumes as normal.
 
-The example below for the unit tests shows a very basic usage of error productions:
+The value of an `ERROR` non-terminal will be an array containing all of the tokens that were discarded while the parser was searching for a valid action.
 
-	class AfterPlsError < StandardError; end
-	class AfterSubError < StandardError; end
+The example below, based on one of the unit tests, shows a very basic usage of error productions:
 
 	class ErrorCalc < RLTK::Parser
+		left :ERROR
+		right :PLS, :SUB, :MUL, :DIV, :NUM
+		
 		production(:e) do
-			clause('NUM') { |n| n }
-			
+			clause('NUM') {|n| n}
+		
 			clause('e PLS e') { |e0, _, e1| e0 + e1 }
 			clause('e SUB e') { |e0, _, e1| e0 - e1 }
 			clause('e MUL e') { |e0, _, e1| e0 * e1 }
 			clause('e DIV e') { |e0, _, e1| e0 / e1 }
-			
-			clause('e PLS ERROR') { |_, _, _| raise AfterPlsError }
-			clause('e SUB ERROR') { |_, _, _| raise AfterSubError }
-		end
 		
+			clause('e PLS ERROR e') { |e0, _, err, e1| error("#{err.len} tokens skipped."); e0 + e1 }
+		end
+	
 		finalize
 	end
 

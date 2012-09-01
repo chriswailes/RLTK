@@ -837,6 +837,11 @@ module RLTK # :nodoc:
 							if error_mode
 								v.puts("Discarding token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
 								
+								# Add the current token to the array
+								# that corresponds to the output value
+								# for the ERROR token.
+								stack.output_stack.last << token
+								
 								moving_on << stack
 								next
 							end
@@ -862,7 +867,7 @@ module RLTK # :nodoc:
 										stack.pop
 									else
 										# Enter the found error state.
-										stack.push(actions.first.id, nil, :ERROR, token.position)
+										stack.push(actions.first.id, [token], :ERROR, token.position)
 										
 										break
 									end

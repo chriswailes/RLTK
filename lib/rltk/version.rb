@@ -5,7 +5,7 @@
 
 module RLTK # :nodoc:
 	# The version number of the RLTK library.
-	VERSION			= '2.2.0'
+	VERSION			= '2.2.1'
 	# The version of LLVM targeted by RLTK.
 	LLVM_TARGET_VERSION	= '3.0'
 end
