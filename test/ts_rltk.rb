@@ -34,6 +34,7 @@ require 'tc_ast'
 require 'tc_cfg'
 require 'tc_lexer'
 require 'tc_parser'
+require 'tc_visitor'
 
 require 'util/ts_util'
 
