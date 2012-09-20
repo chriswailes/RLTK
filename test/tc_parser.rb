@@ -174,7 +174,7 @@ class ParserTester < Test::Unit::TestCase
 	class UnderscoreParser < RLTK::Parser
 		production(:s, 'A_TOKEN+') { |o| o }
 		
-		finalize(explain: 'test.table')
+		finalize
 	end
 	
 	class RotatingCalc < RLTK::Parser
