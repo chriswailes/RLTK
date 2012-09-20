@@ -1100,7 +1100,7 @@ module RLTK # :nodoc:
 							
 							# Translate the G' follow symbols into G lookahead
 							# symbols.
-							lookahead = lookahead.map { |sym| sym.to_s.split('_').last.to_sym }.uniq
+							lookahead = lookahead.map { |sym| sym.to_s.split('_', 2).last.to_sym }.uniq
 							
 							# Here we remove the unnecessary reductions.
 							# If there are error productions we need to

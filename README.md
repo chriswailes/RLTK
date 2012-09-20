@@ -338,6 +338,10 @@ The example below, based on one of the unit tests, shows a very basic usage of e
 		finalize
 	end
 
+## A Note on Token Naming
+
+In the world of RLTK both terminal and non-terminal symbols may contain only alphanumeric characters and underscores.  The differences between terminal and non-terminal symbols is that terminals are **ALL\_UPPER\_CASE** and non-terminals are **all\_lower\_case**.
+
 ## ASTNode
 
 The {RLTK::ASTNode} base class is meant to be a good starting point for implementing your own abstract syntax tree nodes.  By subclassing {RLTK::ASTNode} you automagically get features such as tree comparison, notes, value accessors with type checking, child node accessors and `each` and `map` methods (with type checking), and the ability to retrieve the root of a tree from any member node.

@@ -39,6 +39,10 @@ class ParserTester < Test::Unit::TestCase
 		rule(/\s/)
 	end
 	
+	class UnderscoreLexer < RLTK::Lexer
+		rule(/\w/) { |t| [:A_TOKEN, t] }
+	end
+	
 	class APlusBParser < RLTK::Parser
 		production(:a, 'A+ B') { |a, _| a.length }
 		
@@ -166,7 +170,13 @@ class ParserTester < Test::Unit::TestCase
 	
 		finalize
 	end
-
+	
+	class UnderscoreParser < RLTK::Parser
+		production(:s, 'A_TOKEN+') { |o| o }
+		
+		finalize(explain: 'test.table')
+	end
+	
 	class RotatingCalc < RLTK::Parser
 		production(:e) do
 			clause('NUM') {|n| n}
@@ -432,6 +442,13 @@ class ParserTester < Test::Unit::TestCase
 		assert_equal(9, actual)
 		
 		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
+	end
+	
+	def test_underscore_tokens
+		actual	= UnderscoreParser.parse(UnderscoreLexer.lex('abc')).join
+		expected	= 'abc'
+		
+		assert_equal(expected, actual)
 	end
 	
 	def test_use
