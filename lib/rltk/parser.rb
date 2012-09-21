@@ -230,10 +230,10 @@ module RLTK # :nodoc:
 				opts[:explain]	= self.get_io(opts[:explain])
 				
 				{
-					:explain		=> false,
-					:lookahead	=> true,
-					:precedence	=> true,
-					:use			=> false
+					explain:		false,
+					lookahead:	true,
+					precedence:	true,
+					use:			false
 				}.update(opts)
 			end
 			private :build_finalize_opts
@@ -249,10 +249,10 @@ module RLTK # :nodoc:
 				opts[:verbose]		= self.get_io(opts[:verbose])
 				
 				{
-					:accept		=> :first,
-					:env			=> self::Environment.new,
-					:parse_tree	=> false,
-					:verbose		=> false
+					accept:		:first,
+					env:			self::Environment.new,
+					parse_tree:	false,
+					verbose:		false
 				}.update(opts)
 			end
 			private :build_parse_opts
@@ -527,18 +527,15 @@ module RLTK # :nodoc:
 			# of states and their actions, and the resolution of conflicts
 			# using lookahead and precedence information.
 			# 
-			# The *opts* hash may contain the following options, which are
-			# described in more detail in the main documentation:
-			# 
-			# * :explain - To explain the parser or not.
-			# * :lookahead - To use lookahead info for conflict resolution.
-			# * :precedence - To use precedence info for conflict resolution.
-			# * :use - A file name or object that is used to load/save the parser.
-			# 
 			# No calls to {Parser.production} may appear after the call to
 			# Parser.finalize.
 			#
-			# @param [Hash{Symbol => Object}] opts Options describing how to finalize the parser.
+			# @param [Hash] opts Options describing how to finalize the parser.
+			#
+			# @option opts [Boolean,String,IO]		:explain		To explain the parser or not.
+			# @option opts [Boolean]				:lookahead	To use lookahead info for conflict resolution.
+			# @option opts [Boolean]				:precedence	To use precedence info for conflict resolution.
+			# @option opts [String,IO]			:use			A file name or object that is used to load/save the parser.
 			#
 			# @return [void]
 			def finalize(opts = {})
@@ -778,19 +775,18 @@ module RLTK # :nodoc:
 			# This function is where actual parsing takes place.  The
 			# _tokens_ argument must be an array of Token objects, the last
 			# of which has type EOS.  By default this method will return the
-			# value computed by the first successful parse tree found.  It is
-			# possible to adjust this behavior using the _opts_ hash as
-			# follows:
+			# value computed by the first successful parse tree found.
 			# 
-			# * :accept - Either :first or :all.
-			# * :env - The environment in which to evaluate the production actions.
-			# * :parse_tree - To print parse trees in the DOT language or not.
-			# * :verbose - To be verbose or not.
-			# 
-			# Additional information for these options can be found in the
-			# main documentation.
+			# Additional information about the parsing options can be found in
+			# the main documentation.
 			#
-			# @param [Array<Token>] tokens Tokens to be parsed.
+			# @param [Array<Token>]	tokens	Tokens to be parsed.
+			# @param [Hash]		opts		Options to use when parsing input.
+			#
+			# @option opts [:first, :all] 	:accept		Either :first or :all.
+			# @option opts [Object]			:env			The environment in which to evaluate the production action.
+			# @option opts [Boolean,String,IO]	:parse_tree	To print parse trees in the DOT language or not.
+			# @option opts [Boolean,String,IO] :verbose		To be verbose or not.
 			#
 			# @return [Object, Array<Object>] Result or results of parsing the given tokens.
 			def parse(tokens, opts = {})

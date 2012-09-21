@@ -42,22 +42,6 @@ Rake::TestTask.new do |t|
 	t.test_files = FileList['test/ts_rltk.rb']
 end
 
-if RUBY_VERSION[0..2] == '1.8'
-	begin
-		require 'rcov/rcovtask'
-		
-		Rcov::RcovTask.new do |t|
-			t.libs      << 'test'
-			t.rcov_opts << '--exclude gems,ruby'
-			
-			t.test_files = FileList['test/tc_*.rb']
-		end
-		
-	rescue LoadError
-		warn 'Rcov not installed.'
-	end
-end
-
 # Bundler tasks.
 Bundler::GemHelper.install_tasks
 

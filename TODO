@@ -39,4 +39,5 @@ Semantics:
 	Add the ability to translate between different semantics.
 
 Misc:
-	Convert to Ruby 1.9 syntax.
+	Convert to Ruby 1.9 syntax. (PARTIAL)
+	Update the documentation to use the @overloaded tag.
