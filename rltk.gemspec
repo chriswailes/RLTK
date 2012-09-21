@@ -31,7 +31,7 @@ Gem::Specification.new do |s|
 	s.homepage	= 'http://github.com/chriswailes/RLTK'
 	s.license		= 'University of Illinois/NCSA Open Source License'
 	
-	sc.required_ruby_version = '>= 1.9.1'
+	s.required_ruby_version = '>= 1.9.1'
 	
 	s.add_dependency('ffi', '>= 1.0.0')
 	
