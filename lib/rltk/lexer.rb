@@ -55,6 +55,14 @@ module RLTK # :nodoc:
 			# @return [Symbol] State in which the lexer starts.
 			attr_reader :start_state
 			
+			# Called when the Lexer class is sub-classed, it installes
+			# necessary instance class variables.
+			#
+			# @return [void]
+			def inherited(klass)
+				klass.install_icvars
+			end
+			
 			# Installs instance class varialbes into a class.
 			#
 			# @return [void]
@@ -62,14 +70,6 @@ module RLTK # :nodoc:
 				@match_type	= :longest
 				@rules		= Hash.new {|h,k| h[k] = Array.new}
 				@start_state	= :default
-			end
-			
-			# Called when the Lexer class is sub-classed, it installes
-			# necessary instance class variables.
-			#
-			# @return [void]
-			def inherited(klass)
-				klass.install_icvars
 			end
 		
 			# Lex *string*, using *env* as the environment.  This method will

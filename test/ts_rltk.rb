@@ -8,17 +8,15 @@
 # Requires #
 ############
 
-if RUBY_VERSION[0..2] == '1.9'
-	begin
-		require 'simplecov'
-		SimpleCov.start do
-			add_filter 'tc_*'
-			add_filter 'generated*'
-		end
-		
-	rescue LoadError
-		puts 'SimpleCov not installed.  Continuing without it.'
+begin
+	require 'simplecov'
+	SimpleCov.start do
+		add_filter 'tc_*'
+		add_filter 'generated*'
 	end
+	
+rescue LoadError
+	puts 'SimpleCov not installed.  Continuing without it.'
 end
 
 # Rubygems
@@ -34,6 +32,7 @@ require 'tc_ast'
 require 'tc_cfg'
 require 'tc_lexer'
 require 'tc_parser'
+require 'tc_visitor'
 
 require 'util/ts_util'
 
