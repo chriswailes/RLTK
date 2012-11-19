@@ -91,6 +91,8 @@ module RLTK::CG # :nodoc:
 			Bindings.position_builder_at_end(@ptr, bb) if check_type(bb, BasicBlock, 'bb')
 			self
 		end
+		alias :pae :position_at_end
+		alias :target :position_at_end
 		
 		# Position the Builder before the given Instruction.
 		#

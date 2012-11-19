@@ -68,6 +68,8 @@ module RLTK # :nodoc:
 			#
 			# @return [void]
 			def on(klass, opts = {}, &block)
+				raise ArgumentError, 'The klass parameter was not a Class.' if not klass.is_a?(Class)
+				
 				@actions << Action.new(klass, opts[:guard], opts[:wrapper], block)
 			end
 		end
@@ -115,8 +117,7 @@ module RLTK # :nodoc:
 				# If two matches are equally good go with the first one
 				# defined.
 				
-				better   = object.instance_of?(cur.klass) and not object.instance_of?(best.klass)
-				better ||= cur.klass.subclass_of?(best.klass)
+				better   = cur.klass.subclass_of?(best.klass)
 				better ||= best.klass == cur.klass and best.guard.nil? and not cur.guard.nil?
 		
 				if better then cur else best end
@@ -124,9 +125,14 @@ module RLTK # :nodoc:
 			
 			# Visit the object.
 			if action.wrapper
-				instance_exec_block = ->(*args) { self.instance_exec(*args, &action.block) }
+				# Create the instance exec cache if it doesn't exist.
+				@iexec_cache ||= Hash.new
 				
-				self.send(action.wrapper, object, &instance_exec_block)
+				# Create the instance exec callback if it isn't already cached.
+				@iexec_cache[action] ||= ->(*args) { self.instance_exec(*args, &action.block) }
+				
+				# Call the wrapper with the object and the instance exec wrapped block.
+				self.send(action.wrapper, object, &@iexec_cache[action])
 				
 			else
 				self.instance_exec(object, &action.block)
