@@ -135,8 +135,8 @@ module Kazoo
 				cond_value = translate_expression(node.cond)
 				cond_value = @builder.fcmp(:one, cond_value, ZERO, 'ifcond')
 				
-				start_bb = @builder.current_block
-				fun = start_bb.parent
+				start_bb	= @builder.current_block
+				fun		= start_bb.parent
 				
 				then_bb = fun.blocks.append('then')
 				@builder.position_at_end(then_bb)

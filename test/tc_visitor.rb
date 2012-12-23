@@ -28,6 +28,20 @@ class VisitorTester < Test::Unit::TestCase
 		end
 	end
 	
+#	class MultiClassVisitor < RLTK::Visitor
+#		on [Numeric, String] do
+#			:numANDstr
+#		end
+#		
+#		on Array do
+#			:array
+#		end
+#		
+#		on Integer do
+#			:int
+#		end
+#	end
+	
 	class NumericVisitor < RLTK::Visitor
 		on Numeric do |n|
 			"Numeric: #{n}"
@@ -92,6 +106,16 @@ class VisitorTester < Test::Unit::TestCase
 		assert_equal("Numeric: 3.1415296", v.visit(3.1415296))
 		assert_equal("Integer: 42",        v.visit(42))
 	end
+	
+#	def test_multiclass
+#		v = MultiClassVisitor.new
+#		
+#		assert_equal(:integer, v.visit(1))
+#		assert_equal(:array,   v.visit([1,2,3]))
+#		
+#		assert_equal(:numANDstr, v.visit(42.0))
+#		assert_equal(:numANDstr, v.visit('42'))
+#	end
 	
 	def test_simple_visitor
 		actual	= SimpleVisitor.new.visit([1, 2, 3, 4])

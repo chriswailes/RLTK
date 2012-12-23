@@ -7,11 +7,16 @@
 # RLTK Files
 require 'rltk/cg/llvm'
 require 'rltk/cg/module'
+require 'rltk/cg/execution_engine'
+require 'rltk/cg/value'
 
 # Inform LLVM that we will be targeting an x86 architecture.
 RLTK::CG::LLVM.init(:X86)
 
 module Kazoo
+	
+	ZERO = RLTK::CG::Double.new(0.0)
+	
 	class Contractor < RLTK::CG::Contractor
 		attr_reader :module
 		
@@ -19,6 +24,12 @@ module Kazoo
 			# IR building objects.
 			@module	= RLTK::CG::Module.new('Kazoo JIT')
 			@st		= Hash.new
+		
+			# Execution Engine
+			@engine = RLTK::CG::JITCompiler.new(@module)
+		
+			# Add passes to the Function Pass Manager.
+			@module.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify)
 		end
 	
 		def add(ast)
@@ -27,6 +38,16 @@ module Kazoo
 			when Function, Prototype	then visit ast
 			else raise 'Attempting to add an unhandled node type to the JIT.'
 			end
+		end
+	
+		def execute(fun, *args)
+			@engine.run_function(fun, *args)
+		end
+	
+		def optimize(fun)
+			@module.fpm.run(fun)
+		
+			fun
 		end
 	
 		on Binary do |node|
@@ -67,6 +88,68 @@ module Kazoo
 	
 		on Number do |node|
 			RLTK::CG::Double.new(node.value)
+		end
+		
+		on If do |node|
+			fcmp :one, visit node.cond, ZERO, 'ifcond'
+			
+			start_bb	= current_block
+			fun		= start_bb.parent
+			
+			then_bb				= fun.blocks.append('then')
+			then_val, new_then_bb	= visit node.then, at: then_bb, rcb: true
+			
+			else_bb				= fun.blocks.append('else')
+			else_val, new_else_bb	= visit node.else, at: else_bb, rcb: true
+			
+			merge_bb = fun.blocks.append('merge', self) do
+				phi RLTK::CG::DoubleType, {new_then_bb => then_value, new_else_bb => else_value}, 'iftmp' 
+			end
+			
+			build start_bb { cond cond_value, then_bb, else_bb }
+			
+			build new_then_bb { br merge_bb }
+			build new_else_bb { br merge_bb }
+			
+			returning(phi) { target merge_bb }
+		end
+	
+		on For do |node|
+			ph_bb		= current_block
+			fun			= ph_bb.parent
+			loop_cond_bb	= fun.blocks.append('loop_cond')
+			
+			init_val = visit node.init
+			br loop_cond_bb
+			
+			build loop_cond_bb { phi RLTK::CG::DoubleType, {ph_bb => init_val}, node.var }
+			
+			old_var = @st[node.var]
+			@st[node.var] = var
+			
+			end_cond = fcmp :one, (visit node.cond), ZERO, 'loopcond'
+			
+			loop_bb0 = fun.blocks.append('loop')
+			
+			_, loop_bb1 = visit node.body, at: loop_bb0, rcb: true
+			
+			step_val = visit node.step
+			next_var = fadd var, step_val, 'nextvar'
+			
+			var.incoming.add({loop_bb1 => next_var})
+			
+			br loop_cond_bb
+			
+			# Add the conditional branch to the loop_cond_bb.
+			after_bb = fun.blocks.append('afterloop')
+			
+			build loop_cond_bb { cond end_cond, loop_bb0, after_bb }
+			
+			target after_bb
+			
+			@st[node.var] = old_var
+			
+			ZERO
 		end
 	
 		on Function do |node|

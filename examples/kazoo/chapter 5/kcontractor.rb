@@ -7,6 +7,7 @@
 # RLTK Files
 require 'rltk/cg/llvm'
 require 'rltk/cg/module'
+require 'rltk/cg/execution_engine'
 
 # Inform LLVM that we will be targeting an x86 architecture.
 RLTK::CG::LLVM.init(:X86)
@@ -19,6 +20,12 @@ module Kazoo
 			# IR building objects.
 			@module	= RLTK::CG::Module.new('Kazoo JIT')
 			@st		= Hash.new
+		
+			# Execution Engine
+			@engine = RLTK::CG::JITCompiler.new(@module)
+		
+			# Add passes to the Function Pass Manager.
+			@module.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify)
 		end
 	
 		def add(ast)
@@ -27,6 +34,16 @@ module Kazoo
 			when Function, Prototype	then visit ast
 			else raise 'Attempting to add an unhandled node type to the JIT.'
 			end
+		end
+	
+		def execute(fun, *args)
+			@engine.run_function(fun, *args)
+		end
+	
+		def optimize(fun)
+			@module.fpm.run(fun)
+		
+			fun
 		end
 	
 		on Binary do |node|

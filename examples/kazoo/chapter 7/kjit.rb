@@ -8,7 +8,7 @@ require 'rltk/cg/llvm'
 require 'rltk/cg/module'
 require 'rltk/cg/execution_engine'
 require 'rltk/cg/value'
-			
+
 # Inform LLVM that we will be targeting an x86 architecture.
 RLTK::CG::LLVM.init(:X86)
 

@@ -253,11 +253,11 @@ module Kazoo
 		end
 		
 		def translate_prototype(node)
-			if fun = @module.functions.named(node.name)
+			if fun = @module.functions[node.name]
 				if fun.blocks.size != 0
-					raise Exception, "Redefinition of function #{node.name}."
+					raise "Redefinition of function #{node.name}."
 				elsif fun.params.size != node.arg_names.length
-					raise Exception, "Redefinition of function #{node.name} with different number of arguments."
+					raise "Redefinition of function #{node.name} with different number of arguments."
 				end
 			else
 				fun = @module.functions.add(node.name, RLTK::CG::DoubleType, Array.new(node.arg_names.length, RLTK::CG::DoubleType))
