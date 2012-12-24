@@ -4,7 +4,7 @@ require 'ffi'
 
 module RLTK::CG::Bindings
   extend FFI::Library
-  ffi_lib "LLVM-#{LLVM_TARGET_VERSION}"
+  ffi_lib 'LLVM-3.0'
   
   def self.attach_function(name, *_)
     begin; super; rescue FFI::NotFoundError => e
