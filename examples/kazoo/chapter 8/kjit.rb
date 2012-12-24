@@ -239,7 +239,7 @@ module Kazoo
 			# Create a new basic block to insert into, allocate space for
 			# the arguments, store their values, translate the expression,
 			# and set its value as the return value.
-			fun.blocks.append('entry', nil, @builder, self, @st) do |jit, st|
+			fun.blocks.append('entry', @builder, nil, self, @st) do |jit, st|
 				fun.params.each do |param|
 					st[param.name] = alloca(RLTK::CG::DoubleType, param.name)
 					store(param, st[param.name])

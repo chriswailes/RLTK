@@ -8,6 +8,7 @@
 require 'rltk/cg/llvm'
 require 'rltk/cg/module'
 require 'rltk/cg/execution_engine'
+require 'rltk/cg/contractor'
 
 # Inform LLVM that we will be targeting an x86 architecture.
 RLTK::CG::LLVM.init(:X86)
@@ -17,6 +18,8 @@ module Kazoo
 		attr_reader :module
 		
 		def initialize
+			super
+			
 			# IR building objects.
 			@module	= RLTK::CG::Module.new('Kazoo JIT')
 			@st		= Hash.new
@@ -70,7 +73,7 @@ module Kazoo
 				raise "Function #{node.name} expected #{callee.params.size} argument(s) but was called with #{node.args.length}."
 			end
 
-			args = node.args.map { |arg| visit arg) }
+			args = node.args.map { |arg| visit arg }
 			call callee, *args.push('calltmp')
 		end
 	

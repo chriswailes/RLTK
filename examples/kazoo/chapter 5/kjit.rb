@@ -109,7 +109,7 @@ module Kazoo
 			
 			# Create a new basic block to insert into, translate the
 			# expression, and set its value as the return value.
-			fun.blocks.append('entry', nil, @builder, self) do |jit|
+			fun.blocks.append('entry', @builder, nil, self) do |jit|
 				ret jit.translate_expression(node.body)
 			end
 			
