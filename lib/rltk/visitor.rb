@@ -12,22 +12,29 @@ module RLTK # :nodoc:
 	# An implementation of the visitor pattern.
 	#
 	# @see http://en.wikipedia.org/wiki/Visitor_pattern
-	class Visitor
+	module Visitor
 		
 		#################
 		# Class Methods #
 		#################
 		
-		class << self
+		# A callback method that installs the necessary data structures and
+		# class methods in classes that include the Visitor module.
+		#
+		# @return [void]
+		def self.included(klass)
+			klass.extend(ClassMethods)
+			
+			klass.install_icvars(Array.new)
+		end
+		
+		module ClassMethods
 			# @return [Array<Action>] Actions associated with this visitor.
 			attr_reader :actions
 			
-			# A callback method that installs the necessary data structures
-			# in sbuclasses.
-			#
-			# @return [void]
+			
 			def inherited(klass)
-				klass.install_icvars(if self == RLTK::Visitor then [] else @actions.clone end)
+				klass.install_icvars(@actions.clone)
 			end
 			
 			# Installs instance class varialbes into a class.

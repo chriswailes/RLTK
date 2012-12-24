@@ -18,10 +18,9 @@ require 'rltk/cg/builder'
 
 module RLTK::CG # :nodoc:
 	
-	class Contractor
+	class Contractor < Builder
 		
-		include Visitor
-		include Builder
+		include RLTK::Visitor
 		
 		#################
 		# Class Methods #
@@ -45,6 +44,17 @@ module RLTK::CG # :nodoc:
 		# Alias out the RLTK::Visitor.visit method.
 		alias :wrapped_visit :visit
 		
+		# Visit an object in the context of this builder.  See the
+		# {Visitor#visit} method for more details about the basic behaviour
+		# of this method.  The special options for this method are:
+		#
+		# @param [Object]	object	The object to visit.
+		# @param [Hash]	opts		Options describing how to finalize the parser.
+		#
+		# @option opts [BasicBlock]	:at	Where to position the contractor before visiting the object.
+		# @option opts [true]		:rcb	If specified the method will also return the block where the contractor is currently positioned.
+		#
+		# @return [Object]
 		def visit(object, opts = {})
 			target opts[:at] if opts[:at]
 			

@@ -18,7 +18,9 @@ require 'rltk/visitor'
 #######################
 
 class VisitorTester < Test::Unit::TestCase
-	class GuardedVisitor < RLTK::Visitor
+	class GuardedVisitor
+		include RLTK::Visitor
+		
 		on Integer, guard: ->(i) { i < 10 } do
 			true
 		end
@@ -42,19 +44,24 @@ class VisitorTester < Test::Unit::TestCase
 #		end
 #	end
 	
-	class NumericVisitor < RLTK::Visitor
+	class NumericVisitor
+		include RLTK::Visitor
+		
 		on Numeric do |n|
 			"Numeric: #{n}"
 		end
 	end
 	
 	class SubclassVisitor < NumericVisitor
+		
 		on Integer do |i|
 			"Integer: #{i}"
 		end
 	end
 
-	class SimpleVisitor < RLTK::Visitor
+	class SimpleVisitor
+		include RLTK::Visitor
+		
 		on Array do |a|
 			a.map { |o| visit o }
 		end
@@ -64,7 +71,8 @@ class VisitorTester < Test::Unit::TestCase
 		end
 	end
 	
-	class StatefulVisitor < RLTK::Visitor
+	class StatefulVisitor
+		include RLTK::Visitor
 		
 		def initialize
 			@accumulator = 0
@@ -81,7 +89,9 @@ class VisitorTester < Test::Unit::TestCase
 		end
 	end
 	
-	class WrappingVisitor < RLTK::Visitor
+	class WrappingVisitor
+		include RLTK::Visitor
+		
 		def foo
 			1
 		end
