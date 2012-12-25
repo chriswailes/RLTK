@@ -2,8 +2,6 @@
 
 So far we've been fairly constructive.  In the preceding chapters we've created a lexer, a parser, and AST nodes; we've learned how to generate LLVM IR from our AST and how to use the JIT class to compile and run our code; we've control flow to Kazoo.  Now it's time to slow down a bit and play with what we've created.
 
-(The old version of Chapter 7 can be found [here](file.Chapter7-old.html).)
-
 The first thing that we need to do is add some additional operators to the language.  These operators are | (or), & (and), < (greater than), : (sequencing), ! (not), and unary minus.  The changes necessary to add these operators are minimal and very similar to what we have done in previous chapters.  We'll only actually be using |, <, unary minus, and :, but the rest of the operators are useful demonstrations of some of the additional features of LLVM.  The operators all do exactly what you think they might, except : if you haven't ever seen a sequencing operator.  The : operator executes the code for the left-hand side of the expression followed by the code for the right-hand of side of the expression, and returns the result of the right-hand side.
 
 One important thing to note is the precedence information specified at the top of *kparser.rb*.  This information is important to the parser, and will ensure that expressions get parsed the way you think they would.

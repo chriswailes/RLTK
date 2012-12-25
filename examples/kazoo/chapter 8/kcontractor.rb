@@ -56,14 +56,14 @@ module Kazoo
 		on Assign do
 			right = visit node.right
 			
-			alloca =
+			loc =
 			if @st.has_key?(node.name)
 				@st[node.name]
 			else
 				@st[node.name] = alloca RLTK::CG::DoubleType, node.name
 			end
 			
-			store right, alloca
+			store right, loc
 		end
 		
 		on Binary do |node|
@@ -137,8 +137,7 @@ module Kazoo
 		end
 		
 		on If do |node|
-			cond_val = visit node.cond
-			fcmp :one, cond_val, ZERO, 'ifcond'
+			cond_val = fcmp :one, (visit node.cond), ZERO, 'ifcond'
 			
 			start_bb	= current_block
 			fun		= start_bb.parent
@@ -152,7 +151,7 @@ module Kazoo
 			merge_bb = fun.blocks.append('merge', self)
 			phi_inst = build(merge_bb) { phi RLTK::CG::DoubleType, {new_then_bb => then_val, new_else_bb => else_val}, 'iftmp' }
 			
-			build(start_bb) { cond cond_value, then_bb, else_bb }
+			build(start_bb) { cond cond_val, then_bb, else_bb }
 			
 			build(new_then_bb) { br merge_bb }
 			build(new_else_bb) { br merge_bb }

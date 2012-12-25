@@ -124,8 +124,7 @@ module Kazoo
 		end
 		
 		on If do |node|
-			cond_val = visit node.cond
-			fcmp :one, cond_val, ZERO, 'ifcond'
+			cond_val = fcmp :one, (visit node.cond), ZERO, 'ifcond'
 			
 			start_bb	= current_block
 			fun		= start_bb.parent
@@ -155,7 +154,7 @@ module Kazoo
 			init_val = visit node.init
 			br loop_cond_bb
 			
-			build(loop_cond_bb) { phi RLTK::CG::DoubleType, {ph_bb => init_val}, node.var }
+			var = build(loop_cond_bb) { phi RLTK::CG::DoubleType, {ph_bb => init_val}, node.var }
 			
 			old_var = @st[node.var]
 			@st[node.var] = var

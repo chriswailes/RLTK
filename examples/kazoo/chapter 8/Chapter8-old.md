@@ -2,8 +2,6 @@
 
 Welcome to Chapter 8 of the tutorial.  In chapters 1 through 6 we've built a very respectable, albeit simple, [functional programming language](http://en.wikipedia.org/wiki/Functional_programming).  In our journey we learned some parsing techniques, how to build and represent an AST, how to build LLVM IR, and how to optimize the resultant code as well as JIT compile it.
 
-(The old version of Chapter 8 can be found [here](file.Chapter8-old.html).)
-
 While Kazoo is interesting as a functional language, the fact that it is functional makes it "too easy" to generate LLVM IR for it.  In particular, a functional language makes it very easy to build LLVM IR directly in SSA form.  Since LLVM requires that the input code be in SSA form, this is a very nice property and it is often unclear to newcomers how to generate code for an imperative language with mutable variables.
 
 The short (and happy) summary of this chapter is that there is no need for your front-end to build SSA form: LLVM provides highly tuned and well tested support for this, though the way it works is a bit unexpected for some.
@@ -166,60 +164,65 @@ The symbol table in Kazoo is managed at code generation time by the `@st` hash. 
 At this point in Kazoo's development variables are only supported in two cases: incoming arguments to functions and the induction variable of 'for' loops.  For consistency, we'll allow mutation of these variables in addition to other user-defined variables.  This means that these will both need memory locations.
 
 The first functionality change we want to make is to variable references.  In our new scheme, variables live on the stack, so code generating a reference to them actually needs to produce a load from the stack slot:
-	
-	on Variable do |node|
+
+	when Variable
 		if @st.key?(node.name)
-			self.load @st[node.name], node.name
+			@builder.load(@st[node.name], node.name)
+		
 		else
-			raise "Unitialized variable '#{node.name}'."
+			raise Exception, "Unitialized variable '#{node.name}'."
 		end
-	end
 
-As you can see, this is pretty straightforward.  Now we need to update the things that define the variables to set up the alloca.  We'll start with the visitor for For nodes:
+As you can see, this is pretty straightforward.  Now we need to update the things that define the variables to set up the alloca.  We'll start with `translate_expression`'s For branch:
 
-	on For do |node|
-		ph_bb        = current_block
-		fun          = ph_bb.parent
-		loop_cond_bb = fun.blocks.append('loop_cond')
-		
-		loc = alloca RLTK::CG::DoubleType, node.var
-		store (visit node.init), loc
-		
-		old_var       = @st[node.var]
-		@st[node.var] = loc
-		
-		br loop_cond_bb
-		
-		end_cond = fcmp :one, (visit node.cond, at: loop_cond_bb), ZERO, 'loopcond'
-		
-		loop_bb0 = fun.blocks.append('loop')
-		
-		_, loop_bb1 = visit node.body, at: loop_bb0, rcb: true
-		
-		step_val = visit node.step
-		var      = self.load loc, node.var
-		next_var = fadd var, step_val, 'nextvar'
-		store next_var, loc
-		
-		br loop_cond_bb
-		
-		# Add the conditional branch to the loop_cond_bb.
-		after_bb = fun.blocks.append('afterloop')
-		
-		build(loop_cond_bb) { cond end_cond, loop_bb0, after_bb }
-		
-		target after_bb
-		
-		@st[node.var] = old_var
-		
-		ZERO
-	end
+	ph_bb			= @builder.current_block
+	fun				= ph_bb.parent
+	loop_cond_bb	= fun.blocks.append('loop_cond')
+	
+	alloca		= @builder.alloca(RLTK::CG::DoubleType, node.var)
+	init_val	= translate_expression(node.init)
+	@builder.store(init_val, alloca)
+	
+	old_var = @st[node.var]
+	@st[node.var] = alloca
+	
+	@builder.br(loop_cond_bb)
+	
+	# Translate the conditional code.
+	@builder.position_at_end(loop_cond_bb)
+	end_cond = translate_expression(node.cond)
+	end_cond = @builder.fcmp(:one, end_cond, ZERO, 'loopcond')
+	
+	loop_bb0 = fun.blocks.append('loop')
+	@builder.position_at_end(loop_bb0)
+	
+	translate_expression(node.body)
+	
+	loop_bb1 = @builder.current_block
+	
+	step_val	= translate_expression(node.step)
+	var			= @builder.load(alloca, node.var)
+	next_var	= @builder.fadd(var, step_val, 'nextvar')
+	@builder.store(next_var, alloca)
+	
+	@builder.br(loop_cond_bb)
+	
+	# Add the conditional branch to the loop_cond_bb.
+	after_bb = fun.blocks.append('afterloop')
+	
+	loop_cond_bb.build { cond(end_cond, loop_bb0, after_bb) }
+	
+	@builder.position_at_end(after_bb)
+	
+	@st[node.var] = old_var
+	
+	ZERO
 
 This code is largely identical to the code from the previous chapters.  Notice, however, the new store instruction for the initial value, the removal of the Phi instruction, and the load and store instructions around the `next_var`.
 
-To support mutable argument variables we need to also make allocas for them.  This is accomplished by making changes to the visitors for Prototype and Function nodes.
+To support mutable argument variables we need to also make allocas for them.  This is accomplished by making changes to the `translate_prototype` and `translate_function` methods.
 
-The change to the prototype visitor removes the code that stores the argument's value in the symbol table.  Here is the old code and the new code for comparison:
+The change to `translate_prototype` removes the code that stores the argument's value in the symbol table.  Here is the old code and the new code for comparison:
 
 	# Old Code
 	node.arg_names.each_with_index do |name, i|
@@ -231,18 +234,18 @@ The change to the prototype visitor removes the code that stores the argument's 
 		fun.params[i].name = name
 	end
 
-Instead of adding entries to the symbol table in the prototype visitor we will instead add them in the function visitor:
+Instead of adding entries to the symbol table in the `translate_prototype` method we will instead add them in the `translate_function` method:
 
 	# Create a new basic block to insert into, allocate space for
 	# the arguments, store their values, translate the expression,
 	# and set its value as the return value.
-	build(fun.blocks.append('entry')) do
+	fun.blocks.append('entry', nil, @builder, self, @st) do |jit, st|
 		fun.params.each do |param|
-			@st[param.name] = alloca RLTK::CG::DoubleType, param.name
-			store param, @st[param.name]
+			st[param.name] = alloca(RLTK::CG::DoubleType, param.name)
+			store(param, st[param.name])
 		end
 		
-		ret (visit node.body)
+		ret jit.translate_expression(node.body)
 	end
 
 This new loop not only allocates space for them and adds the address to the symbol table, but it also stores the argument's values in these locations.
@@ -347,18 +350,17 @@ Next we'll add a new clause to the parser (inside the `e` production):
 
 The last thing to do is to add is a new clause to the `translate_expression` method:
 
-	on Assign do
-		right = visit node.right
+	when Assign
+		right = translate_expression(node.right)
 		
-		loc =
+		alloca =
 		if @st.has_key?(node.name)
 			@st[node.name]
 		else
-			@st[node.name] = alloca RLTK::CG::DoubleType, node.name
+			@st[node.name] = @builder.alloca(RLTK::CG::DoubleType, node.name)
 		end
 		
-		store right, loc
-	end
+		@builder.store(right, alloca)
 
 If a memory location with the name of the left-hand side isn't present in the symbol table a new alloca instruction is generated and the memory location is inserted into the symbol table.  This allows you to define a variable simply by assigning to it.
 

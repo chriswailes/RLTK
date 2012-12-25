@@ -12,7 +12,7 @@ In addition, RLTK includes several ready-made lexers and parsers and a Turing-co
 
 ## Why Use RLTK
 
-Here are some reasons to use RLTK to build your lexers, parsers, and abstract syntax trees:
+Here are some reasons to use RLTK to build your lexers, parsers, and abstract syntax trees, as well as generating LLVM IR and native object files:
 
 * **Lexer and Parser Definitions in Ruby** - Many tools require you to write your lexer/parser definitions in their own format, which is then processed and used to generate Ruby code.  RLTK lexers/parsers are written entirely in Ruby and use syntax you are already familiar with.
 
@@ -33,6 +33,10 @@ Here are some reasons to use RLTK to build your lexers, parsers, and abstract sy
 * **Fast Prototyping** - If you need to change your lexer/parser you don't have to re-run the lexer and parser generation tools, simply make the changes and be on your way.
 
 * **Parse Tree Graphs** - RLTK parsers can print parse trees (in the DOT language) of accepted strings.
+
+* **Comprehensive LLVM Bindings** - RLTK provides bindings to all of the C LLVM bindings as well as some functionality that isn't present in the C LLVM bindings.
+
+* **The Contractor** - LLVM's method of building instructions is a bit cumbersome, and is very imperative in style.  RLTK provides the Contractor class to make things easier.
 
 * **Documentation** - We have it!
 
@@ -117,8 +121,8 @@ When *rules* are defined they may use a third parameter to specify a list of fla
 		
 		rule(/\s/)
 		
-		rule(/b/, :default, [:a])	{ set_flag(:b); :B }
-		rule(/c/, :default, [:a, :b])	{ :C }
+		rule(/b/, :default, [:a])     { set_flag(:b); :B }
+		rule(/c/, :default, [:a, :b]) { :C }
 	end
 
 ### Instantiating Lexers
@@ -572,6 +576,53 @@ In the last two examples a new builder object is created for the block.  It is p
 	end
 
 For an example of where this is useful, see the Kazoo tutorial.
+
+### The Contractor
+
+An alternative to using the {RLTK::CG::Builder} class is to use the {RLTK::CG::Contractor} class, which is a subclass of the Builder and includes the {RLTK::Visitor} module. (Get it? It's a visiting builder!)  By subclassing the Contractor you can define blocks of code for handling various types of AST nodes and leave the selection of the correct code up to the {RLTK::CG::Contractor#visit} method.  In addition, the `:at` and `:rcb` options to the *visit* method make it much easier to manage the positioning of the Builder.
+
+Here we can see how easy it is to define a block that builds the instructions for binary operations:
+	
+	on Binary do |node|
+		left  = visit node.left
+		right = visit node.right
+	
+		case node
+		when Add then fadd(left, right, 'addtmp')
+		when Sub then fsub(left, right, 'subtmp')
+		when Mul then fmul(left, right, 'multmp')
+		when Div then fdiv(left, right, 'divtmp')
+		when LT  then ui2fp(fcmp(:ult, left, right, 'cmptmp'), RLTK::CG::DoubleType, 'booltmp')
+		end
+	end
+
+AST nodes whos translation requires the generation of control flow will require the creation of new BasicBlocks and the repositioning of the builder.  This can be easily managed:
+
+	on If do |node|
+		cond_val = visit node.cond
+		fcmp :one, cond_val, ZERO, 'ifcond'
+		
+		start_bb = current_block
+		fun      = start_bb.parent
+		
+		then_bb               = fun.blocks.append('then')
+		then_val, new_then_bb = visit node.then, at: then_bb, rcb: true
+		
+		else_bb               = fun.blocks.append('else')
+		else_val, new_else_bb = visit node.else, at: else_bb, rcb: true
+		
+		merge_bb = fun.blocks.append('merge', self)
+		phi_inst = build(merge_bb) { phi RLTK::CG::DoubleType, {new_then_bb => then_val, new_else_bb => else_val}, 'iftmp' }
+		
+		build(start_bb) { cond cond_val, then_bb, else_bb }
+		
+		build(new_then_bb) { br merge_bb }
+		build(new_else_bb) { br merge_bb }
+		
+		returning(phi_inst) { target merge_bb }
+	end
+
+More extensive examples of how to use the Contractor class can be found in the Kazoo tutorial cchapters.
 
 ### Execution Engines
 

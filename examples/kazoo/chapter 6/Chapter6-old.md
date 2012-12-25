@@ -2,8 +2,6 @@
 
 Welcome to Chapter 5 of the  tutorial.  Chapters 1-4 described the implementation of the simple Kazoo language and included support for generating LLVM IR, followed by optimizations and a JIT compiler.  Unfortunately, as presented, Kazoo is mostly useless: it has no control flow other than call and return.  This means that you can't have conditional branches in the code, significantly limiting its power.  In this episode of "Build That Compiler", we'll extend Kazoo to have an if/then/else expression plus a simple 'for' loop.
 
-The old version of Chapter 6 can be found [here](file.Chapter6-old.html).
-
 ## If/Then/Else
 
 Extending Kazoo to support if/then/else is quite straightforward.  It basically requires adding lexer support for this "new" concept to the lexer, parser, AST, and LLVM code emitter.  This example is nice, because it shows how easy it is to "grow" a language over time, incrementally extending it as new ideas are discovered.
@@ -11,7 +9,7 @@ Extending Kazoo to support if/then/else is quite straightforward.  It basically 
 Before we get going on "how" we add this extension, lets talk about "what" we want.  The basic idea is that we want to be able to write this sort of thing:
 
 	def fib(x)
-		if x < 2 then
+		if x < 3 then
 			1
 		else
 			fib(x-1)+fib(x-2);
@@ -67,20 +65,20 @@ If you disable optimizations, the code you'll (soon) get from Kazoo looks like t
 
 	then:    ; preds = %entry
 		%calltmp = call double @foo()
-		br label %merge
+		br label %ifcont
 
 	else:    ; preds = %entry
 		%calltmp1 = call double @bar()
-		br label %merge
+		br label %ifcont
 
-	merge:    ; preds = %else, %then
+	ifcont:    ; preds = %else, %then
 		%iftmp = phi double [ %calltmp, %then ], [ %calltmp1, %else ]
 		ret double %iftmp
 	}
 
 This code is fairly simple: the entry block evaluates the conditional expression ("x" in our case here) and compares the result to 0.0 with the "fcmp one" instruction ('one' is "Ordered and Not Equal").  Based on the result of this expression, the code jumps to either the "then" or "else" blocks, which contain the expressions for the true/false cases.
 
-Once the then/else blocks are finished executing, they both branch back to the 'merge' block to execute the code that happens after the if/then/else.  In this case the only thing left to do is to return to the caller of the function.  The question then becomes: how does the code know which expression to return?
+Once the then/else blocks are finished executing, they both branch back to the 'ifcont' block to execute the code that happens after the if/then/else.  In this case the only thing left to do is to return to the caller of the function.  The question then becomes: how does the code know which expression to return?
 
 The answer to this question involves an important SSA operation: the [Phi operation](http://en.wikipedia.org/wiki/Static_single_assignment_form).  If you're not familiar with SSA, the [wikipedia article](http://en.wikipedia.org/wiki/Static_single_assignment_form) is a good introduction and there are various other introductions to it available on your favorite search engine.  The short version is that "execution" of the Phi operation requires "remembering" which block control came from.  The Phi operation takes on the value corresponding to the input control block.  In this case, if control comes in from the "then" block, it gets the value of "calltmp".  If control comes from the "else" block, it gets the value of "calltmp1".
 
@@ -95,49 +93,57 @@ Okay, enough of the motivation and overview, lets generate code!
 
 ### Code Generation for If/Then/Else
 
-In order to generate code for this we will add an additional visitor case that starts as follows:
+In order to generate code for this we will add an additional branch to the `translate_expression` method:
 
-	on If do |node|
-		cond_val = fcmp :one, (visit node.cond), ZERO, 'ifcond'
+	when If
+		cond_value = translate_expression(node.cond)
+		cond_value = @builder.fcmp(:one, cond_value, ZERO, 'ifcond')
 
-This code is straightforward and similar to what we saw before.  We visit the node's conditional expression and then compare that value to zero to get a truth value as a 1-bit (bool) value.  The variable `ZERO` is defined inside the Kazoo module, and represents a constant with value 0.0.
+This code is straightforward and similar to what we saw before.  We emit the expression for the condition, then compare that value to zero to get a truth value as a 1-bit (bool) value.  The variable `ZERO` is defined inside the Kazoo module, and represents a constant with value 0.0.
 
-	start_bb = current_block
-	fun      = start_bb.parent
-	
-	then_bb               = fun.blocks.append('then')
-	then_val, new_then_bb = visit node.then, at: then_bb, rcb: true
+	start_bb = @builder.current_block
+	fun = start_bb.parent
 
-We start off by saving a pointer to the first block (which might not be the entry block), which we'll need to build a conditional branch later.  We do this by asking the contractor for the current BasicBlock.  The second line gets the current Function object that is being built.  It gets this by asking the start_bb for its "parent" (the function it is currently embedded into).  Once we have the function we creat a new block.  It is automatically appended into the function's list of blocks.
+	then_bb = fun.blocks.append('then')
+	@builder.position_at_end(then_bb)
+	then_value = translate_expression(node.then)
+	new_then_bb = @builder.current_block
 
-Next, we recrusively translate the "then" expression from the AST.  Using the `:at` argument we tell the contractor to start inserting into the "then" block.  Stricctly speaking, this call moves the insertion point to be at the end of the specified block.  However, since the "then" block is empty, it starts by inserting at the beginning of the block.
+We start off by saving a pointer to the first block (which might not be the entry block), which we'll need to build a conditional branch later.  We do this by asking the builder for the current BasicBlock.  The second line gets the current Function object that is being built.  It gets this by asking the start_bb for its "parent" (the function it is currently embedded into).  Once it has that, it creates one block.  It is automatically appended into the function's list of blocks.
 
-This call to `visit` also uses the `:rcb` option (which stands for 'return current block'), which is very important.  The basic issue is that when we create the Phi node in the merge block later, we need to set up the block/value pairs that indicate how the Phi node will work.  Importantly, the Phi node expects to have an entry for each predecessor of the block in the CFG.  Why then, are we getting the current block when we just set it to `then_bb` using the `:at` argument in the same call?  The problem is that the "then" expresison may have changed the block that the contractor is emitting into if, for example, it contains a nested "if/then/else" expression.  Because calling `visit` recursively could arbitrarily change the notion of the *current block*, we are required to get an up-to-date value for code that will set up the Phi node.
+Next, we move the builder to start inserting into the "then" block.  Strictly speaking, this call moves the insertion point to be at the end of the specified block.  However, since the "then" block is empty, it also starts out by inserting at the beginning of the block. :)
+
+Once the insertion point is set, we recursively translate the "then" expression from the AST.
+
+The final line here is quite subtle, but is very important.  The basic issue is that when we create the Phi node in the merge block, we need to set up the block/value pairs that indicate how the Phi will work.  Importantly, the Phi node expects to have an entry for each predecessor of the block in the CFG.  Why then, are we getting the current block when we just set it to ThenBB 2 lines above?  The problem is that the "Then" expression may actually itself change the block that the Builder is emitting into if, for example, it contains a nested "if/then/else" expression.  Because calling translate recursively could arbitrarily change the notion of the current block, we are required to get an up-to-date value for code that will set up the Phi node.
 
 Code generation for the 'else' block is basically identical what we did for the 'then' block:
 
-	else_bb               = fun.blocks.append('else')
-	else_val, new_else_bb = visit node.else, at: else_bb, rcb: true
+	else_bb = fun.blocks.append('else')
+	@builder.position_at_end(else_bb)
+	else_value = translate_expression(node.else)
+	new_else_bb = @builder.current_block
 
 Next, we must build our merge block:
 
-	merge_bb = fun.blocks.append('merge', self)
-	phi_inst = build(merge_bb) { phi RLTK::CG::DoubleType, {new_then_bb => then_val, new_else_bb => else_val}, 'iftmp' }
+	merge_bb = fun.blocks.append('merge')
+	@builder.position_at_end(merge_bb)
+	phi = @builder.phi(RLTK::CG::DoubleType, {new_then_bb => then_value, new_else_bb => else_value}, 'iftmp')
 
-The first line her should be familiar: it adds the "merge" block to the Function object.  The second line uses the {RLTK::CG::Builder#build build} method to position the builder and then execute the provided block.  In this case the block generates a Phi node with type {RLTK::CG::DoubleType}.  The mapping between predecessor blocks and values is provided by the hash, and the result of the Phi node will be stored in a variable named "iftmp".
-
-Once we have created the then_bb, else_bb, and merge_bb blocks we can emit the conditional branch that will chose between the first two.  Note that creating new blocks does not implicitly affect the builder, so it is still inserting into the else_bb block or wherever translating the *else* expression positioned the contractor.  This is why we needed to save the start_bb.
-
-	build(start_bb) { cond cond_val, then_bb, else_bb }
-
-To finish off the *then* and *else* blocks, we create an unconditional branch to the merge block.
-
-	build(new_then_bb) { br merge_bb }
-	build(new_else_bb) { br merge_bb }
-
-One interesting (and very important) aspect of the LLVM IR is that it [requires all basic blocks to be "terminated"](http://llvm.org/docs/LangRef.html#functionstructure) with a [control flow instruction](http://llvm.org/docs/LangRef.html#terminators) such as return or branch.  This means that all control flow, including fall throughs, must be made explicit in the LLVM IR. If you violate this rule, the verifier will emit an error.  As such, we must return the phi node as the value computed by the if/then/else expression.  In our example above, this returned value will feed into the code for the top-level function, which will create the return instruction.  Before doing that, however, we reposition the contractor at the end of the merge_bb to allow later instructions to be inserted in the correct position.
+The first two lines here are now familiar: the first adds the "merge" block to the Function object, and the second block changes the insertion point so that newly created code will go into the "merge" block.  Once that is done, we need to create the PHI node and set up the block/value pairs for the PHI.
 	
-	returning(phi_inst) { target merge_bb }
+	start_bb.build { cond(cond_value, then_bb, else_bb) }
+
+Once the blocks are created, we can emit the conditional branch that chooses between them.  Note that creating new blocks does not implicitly affect the IRBuilder, so it is still inserting into the block that the condition went into. This is why we needed to save the "start" block.
+
+	new_then_bb.build { br(merge_bb) }
+	new_else_bb.build { br(merge_bb) }
+	
+	returning(phi) { @builder.position_at_end(merge_bb) }
+
+To finish off the blocks, we create an unconditional branch to the merge block.  One interesting (and very important) aspect of the LLVM IR is that it [requires all basic blocks to be "terminated"](http://llvm.org/docs/LangRef.html#functionstructure) with a [control flow instruction](http://llvm.org/docs/LangRef.html#terminators) such as return or branch.  This means that all control flow, including fall throughs must be made explicit in the LLVM IR. If you violate this rule, the verifier will emit an error.
+
+Finally, the translate function returns the phi node as the value computed by the if/then/else expression.  In our example above, this returned value will feed into the code for the top-level function, which will create the return instruction.
 
 Overall, we now have the ability to execute conditional code in Kazoo.  With this extension, Kazoo is a fairly complete language that can calculate a wide variety of numeric functions.  Next up we'll add another useful expression that is familiar from non-functional languages...
 
@@ -147,7 +153,7 @@ Now that we know how to add basic control flow constructs to the language, we ha
 
 	extern putchard(char);
 	def printstar(n)
-		for i = 0, i < n, 1.0 in
+		for i = 1, i < n, 1.0 in
 			putchard(42);  # ascii 42 = '*'
 
 	# print 100 '*' characters
@@ -213,53 +219,57 @@ This loop contains all the same constructs we saw before: a phi node, several ex
 
 ### Code Generation for the 'for' Loop
 
-The first part of our new visitor code sets up a couple of basic blocks for us to insert into.  `ph_bb` is the current block, and will be used to set up the initial value and branch into the `loop_cond_bb`.  The `loop_cond_bb` will hold the code responsible for determining if the loop should execute an iteration.
+The first part of the new branch of `translate_expression` sets up a couple of basic blocks for us to insert into.  `ph_bb` is the current block, and will be used to set up the initial value and branch into the `loop_cond_bb`.  The `loop_cond_bb` will hold the code responsible for determining if the loop should execute an iteration.
 
-	on For do |node|
-		ph_bb        = current_block
-		fun          = ph_bb.parent
-		loop_cond_bb = fun.blocks.append('loop_cond')
+	when For
+		ph_bb			= @builder.current_block
+		fun				= ph_bb.parent
+		loop_cond_bb	= fun.blocks.append('loop_cond')
 
 Now that this is done we can generate the initial value for the loop variable and then add the unconditional branch to the `loop_cond_bb` basic block.
 
-	init_val = visit node.init
-	br loop_cond_bb
+	initial_val = translate_expression(node.init)
+	@builder.br(loop_cond_bb)
 
 The `loop_cond` basic block will need a Phi node to receive incoming values from the preheader basic block and the loop basic block, so we build the node and then add it to our symbol table.  The old value is kept so that it can be restored later.  This allows loop variables to shadow existing ones.
 
-	var = build(loop_cond_bb) { phi RLTK::CG::DoubleType, {ph_bb => init_val}, node.var }
-	
+	@builder.position_at_end(loop_cond_bb)
+	var = @builder.phi(RLTK::CG::DoubleType, {ph_bb => init_val}, node.var)
+
 	old_var = @st[node.var]
 	@st[node.var] = var
 
 The next step is to generate the code for testing the termination condition:
 
-	end_cond = fcmp :one, (visit node.cond), ZERO, 'loopcond'
+	end_cond = translate_expression(node.cond)
+	end_cond = @builder.fcmp(:one, end_cond, ZERO, 'loopcond')
 
 We'll eventually need to insert a branch into this basic block, but that can't happen until we have references to several blocks that haven't been built yet.  So, instead, we'll move on to the loop basic block where we'll add the code for the loop's body.
 
 	loop_bb0 = fun.blocks.append('loop')
-			
-	_, loop_bb1 = visit node.body, at: loop_bb0, rcb: true
+	@builder.position_at_end(loop_bb0)
 
-Notice the last line where we get a new reference to the insert block using the `:rcb` option.  This is to handle cases where the body of the loop caused new basic_blocks to be added to the function.  This reference will be needed to add an incoming branch to the `var` Phi node, which is what we do right after we calculate the value to be added to the node:
+	translate_expression(node.body)
 
-	step_val = visit node.step
-	next_var = fadd var, step_val, 'nextvar'
-	
+	loop_bb1 = @builder.current_block
+
+Notice the last line where we get a new reference to the insert block.  This is to handle cases where the body of the loop caused new basic_blocks to be added to the function.  This reference will be needed to add an incoming branch to the `var` Phi node, which is what we do right after we calculate the value to be added to the node:
+
+	step_val = translate_expression(node.step)
+	next_var = @builder.fadd(var, step_val, 'nextvar')
 	var.incoming.add({loop_bb1 => next_var})
-	
-	br loop_cond_bb
+
+	@builder.br(loop_cond_bb)
 
 After we've added the new value to the Phi node we build the unconditional branch back to the `loop_cond` basic block.
 
 The last basic block that we need to create we won't actually generate code for.  It is simply used as the exit block for the loop where subsequent expressions will be translated.  This last basic block will also allow us to add our last remaining branch instruction and then reset the builder for future translations:
 
 	after_bb = fun.blocks.append('afterloop')
-	
-	build(loop_cond_bb) { cond end_cond, loop_bb0, after_bb }
-	
-	target after_bb
+
+	loop_cond_bb.build { cond(end_cond, loop_bb0, after_bb) }
+
+	@builder.position_at_end(after_bb)
 
 The only thing remaining now is to do some cleanup.  We first need to restore the `old_var` variable to the symbol table.  The absolute last thing that needs to happen is to return zero.  This is because all expressions must return some value and zero makes as much sense as any other value.
 

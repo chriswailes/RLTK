@@ -2,8 +2,6 @@
 
 In the previous chapters we described the implementation of the lexer, parser, and AST for our simple language, Kazoo, and added support for generating LLVM IR for it.  This chapter describes two new techniques: adding optimizer support to your language, and adding JIT compiler support. These additions will demonstrate how to get nice, efficient code for the Kazoo language.
 
-The old version of Chapter 5 can be found [here](file.Chapter5-old.html).
-
 ## LLVM Optimization Passes
 
 LLVM provides many optimization passes which do many different sorts of things and have different tradeoffs.  Unlike other systems, LLVM doesn't hold to the mistaken notion that one set of optimizations is right for all languages and for all situations.  LLVM allows a compiler implementor to make complete decisions about what optimizations to use, in which order, and in what situation.
@@ -15,17 +13,16 @@ For Kazoo, we are currently generating functions on the fly, one at a time, as t
 In order to get per-function optimizations going, we will use a {RLTK::CG::FunctionPassManager FunctionPassManager} to hold and organize the LLVM optimizations that we want to run.  We can now add a set of optimizations to run.  We will be adding the manager to our JIT class's initialization method like so:
 
 	def initialize
-		super
-		
 		# IR building objects.
-		@module = RLTK::CG::Module.new('Kazoo JIT')
-		@st     = Hash.new
-	
+		@module	= RLTK::CG::Module.new('Kazoo JIT')
+		@builder	= RLTK::CG::Builder.new
+		@st		= Hash.new
+		
 		# Execution Engine
 		@engine = RLTK::CG::JITCompiler.new(@module)
-	
+		
 		# Add passes to the Function Pass Manager.
-		@module.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify)
+		@engine.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify)
 	end
 
 Each {RLTK::CG::ExecutionEngine} provides both a PassManager and FunctionPassManager object when they are requested, and handles their initialization.  Once our FunctionPassManager is set up, we use the {RLTK::CG::PassManager#add add} method to add a bunch of LLVM passes.  The `@engine` variable is related to the JIT, which we will get to in the next section.
@@ -99,7 +96,6 @@ Recall that we compile top-level expressions into a self-contained LLVM function
 
 With just these two changes, lets see how Kazoo works now (the output below is slightly elided)!
 
-	`
 	Kazoo > 4 + 5;
 
 	define double @1() {
@@ -108,7 +104,6 @@ With just these two changes, lets see how Kazoo works now (the output below is s
 	}
 
 	=> 9.0
-	`
 
 Well this looks like it is basically working.  The dump of the function shows the "no argument function that always returns double" that we synthesize for each top level expression that is typed in.  This demonstrates very basic functionality, but can we do more?
 
@@ -131,7 +126,7 @@ Well this looks like it is basically working.  The dump of the function shows th
 
 	=> 24.0
 
-This illustrates that we can now call user code, but there is something a bit subtle going on here.  Note that we only invoke the JIT on the anonymous functions that calls `testfunc`, but we never invoked it on `testfunc` itself.  What actually happened here is that the JIT scanned for all non-JIT'd functions transitively called from the anonymous function and compiled all of them before returning from {RLTK::CG::ExecutionEngine#run_function}.
+This illustrates that we can now call user code, but there is something a bit subtle going on here.  Note that we only invoke the JIT on the anonymous functions that calls `testfunc`, but we never invoked it on `testfunc` itself.  What actually happened here is that the JIT scanned for all non-JIT'd functions transitively called from the anonymous function and compiled all of them before returning from `run_function`.
 
 The JIT provides a number of other more advanced interfaces for things like freeing allocated machine code, rejit'ing functions to update them, etc. However, even with this simple code, we get some surprisingly powerful capabilities - check this out:
 
