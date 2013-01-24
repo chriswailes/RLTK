@@ -46,6 +46,6 @@ module Brainfuck
 			c('LBRACKET ops RBRACKET')	{ |_, ops, _| Loop.new(ops) }
 		end
 		
-		finalize explain: 'brainfuck.tbl'
+		finalize
 	end
 end

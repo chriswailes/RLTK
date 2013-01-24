@@ -15,9 +15,9 @@ require 'rltk/cg/contractor'
 require 'rltk/cg/execution_engine'
 
 # Project requires
-require 'bflexer'
-require 'bfparser'
-require 'bfjit'
+require './bflexer'
+require './bfparser'
+require './bfjit'
 
 ########
 # Main #
@@ -28,7 +28,17 @@ jit = Brainfuck::JIT.new
 if ARGV[0]
 	raise "No such file exists: #{ARGV[0]}" if not File.exists?(ARGV[0])
 	
-	jit.visit Brainfuck::Parser.parse(Brainfuck::Lexer.lex_file(ARGV[0]))
+	begin
+		jit.visit (Brainfuck::Parser.parse (Brainfuck::Lexer.lex_file ARGV[0]))
+
+	rescue Exception => e
+		puts e.message
+		puts e.backtrace
+		puts
+
+	rescue RLTK::LexingError, RLTK::NotInLanguage
+		puts 'Line was not in language.'
+	end
 else
 	loop do
 		print('Brainfuck: ')
@@ -42,21 +52,13 @@ else
 		line = line[0..-2]
 	
 		if line == 'quit;' or line == 'exit;'
-			jit.module.verify
-			jit.module.dump
+			jit.module.print
 		
 			break
 		end
 	
 		begin
-			tokens = Brainfuck::Lexer.lex(line)
-			pp tokens
-			
-			ast = Brainfuck::Parser.parse(tokens, verbose: true)
-			pp ast
-			
-			jit.visit ast
-			
+			jit.visit(Brainfuck::Parser.parse(Brainfuck::Lexer.lex_file(ARGV[0])))
 	
 		rescue Exception => e
 			puts e.message

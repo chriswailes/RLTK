@@ -10,10 +10,10 @@ require 'rltk/cg/contractor'
 require 'rltk/cg/execution_engine'
 
 # Project requires
-require 'bfparser'
+require './bfparser'
 
 module Brainfuck
-	DATA_SIZE = 20
+	DATA_SIZE = 1000
 	
 	RLTK::CG::LLVM.init(:x86)
 	
@@ -51,11 +51,12 @@ module Brainfuck
 		on Program do |prog|
 			fun = @module.funs.add('BF', CG::NativeIntType, [])
 			
+			entry	= fun.blocks.append('entry')
 			init_loop = fun.blocks.append('init loop')
 			init_body = fun.blocks.append('init body')
 			body		= fun.blocks.append('body')
 			
-			build fun.blocks.append('entry') do
+			build entry do
 				@offset	= alloca CG::NativeIntType
 				@data	= array_alloca CG::NativeIntType, CG::NativeInt.new(DATA_SIZE)
 				
@@ -83,8 +84,6 @@ module Brainfuck
 			build body do
 				store CG::NativeInt.new(DATA_SIZE/2), @offset
 				
-				puts 'Generating the body.'
-				
 				prog.body.each { |n| visit n }
 				
 				ret ZERO
@@ -100,16 +99,14 @@ module Brainfuck
 			@engine.run_function(fun)
 		end
 		
-		on(Brainfuck::PtrRight)	{ puts 'PtrRight';	store (add (load @offset), ONE), @offset }
-		on(Brainfuck::PtrLeft)	{ puts 'PtrLeft';	store (sub (load @offset), ONE), @offset }
-		on(Brainfuck::Increment)	{ puts 'Increment'; store (add curr_val, ONE), curr_cell }
-		on(Brainfuck::Decrement)	{ puts 'Decrement'; store (sub curr_val, ONE), curr_cell }
-		on(Brainfuck::Put)		{ puts 'Put';		call @putchar, curr_val }
-		on(Get)				{ puts 'Get';		store (call @getchar), curr_cell }
+		on(Brainfuck::PtrRight)	{ store (add (load @offset), ONE), @offset }
+		on(Brainfuck::PtrLeft)	{ store (sub (load @offset), ONE), @offset }
+		on(Brainfuck::Increment)	{ store (add curr_val, ONE), curr_cell     }
+		on(Brainfuck::Decrement)	{ store (sub curr_val, ONE), curr_cell     }
+		on(Brainfuck::Put)		{ call @putchar, curr_val                  }
+		on(Get)				{ store (call @getchar), curr_cell         }
 		
 		on Loop do |l|
-			puts 'Loop'
-			
 			fun = current_block.parent
 			
 			loop_head = fun.blocks.append('loop head')
