@@ -2,9 +2,6 @@
 # Requires #
 ############
 
-# Standard library requires
-require 'pp'
-
 # RLTK requires
 require 'rltk/parser'
 require 'rltk/ast'

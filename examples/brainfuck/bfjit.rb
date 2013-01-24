@@ -2,9 +2,6 @@
 # Requires #
 ############
 
-# Standard library requires
-require 'pp'
-
 # RLTK requires
 require 'rltk/cg/contractor'
 require 'rltk/cg/execution_engine'
