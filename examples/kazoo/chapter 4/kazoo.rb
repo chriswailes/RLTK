@@ -8,9 +8,12 @@
 # Tutorial Files
 require './klexer'
 require './kparser'
-require './kjit'
+require './kcontractor'
+#require './kjit'
 
-jit = Kazoo::JIT.new
+# Create our JIT compiler.
+jit = Kazoo::Contractor.new
+#jit = Kazoo::JIT.new
 
 loop do
 	print('Kazoo > ')

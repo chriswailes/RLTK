@@ -12,22 +12,29 @@ module RLTK # :nodoc:
 	# An implementation of the visitor pattern.
 	#
 	# @see http://en.wikipedia.org/wiki/Visitor_pattern
-	class Visitor
+	module Visitor
 		
 		#################
 		# Class Methods #
 		#################
 		
-		class << self
+		# A callback method that installs the necessary data structures and
+		# class methods in classes that include the Visitor module.
+		#
+		# @return [void]
+		def self.included(klass)
+			klass.extend(ClassMethods)
+			
+			klass.install_icvars(Array.new)
+		end
+		
+		module ClassMethods
 			# @return [Array<Action>] Actions associated with this visitor.
 			attr_reader :actions
 			
-			# A callback method that installs the necessary data structures
-			# in sbuclasses.
-			#
-			# @return [void]
+			
 			def inherited(klass)
-				klass.install_icvars(if self == RLTK::Visitor then [] else @actions.clone end)
+				klass.install_icvars(@actions.clone)
 			end
 			
 			# Installs instance class varialbes into a class.
@@ -68,6 +75,8 @@ module RLTK # :nodoc:
 			#
 			# @return [void]
 			def on(klass, opts = {}, &block)
+				raise ArgumentError, 'The klass parameter was not a Class.' if not klass.is_a?(Class)
+				
 				@actions << Action.new(klass, opts[:guard], opts[:wrapper], block)
 			end
 		end
@@ -115,8 +124,7 @@ module RLTK # :nodoc:
 				# If two matches are equally good go with the first one
 				# defined.
 				
-				better   = object.instance_of?(cur.klass) and not object.instance_of?(best.klass)
-				better ||= cur.klass.subclass_of?(best.klass)
+				better   = cur.klass.subclass_of?(best.klass)
 				better ||= best.klass == cur.klass and best.guard.nil? and not cur.guard.nil?
 		
 				if better then cur else best end
@@ -124,9 +132,14 @@ module RLTK # :nodoc:
 			
 			# Visit the object.
 			if action.wrapper
-				instance_exec_block = ->(*args) { self.instance_exec(*args, &action.block) }
+				# Create the instance exec cache if it doesn't exist.
+				@iexec_cache ||= Hash.new
 				
-				self.send(action.wrapper, object, &instance_exec_block)
+				# Create the instance exec callback if it isn't already cached.
+				@iexec_cache[action] ||= ->(*args) { self.instance_exec(*args, &action.block) }
+				
+				# Call the wrapper with the object and the instance exec wrapped block.
+				self.send(action.wrapper, object, &@iexec_cache[action])
 				
 			else
 				self.instance_exec(object, &action.block)

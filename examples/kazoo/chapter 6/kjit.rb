@@ -135,8 +135,8 @@ module Kazoo
 				cond_value = translate_expression(node.cond)
 				cond_value = @builder.fcmp(:one, cond_value, ZERO, 'ifcond')
 				
-				start_bb = @builder.current_block
-				fun = start_bb.parent
+				start_bb	= @builder.current_block
+				fun		= start_bb.parent
 				
 				then_bb = fun.blocks.append('then')
 				@builder.position_at_end(then_bb)
@@ -183,7 +183,7 @@ module Kazoo
 			
 			# Create a new basic block to insert into, translate the
 			# expression, and set its value as the return value.
-			fun.blocks.append('entry', nil, @builder, self) do |jit|
+			fun.blocks.append('entry', @builder, nil, self) do |jit|
 				ret jit.translate_expression(node.body)
 			end
 			

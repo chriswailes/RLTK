@@ -131,7 +131,7 @@ module RLTK::CG # :nodoc:
 			#
 			# @return [BasicBlock] New BasicBlock.
 			def append(name = '', builder = nil, context = nil, *block_args, &block)
-				BasicBlock.new(@fun, name, builder, context, @fun, *block_args, &block)
+				BasicBlock.new(@fun, name, builder, context, *block_args, &block)
 			end
 			
 			# An iterator for each block inside this collection.

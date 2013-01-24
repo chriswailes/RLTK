@@ -1343,7 +1343,7 @@ module RLTK # :nodoc:
 			#
 			# @param [Integer] n Number of object to pop off the stack.
 			#
-			# @return [Array<Array<Object, StreamPosition>>] Values popped from the output and positions stacks.
+			# @return [Array(Object, StreamPosition)] Values popped from the output and positions stacks.
 			def pop(n = 1)
 				@state_stack.pop(n)
 				

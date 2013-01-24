@@ -239,7 +239,7 @@ module Kazoo
 			# Create a new basic block to insert into, allocate space for
 			# the arguments, store their values, translate the expression,
 			# and set its value as the return value.
-			fun.blocks.append('entry', nil, @builder, self, @st) do |jit, st|
+			fun.blocks.append('entry', @builder, nil, self, @st) do |jit, st|
 				fun.params.each do |param|
 					st[param.name] = alloca(RLTK::CG::DoubleType, param.name)
 					store(param, st[param.name])
@@ -253,11 +253,11 @@ module Kazoo
 		end
 		
 		def translate_prototype(node)
-			if fun = @module.functions.named(node.name)
+			if fun = @module.functions[node.name]
 				if fun.blocks.size != 0
-					raise Exception, "Redefinition of function #{node.name}."
+					raise "Redefinition of function #{node.name}."
 				elsif fun.params.size != node.arg_names.length
-					raise Exception, "Redefinition of function #{node.name} with different number of arguments."
+					raise "Redefinition of function #{node.name} with different number of arguments."
 				end
 			else
 				fun = @module.functions.add(node.name, RLTK::CG::DoubleType, Array.new(node.arg_names.length, RLTK::CG::DoubleType))

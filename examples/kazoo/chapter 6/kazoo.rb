@@ -8,13 +8,15 @@
 # Tutorial Files
 require './klexer'
 require './kparser'
-require './kjit'
+require './kcontractor'
+#require './kjit'
 
 # Load the Kazoo C library.
 RLTK::CG::Support.load_library('./libkazoo.so')
 
 # Create our JIT compiler.
-jit = Kazoo::JIT.new
+jit = Kazoo::Contractor.new
+#jit = Kazoo::JIT.new
 
 loop do
 	print('Kazoo > ')
@@ -44,6 +46,7 @@ loop do
 	
 	rescue Exception => e
 		puts e.message
+		puts e.backtrace
 		puts
 	
 	rescue RLTK::LexingError, RLTK::NotInLanguage
