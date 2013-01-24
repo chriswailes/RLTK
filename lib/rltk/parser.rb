@@ -208,7 +208,7 @@ module RLTK # :nodoc:
 							when :nelp
 								case num
 								when :first	then	Proc.new { |v|                                        v }
-								when :second	then	Proc.new { |v|                            v[0] + [v[2]] }
+								when :second	then	Proc.new { |v|                           v[0] + [v[-1]] }
 								else				Proc.new { |v| if v.length == 1 then v.first else v end }
 								end
 							end,
@@ -400,7 +400,7 @@ module RLTK # :nodoc:
 			# Adds productions and actions for parsing empty lists.
 			#
 			# @see CFG#empty_list_production
-			def empty_list_production(symbol, list_elements, separator)
+			def empty_list_production(symbol, list_elements, separator = '')
 				@grammar.empty_list(symbol, list_elements, separator)
 			end
 			alias :empty_list :empty_list_production 
@@ -767,7 +767,7 @@ module RLTK # :nodoc:
 			# Adds productions and actions for parsing nonempty lists.
 			#
 			# @see CFG#nonempty_list_production
-			def nonempty_list_production(symbol, list_elements, separator)
+			def nonempty_list_production(symbol, list_elements, separator = '')
 				@grammar.nonempty_list(symbol, list_elements, separator)
 			end
 			alias :nonempty_list :nonempty_list_production 

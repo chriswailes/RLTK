@@ -7,17 +7,29 @@ parser.rb:
 	Allow the parser to parse one token at a time (thus allowing the lexer to be changed in the middle of parsing).
 	Allow the first argument to the associativity methods to be a integer to be used as the value for those tokens.  An error should be raised if associativity values are given in a non-increasing order.
 	Get token associativity information to line up in explain.
+	Finish add support for an empty separator for list production helpers.
 	
 lexer.rb:
+	Single token at a time lexer.
 	Composable lexers.
 
 ast.rb:
 	Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors.
 
 cfg.rb
+	Re-do how callbacks are set.  Should be something like @grammar.callbacks[:tag][0] or @grammar.callbacks.tag(0).  Also provide a way to set in mass like currently.
 	Add the ability to print out grammars in a textual form.
+	Add an optimization function for grammars.  One example optimization would be replacing nonterminals that only produce a single item.  Kind of like constant and reference propagation.
 
 tokens.rb:
+
+visitor.rb:
+	Add support for arrays of objects.  This should support matching (e.g. `on [:fib, Integer]` or `on [Integer, String]`.
+	Allow blocks to be passed to the `on` clauses of the Visitor class.
+	Support matching literals.
+
+cg/type.rb:
+	Make the classes representing LLVM types into modules and then in the cg/value.rb file extend each of the classes representing LLVM values with the appropriate type module.  This will require changes to the documentation and Kazoo tutorial if successful.
 
 Code generation:
 	Figure out what an AssemblyAnnotationWriter is and what it is used for.

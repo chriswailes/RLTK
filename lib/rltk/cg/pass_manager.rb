@@ -27,7 +27,7 @@ module RLTK::CG # :nodoc:
 		# A list of passes that are available to be added to the pass
 		# manager via the {PassManager#add} method.
 		PASSES = {
-			:ADCE			=> :agressive_dce,
+			:ADCE			=> :aggressive_dce,
 			:AlwaysInline		=> :always_inliner,
 			:ArgPromote		=> :argument_promotion,
 			:BasicAliasAnalysis	=> :basic_alias_analysis,

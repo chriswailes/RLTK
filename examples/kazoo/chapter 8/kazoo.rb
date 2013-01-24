@@ -46,7 +46,6 @@ loop do
 	
 	rescue Exception => e
 		puts e.message
-		puts e.backtrace
 		puts
 	
 	rescue RLTK::LexingError, RLTK::NotInLanguage

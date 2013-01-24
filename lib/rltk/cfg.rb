@@ -176,7 +176,7 @@ module RLTK # :nodoc:
 		# @param [Symbol]		separator		The list separator symbol.
 		#
 		# @return [void]
-		def empty_list_production(symbol, list_elements, separator)
+		def empty_list_production(symbol, list_elements, separator = '')
 			# Add the items for the following productions:
 			#
 			# symbol: | symbol_prime
@@ -184,11 +184,11 @@ module RLTK # :nodoc:
 			prime = symbol.to_s + '_prime'
 			
 			# 1st Production
-			production = self.production(symbol, '').first
+			production, _ = self.production(symbol, '')
 			@callback.call(production, :elp, :first)
 			
 			# 2nd Production
-			production = self.production(symbol, prime.to_s).first
+			production, _ = self.production(symbol, prime.to_s)
 			@callback.call(production, :elp, :second)
 			
 			self.nonempty_list(prime, list_elements, separator)
@@ -415,10 +415,10 @@ module RLTK # :nodoc:
 		# @param [Symbol]						separator		The list separator symbol.
 		#
 		# @return [void]
-		def nonempty_list_production(symbol, list_elements, separator)
+		def nonempty_list_production(symbol, list_elements, separator = '')
 			# Add the items for the following productions:
 			#
-			# symbol_elements: list_elements.join('|')
+			# symbol_elements: #{list_elements.join('|')}
 			#
 			# symbol: symbol_elements | symbol separator symbol_elements
 			
@@ -439,16 +439,16 @@ module RLTK # :nodoc:
 			el_symbol = (symbol.to_s + '_elements').to_sym
 			
 			# 1st Production
-			production = self.production(symbol, el_symbol.to_s).first
+			production, _ = self.production(symbol, el_symbol.to_s)
 			@callback.call(production, :nelp, :first)
 			
 			# 2nd Production
-			production = self.production(symbol, "#{symbol} #{separator} #{el_symbol}").first
+			production, _ = self.production(symbol, "#{symbol} #{separator} #{el_symbol}")
 			@callback.call(production, :nelp, :second)
 			
 			# 3rd Productions
 			list_elements.each do |el|
-				production = self.production(el_symbol, el).first
+				production, _ = self.production(el_symbol, el)
 				@callback.call(production, :nelp, :third)
 			end
 		end
