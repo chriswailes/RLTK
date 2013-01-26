@@ -15,11 +15,13 @@ lexer.rb:
 
 ast.rb:
 	Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors.
+	Add a function to print out ASTs in dot language.
 
 cfg.rb
 	Re-do how callbacks are set.  Should be something like @grammar.callbacks[:tag][0] or @grammar.callbacks.tag(0).  Also provide a way to set in mass like currently.
 	Add the ability to print out grammars in a textual form.
 	Add an optimization function for grammars.  One example optimization would be replacing nonterminals that only produce a single item.  Kind of like constant and reference propagation.
+	Allow the right-hand side of a production to be a symbol (call to_s on it).
 
 tokens.rb:
 
