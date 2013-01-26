@@ -7,14 +7,16 @@ parser.rb:
 	Allow the parser to parse one token at a time (thus allowing the lexer to be changed in the middle of parsing).
 	Allow the first argument to the associativity methods to be a integer to be used as the value for those tokens.  An error should be raised if associativity values are given in a non-increasing order.
 	Get token associativity information to line up in explain.
-	Finish add support for an empty separator for list production helpers.
+	Finish adding support for an empty separator for list production helpers.
 	
 lexer.rb:
-	Single token at a time lexer.
+	(D) Single token at a time lexer.
+	(D) Change it so lexers can be given a string or file to lex when they are instantiated.
 	Composable lexers.
 
 ast.rb:
 	Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors.
+	Add the ability to print ASTs out into dot language.
 
 cfg.rb
 	Re-do how callbacks are set.  Should be something like @grammar.callbacks[:tag][0] or @grammar.callbacks.tag(0).  Also provide a way to set in mass like currently.
@@ -53,3 +55,4 @@ Semantics:
 Misc:
 	Convert to Ruby 1.9 syntax. (PARTIAL)
 	Update the documentation to use the @overloaded tag.
+	Update to LLVM 3.2.
