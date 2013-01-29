@@ -78,13 +78,17 @@ module Brainfuck
 				br init_loop
 			end
 			
-			build body do
-				store CG::NativeInt.new(DATA_SIZE/2), @offset
-				
-				prog.body.each { |n| visit n }
-				
-				ret ZERO
-			end
+			target body
+			
+			# Start the pointer in the middle of our array.
+			store CG::NativeInt.new(DATA_SIZE/2), @offset
+			
+			# Generate instructions for each of nodes in our AST.
+			prog.body.each { |n| visit n }
+			
+			# Add a block terminator to the last block of the function,
+			# wherever that may be.
+			ret ZERO
 			
 			# Verify the function
 			fun.verify!
@@ -118,12 +122,19 @@ module Brainfuck
 				cond loop_cond, loop_next, loop_body
 			end
 			
-			build loop_body do
-				l.body.each { |n| visit n }
-				
-				br loop_head
-			end
+			target loop_body
 			
+			# Build the instructions for each of our child nodes.  This may
+			# generate new basic blocks, so when this line is done executing
+			# the contractor may be pointing at a different basic block.
+			l.body.each { |n| visit n }
+			
+			# Whatever block we are pointing to should jump back to this
+			# loop's loop head block.
+			br loop_head
+			
+			# Make the contractor point where we want to start inserting
+			# instructions later. 
 			target loop_next
 		end
 	end

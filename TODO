@@ -1,57 +1,58 @@
-parser.rb:
-	Composable parsers.
-	Auto-generate as much of the AST as possible, including AST node classes.
-	Add a simple way to lexically scope the language.
-	Add a way of setting a default lexer for a parser.
-	Allow a parser to accept strings as an input (and take a lexer as an argument).
-	Allow the parser to parse one token at a time (thus allowing the lexer to be changed in the middle of parsing).
-	Allow the first argument to the associativity methods to be a integer to be used as the value for those tokens.  An error should be raised if associativity values are given in a non-increasing order.
-	Get token associativity information to line up in explain.
-	Finish add support for an empty separator for list production helpers.
+########
+# Bugs #
+########
+
+* Finish adding support for an empty separator for list production helpers.  (parser.rb, cfg.rb)
+* Get associativity information to line up in explain. (parser.rb)
+* Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors. (ast.rb)
+* Re-do how callbacks are set.  Should be something like @grammar.callbacks[:tag][0] or @grammar.callbacks.tag(0).  Also provide a way to set in mass like currently. (cfg.rb)
+
+############
+# Features #
+############
+
+* Add a function to print out ASTs in dot language. (ast.rb)
+* Allow the right-hand side of a production to be a symbol (call to_s on it). (cfg.rb)
+* Add support for arrays of objects.  This should support matching (e.g. `on [:fib, Integer]` or `on [Integer, String]`. (visitor.rb)
+* Allow blocks to be passed to the `on` clauses of the Visitor class. (visitor.rb)
+* Support matching literals. (visitor.rb)
+* Add the ability to print out grammars in a textual form. (cfg.rb)
+* Make the classes representing LLVM types into modules and then in the cg/value.rb file extend each of the classes representing LLVM values with the appropriate type module.  This will require changes to the documentation and Kazoo tutorial if successful. (cg/types.rb)
+* Add ability to set tail call info on call instructions. (cg/value.rb)
+* Convert to Ruby 1.9 syntax. (PARTIAL)
+* Update the documentation to use the @overloaded tag.
+* Update to LLVM 3.2.
+* Add a way of setting a default lexer class for a parser. (parser.rb)
+* Allow a parser to accept strings as input and then use either a provided lexer or the default lexer to lex the string (parser.rb)
+* Allow the first argument of the associativity methods to be an integer to be used as the value for those tokens.  an error should be raised if associativity values are given in a non-increasing order. (parser.rb)
+* Figure out what an AssemblyAnnotationWriter is and what it is used for.
+
+###############
+# Crazy Ideas #
+###############
+
+* Add an optimization function for grammars.  One example optimization would be replacing nonterminals that only produce a single item.  Kind of like constant and reference propagation. (parser.rb, cfg.rb)
+* Composable parsers. (parser.rb)
+* Add functionality to automatically add lexical scoping/binding to an AST.
+* Make the parser able to parse a single token at a time, thus allowing the lexer to be changed in the middle of parsing. (parser.rb)
+* Single token at a time lexer. (lexer.rb)
+* Change it so lexers can be instantiated with a string or file to lex. (lexer.rb)
+* Composable lexers. (lexer.rb)
+
+#############
+# Semantics #
+#############
+
+* Fill in the remaining semantic tools:
+	* Actor
+	* Axiomatic
+	* Big-Step Operational
+	* Denotational
+	* Hoare Logic
+	* Join Calculus
+	* Lambda Calculus
+	* Operational
+	* Pi Calculus
+	* Small-Step Operational
+* Add the ability to translate between different semantics.
 	
-lexer.rb:
-	Single token at a time lexer.
-	Composable lexers.
-
-ast.rb:
-	Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors.
-	Add a function to print out ASTs in dot language.
-
-cfg.rb
-	Re-do how callbacks are set.  Should be something like @grammar.callbacks[:tag][0] or @grammar.callbacks.tag(0).  Also provide a way to set in mass like currently.
-	Add the ability to print out grammars in a textual form.
-	Add an optimization function for grammars.  One example optimization would be replacing nonterminals that only produce a single item.  Kind of like constant and reference propagation.
-	Allow the right-hand side of a production to be a symbol (call to_s on it).
-
-tokens.rb:
-
-visitor.rb:
-	Add support for arrays of objects.  This should support matching (e.g. `on [:fib, Integer]` or `on [Integer, String]`.
-	Allow blocks to be passed to the `on` clauses of the Visitor class.
-	Support matching literals.
-
-cg/type.rb:
-	Make the classes representing LLVM types into modules and then in the cg/value.rb file extend each of the classes representing LLVM values with the appropriate type module.  This will require changes to the documentation and Kazoo tutorial if successful.
-
-Code generation:
-	Figure out what an AssemblyAnnotationWriter is and what it is used for.
-	Add ability to set tail call info on call instructions.
-
-Semantics:
-	Fill in the remaining semantic tools:
-		* Actor
-		* Axiomatic
-		* Big-Step Operational
-		* Denotational
-		* Hoare Logic
-		* Join Calculus
-		* Lambda Calculus
-		* Operational
-		* Pi Calculus
-		* Small-Step Operational
-	
-	Add the ability to translate between different semantics.
-
-Misc:
-	Convert to Ruby 1.9 syntax. (PARTIAL)
-	Update the documentation to use the @overloaded tag.
