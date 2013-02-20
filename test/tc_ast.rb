@@ -36,6 +36,11 @@ class ASTNodeTester < Test::Unit::TestCase
 		child :right, SNode
 	end
 	
+	class VNode < RLTK::ASTNode
+		value :a, Integer
+		value :b, Integer
+	end
+	
 	def setup
 		@leaf0 = CNode.new
 		@tree0 = ANode.new(BNode.new(@leaf0), BNode.new)
@@ -77,6 +82,24 @@ class ASTNodeTester < Test::Unit::TestCase
 		node.children = (expected_children = [BNode.new, CNode.new])
 		
 		assert_equal(node.children, expected_children)
+		
+		node.children = (expected_children = {:left => CNode.new, :right => BNode.new})
+		
+		assert_equal(node.children(Hash), expected_children)
+	end
+	
+	def test_value
+		node = VNode.new
+		
+		assert_equal(node.values, [nil, nil])
+		
+		node.values = (expected_values = [42, 1984])
+		
+		assert_equal(node.values, expected_values)
+		
+		node.values = (expected_values = {:a => 1984, :b => 42})
+		
+		assert_equal(node.values(Hash), expected_values)
 	end
 	
 	def test_dump
