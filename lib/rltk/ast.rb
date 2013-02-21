@@ -320,16 +320,18 @@ module RLTK # :nodoc:
 		# * Post-order (:post)
 		# * Level-order (:level)
 		#
+		# @param [:pre, :post, :level] order The order in which to iterate over the tree.
+		#
 		# @return [void]
 		def each(order = :pre, &block)
 			case order
 			when :pre
 				yield self
 				
-				self.children.compact.each { |c| c.each(:pre, &block) }
+				self.children.flatten.compact.each { |c| c.each(:pre, &block) }
 				
 			when :post
-				self.children.compact.each { |c| c.each(:post, &block) }
+				self.children.flatten.compact.each { |c| c.each(:post, &block) }
 				
 				yield self
 				
@@ -339,7 +341,7 @@ module RLTK # :nodoc:
 				while node = level_queue.shift
 					yield node
 					
-					level_queue += node.children.compact
+					level_queue += node.children.flatten.compact
 				end
 			end
 		end

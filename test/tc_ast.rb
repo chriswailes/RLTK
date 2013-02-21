@@ -29,6 +29,14 @@ class ASTNodeTester < Test::Unit::TestCase
 
 	class DNode < RLTK::ASTNode; end
 	
+	class ENode < RLTK::ASTNode
+		value :str, String
+	end
+	
+	class FNode < ENode
+		child :c, [ENode]
+	end
+	
 	class SNode < RLTK::ASTNode
 		value :string, String
 		
@@ -64,6 +72,11 @@ class ASTNodeTester < Test::Unit::TestCase
 						)
 					)
 				)
+		
+		@tree5 = FNode.new('one',
+				[FNode.new('two',
+					[ENode.new('three')]),
+				ENode.new('four')])
 		
 		@bc_proc = Proc.new do |n|
 			case n
@@ -131,6 +144,20 @@ class ASTNodeTester < Test::Unit::TestCase
 		@tree4.each(:level) { |n| nodes << n.string }
 		
 		assert_equal(expected, nodes)
+		
+		# Test iteration with array children.
+		
+		res	= ''
+		@tree5.each(:pre) { |node| res += ' ' + node.str }
+		assert_equal(res, ' one two three four')
+		
+		res	= ''
+		@tree5.each(:post) { |node| res += ' ' + node.str }
+		assert_equal(res, ' three two four one')
+		
+		res	= ''
+		@tree5.each(:level) { |node| res += ' ' + node.str }
+		assert_equal(res, ' one two four three')
 	end
 	
 	def test_equal
