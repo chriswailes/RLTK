@@ -231,23 +231,47 @@ module RLTK # :nodoc:
 			@notes[key] = value
 		end
 		
-		# @return [Array<ASTNode>] Array of this node's children.
-		def children
-			self.class.child_names.map { |name| self.send(name) }
+		# @param [Class] as The type that should be returned by the method.  Must be either Array or hash.
+		#
+		# @return [Array<ASTNode>, Hash{Symbol => ASTNode}] Array or Hash of this node's children.
+		def children(as = Array)
+			if as == Array
+				self.class.child_names.map { |name| self.send(name) }
+			
+			elsif as == Hash
+				self.class.child_names.inject(Hash.new) { |h, name| h[name] = self.send(name); h }
+			
+			else
+				raise 'Children can only be returned as an Array or a Hash.'
+			end
 		end
 		
-		# Assigns an array of AST nodes as the children of this node.
+		# Assigns an array or hash of AST nodes as the children of this node.
+		# If a hash is provided as an argument the key is used as the name of
+		# the child a object should be assigned to.
 		#
-		# @param [Array<ASTNode>] children Children to be assigned to this node.
+		# @param [Array<ASTNode>, Hash{Symbol => ASTNode}] children Children to be assigned to this node.
 		#
 		# @return [void]
 		def children=(children)
-			if children.length != self.class.child_names.length
-				raise 'Wrong number of children specified.'
-			end
+			case children
+			when Array
+				if children.length != self.class.child_names.length
+					raise 'Wrong number of children specified.'
+				end
 			
-			self.class.child_names.each_with_index do |name, i|
-				self.send((name.to_s + '=').to_sym, children[i])
+				self.class.child_names.each_with_index do |name, i|
+					self.send((name.to_s + '=').to_sym, children[i])
+				end
+				
+			when Hash
+				children.each do |name, val|
+					if self.class.child_names.include?(name)
+						self.send((name.to_s + '=').to_sym, val)
+					else
+						raise "ASTNode subclass #{self.class.name} does not have a child named #{name}."
+					end
+				end
 			end
 		end
 		
@@ -296,16 +320,18 @@ module RLTK # :nodoc:
 		# * Post-order (:post)
 		# * Level-order (:level)
 		#
+		# @param [:pre, :post, :level] order The order in which to iterate over the tree.
+		#
 		# @return [void]
 		def each(order = :pre, &block)
 			case order
 			when :pre
 				yield self
 				
-				self.children.compact.each { |c| c.each(:pre, &block) }
+				self.children.flatten.compact.each { |c| c.each(:pre, &block) }
 				
 			when :post
-				self.children.compact.each { |c| c.each(:post, &block) }
+				self.children.flatten.compact.each { |c| c.each(:post, &block) }
 				
 				yield self
 				
@@ -315,7 +341,7 @@ module RLTK # :nodoc:
 				while node = level_queue.shift
 					yield node
 					
-					level_queue += node.children.compact
+					level_queue += node.children.flatten.compact
 				end
 			end
 		end
@@ -390,21 +416,45 @@ module RLTK # :nodoc:
 			if @parent then @parent.root else self end
 		end
 		
-		# @return [Array<Object>] Array of this node's values.
-		def values
-			self.class.value_names.map { |name| self.send(name) }
+		# @param [Class] as The type that should be returned by the method.  Must be either Array or hash.
+		#
+		# @return [Array<Object>, Hash{Symbol => Object}] Array or Hash of this node's values.
+		def values(as = Array)
+			if as == Array
+				self.class.value_names.map { |name| self.send(name) }
+			
+			elsif as == Hash
+				self.class.value_names.inject(Hash.new) { |h, name| h[name] = self.send(name); h }
+			
+			else
+				raise 'Values can only be returned as an Array or a Hash.'
+			end
 		end
 		
-		# Assigns an array of objects as the values of this node.
+		# Assigns an array or hash of objects as the values of this node.  If
+		# a hash is provided as an argument the key is used as the name of
+		# the value an object should be assigned to.
 		#
-		# @param [Array<Object>] values The values to be assigned to this node.
+		# @param [Array<Object>, Hash{Symbol => Object}] values The values to be assigned to this node.
 		def values=(values)
-			if values.length != self.class.value_names.length
-				raise 'Wrong number of values specified.'
-			end
+			case values
+			when Array
+				if values.length != self.class.value_names.length
+					raise 'Wrong number of values specified.'
+				end
 			
-			self.class.value_names.each_with_index do |name, i|
-				self.send((name.to_s + '=').to_sym, values[i])
+				self.class.value_names.each_with_index do |name, i|
+					self.send((name.to_s + '=').to_sym, values[i])
+				end
+				
+			when Hash
+				values.each do |name, val|
+					if self.class.value_names.include?(name)
+						self.send((name.to_s + '=').to_sym, val)
+					else
+						raise "ASTNode subclass #{self.class.name} does not have a value named #{name}."
+					end
+				end
 			end
 		end
 	end
