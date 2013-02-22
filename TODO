@@ -11,6 +11,7 @@
 # Features #
 ############
 
+* Change it so production actions can be passed arrays or individual arguments individually.  This will allow the necessity for only a single set of CFG callbacks. (parser.rb)
 * Add a function to print out ASTs in dot language. (ast.rb)
 * Allow the right-hand side of a production to be a symbol (call to_s on it). (cfg.rb)
 * Add support for arrays of objects.  This should support matching (e.g. `on [:fib, Integer]` or `on [Integer, String]`. (visitor.rb)

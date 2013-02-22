@@ -37,6 +37,14 @@ module RLTK # :nodoc:
 		# @return [Symbol] The current left-hand side symbol.
 		attr_accessor :curr_lhs
 		
+		# This multi-level hash contains Proc objects that are called when
+		# EBNF symbols are expanded.
+		#
+		# TODO: Describe the structure of the hash.
+		#
+		# @return [Hash] The hash object that stores the callback Proc objects.
+		attr_accessor :callbacks
+		
 		#################
 		# Class Methods #
 		#################
@@ -65,14 +73,14 @@ module RLTK # :nodoc:
 		# Instance Methods #
 		####################
 		
-		# Instantiates a new CFG object that uses *callback* to inform the
+		# Instantiates a new CFG object that uses *callbacks* to inform the
 		# programmer of the generation of new productions due to EBNF
 		# operators.
 		#
-		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded.
-		def initialize(&callback)
+		# @param [Hash] callbacks A hash of proc objects to be called when EBNF operators are expanded.
+		def initialize(callbacks)
 			@curr_lhs			= nil
-			@callback			= callback || Proc.new {}
+			@callbacks		= callbacks
 			@lexer			= Lexers::EBNF.new
 			@production_counter	= -1
 			@start_symbol		= nil
@@ -98,15 +106,6 @@ module RLTK # :nodoc:
 			@productions_sym[production.lhs] << (@productions_id[production.id] = production)
 			
 			production
-		end
-		
-		# Sets the EBNF callback to *callback*.
-		#
-		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded and list productions are added.
-		#
-		# @return [void]
-		def callback(&callback)
-			@callback = callback || Proc.new {}
 		end
 		
 		# This function MUST be called inside a CFG.production block.  It will
@@ -185,16 +184,18 @@ module RLTK # :nodoc:
 			
 			# 1st Production
 			production, _ = self.production(symbol, '')
-			@callback.call(production, :elp, :first)
+			@callbacks[:elp][:first].call(production)
 			
 			# 2nd Production
 			production, _ = self.production(symbol, prime.to_s)
-			@callback.call(production, :elp, :second)
+			@callbacks[:elp][:first].call(production)
 			
 			self.nonempty_list(prime, list_elements, separator)
 		end
 		alias :empty_list :empty_list_production
 		
+		# @see {CFG#first_set_prime}
+		#
 		# @param [Symbol, Array<Symbol>] sentence Sentence to find the *first set* for.
 		#
 		# @return [Array<Symbol>] The *first set* for the given sentence.
@@ -229,7 +230,6 @@ module RLTK # :nodoc:
 			if self.symbols.include?(sym0)
 				# Memoize the result for later.
 				@firsts[sym0] ||=
-				
 				if CFG::is_terminal?(sym0)
 					# If the symbol is a terminal, it is the only symbol in
 					# its follow set.
@@ -238,7 +238,7 @@ module RLTK # :nodoc:
 					set0 = []
 					
 					@productions_sym[sym0].each do |production|
-						if production.rhs == []
+						if production.rhs.empty?
 							# If this is an empty production we should
 							# add the empty string to the First set.
 							set0 << :'ɛ'
@@ -332,11 +332,11 @@ module RLTK # :nodoc:
 				
 				# 1st production
 				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(production, :+, :first)
+				@callbacks[:+][:first].call(production)
 				
 				# 2nd production
 				production = self.add_production(Production.new(self.next_id, new_symbol, [new_symbol, symbol]))
-				@callback.call(production, :+, :second)
+				@callbacks[:+][:second].call(production)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -360,11 +360,11 @@ module RLTK # :nodoc:
 				
 				# 1st (empty) production.
 				production = self.add_production(Production.new(self.next_id, new_symbol, []))
-				@callback.call(production, :'?', :first)
+				@callbacks[:?][:first].call(production)
 				
 				# 2nd production
 				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(production, :'?', :second)
+				@callbacks[:?][:second].call(production)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -388,11 +388,11 @@ module RLTK # :nodoc:
 				
 				# 1st (empty) production
 				production = self.add_production(Production.new(self.next_id, new_symbol, []))
-				@callback.call(production, :*, :first)
+				@callbacks[:*][:first].call(production)
 				
 				# 2nd production
 				production = self.add_production(Production.new(self.next_id, new_symbol, [new_symbol, symbol]))
-				@callback.call(production, :*, :second)
+				@callbacks[:*][:second].call(production)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -440,16 +440,16 @@ module RLTK # :nodoc:
 			
 			# 1st Production
 			production, _ = self.production(symbol, el_symbol.to_s)
-			@callback.call(production, :nelp, :first)
+			@callbacks[:nelp][:first].call(production)
 			
 			# 2nd Production
 			production, _ = self.production(symbol, "#{symbol} #{separator} #{el_symbol}")
-			@callback.call(production, :nelp, :second)
+			@callbacks[:nelp][:second].call(production)
 			
 			# 3rd Productions
 			list_elements.each do |el|
 				production, _ = self.production(el_symbol, el)
-				@callback.call(production, :nelp, :third)
+				@callbacks[:nelp][:thrid].call(production)
 			end
 		end
 		alias :nonempty_list :nonempty_list_production
