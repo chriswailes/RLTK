@@ -40,6 +40,7 @@ Gem::Specification.new do |s|
 	s.add_development_dependency('minitest')
 	s.add_development_dependency('pry')
 	s.add_development_dependency('rake')
+	s.add_development_dependency('rake-notes')
 	s.add_development_dependency('rubygems-tasks')
 	s.add_development_dependency('simplecov')
 	s.add_development_dependency('yard', '>= 0.8.1')

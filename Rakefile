@@ -8,6 +8,7 @@
 ##############
 
 # Gems
+require 'rake/notes/rake_task'
 require 'rake/testtask'
 require 'bundler'
 
