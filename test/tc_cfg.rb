@@ -36,7 +36,7 @@ class CFGTester < Test::Unit::TestCase
 		grammar = RLTK::CFG.new
 		
 		first = true
-		grammar.callback do |p, type, num|
+		grammar.callback do |type, num, p|
 			assert_not_nil(p)
 			assert_equal(type, :'?')
 			
@@ -51,7 +51,7 @@ class CFGTester < Test::Unit::TestCase
 		grammar.production(:a, 'A?') { |a| a }
 		
 		first = true
-		grammar.callback do |p, type, num|
+		grammar.callback do |type, num, p|
 			assert_not_nil(p)
 			assert_equal(type, :*)
 			
@@ -66,7 +66,7 @@ class CFGTester < Test::Unit::TestCase
 		grammar.production(:a, 'A*') { |a| a }
 		
 		first = true
-		grammar.callback do |p, type, num|
+		grammar.callback do |type, num, p|
 			assert_not_nil(p)
 			assert_equal(type, :+)
 			

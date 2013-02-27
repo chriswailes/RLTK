@@ -95,42 +95,43 @@ module RLTK # :nodoc:
 				@production_precs	= Array.new
 				@token_precs		= Hash.new
 				
-				# Set the default argument handling policy.
-				@args = :splat
+				# Set the default argument handling policy.  Valid values
+				# are :array and :splat.
+				@default_arg_type = :splat
 				
-				@grammar.callback do |p, type, num|
+				@grammar.callback do |type, num, p|
 					@procs[p.id] =
 					[
 						case type
 						when :*
 							case num
-							when :first then	Proc.new { ||           [] }
-							else				Proc.new { |os, o| os << o }
+							when :first then	ClauseProc.new { ||            [] }
+							else				ClauseProc.new { |os, o|  os << o }
 							end
 							
 						when :+
 							case num
-							when :first then	Proc.new { |o|         [o] }
-							else				Proc.new { |os, o| os << o }
+							when :first then	ClauseProc.new { |o|         [o] }
+							else				ClauseProc.new { |os, o| os << o }
 							end
 							
 						when :'?'
 							case num
-							when :first then	Proc.new { ||  nil }
-							else				Proc.new { |o|   o }
+							when :first then	ClauseProc.new { ||  nil }
+							else				ClauseProc.new { |o|   o }
 							end
 							
 						when :elp
 							case num
-							when :first then	Proc.new { ||         [] }
-							else				Proc.new { |prime| prime }
+							when :first then	ClauseProc.new { ||         [] }
+							else				ClauseProc.new { |prime| prime }
 							end
 							
 						when :nelp
 							case num
-							when :first	then	Proc.new { |el|                                         [el] }
-							when :second	then	Proc.new { |els, _, el|                           els + [el] }
-							else				Proc.new { |*el| if el.length == 1 then el.first else el end }
+							when :first	then	ClauseProc.new { |el|                                         [el] }
+							when :second	then	ClauseProc.new { |*syms|                  syms.first + [syms.last] }
+							else				ClauseProc.new { |*el| if el.length == 1 then el.first else el end }
 							end
 						end,
 						p.rhs.length
@@ -165,58 +166,6 @@ module RLTK # :nodoc:
 					@states << state
 					
 					@states.length - 1
-				end
-			end
-			
-			# Calling this method will cause the parser to pass right-hand
-			# side values as arrays instead of splats.  This method must be
-			# called before ANY calls to Parser.production.
-			#
-			# @return [void]
-			def array_args
-				if @grammar.productions.length == 0
-					@args = :array
-					
-					@grammar.callback do |p, type, num|
-						@procs[p.id] =
-						[
-							case type
-							when :*
-								case num
-								when :first then	Proc.new { |v|           [] }
-								else				Proc.new { |v| v[0] << v[1] }
-								end
-							
-							when :+
-								case num
-								when :first then	Proc.new { |v|       [v[0]] }
-								else				Proc.new { |v| v[0] << v[1] }
-								end
-							
-							when :'?'
-								case num
-								when :first then	Proc.new { |v|  nil }
-								else				Proc.new { |v| v[0] }
-								end
-							
-							when :elp
-								case num
-								when :first then	Proc.new { |v|   [] }
-								else				Proc.new { |v| v[0] }
-								end
-							
-							when :nelp
-								case num
-								when :first	then	Proc.new { |v|                                        v }
-								when :second	then	Proc.new { |v|                           v[0] + [v[-1]] }
-								else				Proc.new { |v| if v.length == 1 then v.first else v end }
-								end
-							end,
-							p.rhs.length
-						]
-						
-						@production_precs[p.id] = p.last_terminal
-					end
 				end
 			end
 			
@@ -345,12 +294,13 @@ module RLTK # :nodoc:
 			# production can be changed by setting the *precedence* argument
 			# to some terminal symbol.
 			#
-			# @param [String]	expression	Right-hand side of a production.
-			# @param [Symbol]	precedence	Symbol representing the precedence of this production.
-			# @param [Proc]	action		Action to be taken when the production is reduced.
+			# @param [String]			expression	Right-hand side of a production.
+			# @param [Symbol]			precedence	Symbol representing the precedence of this production.
+			# @param [:array, :splat]	arg_type		Method to use when passing arguments to the action.
+			# @param [Proc]			action		Action to be taken when the production is reduced.
 			#
 			# @return [void]
-			def clause(expression, precedence = nil, &action)
+			def clause(expression, precedence = nil, arg_type = @default_arg_type, &action)
 				# Use the curr_prec only if it isn't overridden for this
 				# clause.
 				precedence ||= @curr_prec
@@ -359,13 +309,13 @@ module RLTK # :nodoc:
 				
 				# Check to make sure the action's arity matches the number
 				# of symbols on the right-hand side.
-				if @args == :splat and action.arity != production.rhs.length
+				if arg_type == :splat and action.arity != production.rhs.length
 					raise ParserConstructionException, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
 						'terminals and non-terminals in the clause.'
 				end
 				
 				# Add the action to our proc list.
-				@procs[production.id] = [action, production.rhs.length]
+				@procs[production.id] = [ClauseProc.new(arg_type, &action), production.rhs.length]
 				
 				# If no precedence is specified use the precedence of the
 				# last terminal in the production.
@@ -396,6 +346,19 @@ module RLTK # :nodoc:
 				# Drop the items from each of the states.
 				@states.each { |state| state.clean }
 			end
+			
+			# Set the default argument type for the actions associated with
+			# clauses.  All actions defined after this call will be passed
+			# arguments in the way specified here, unless overridden in the
+			# call to {Parser#clause}.
+			#
+			# @param [:array, :splat] type The default argument type.
+			#
+			# @return [void]
+			def default_arg_type(type)
+				@default_arg_type = type if type == :array or type == :splat
+			end
+			alias :dat :default_arg_type
 			
 			# Adds productions and actions for parsing empty lists.
 			#
@@ -934,7 +897,7 @@ module RLTK # :nodoc:
 								opts[:env].set_positions(positions)
 								
 								result =
-								if @args == :array
+								if production_proc.arg_type == :array
 									opts[:env].instance_exec(args, &production_proc)
 								else
 									opts[:env].instance_exec(*args, &production_proc)
@@ -1528,6 +1491,18 @@ module RLTK # :nodoc:
 			# @return [Array<Action>] Actions that should be taken.
 			def on?(symbol)
 				@actions[symbol].clone
+			end
+		end
+		
+		# A subclass of Proc that indicates how it should be passed arguments
+		# by the parser.
+		class ClauseProc < Proc
+			# @return [:array, :splat] Method that should be used to pass arguments to this proc.
+			attr_reader :arg_type
+			
+			def initialize(arg_type = :splat)
+				super()
+				@arg_type = arg_type
 			end
 		end
 		

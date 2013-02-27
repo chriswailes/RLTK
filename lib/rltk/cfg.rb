@@ -106,7 +106,9 @@ module RLTK # :nodoc:
 		#
 		# @return [void]
 		def callback(&callback)
-			@callback = callback || Proc.new {}
+			@callback = callback if callback
+			
+			nil
 		end
 		
 		# This function MUST be called inside a CFG.production block.  It will
@@ -144,7 +146,7 @@ module RLTK # :nodoc:
 						
 						rhs <<
 						case ttype1
-						when :'?'	then self.get_question(tvalue0)						
+						when :'?'	then self.get_question(tvalue0)
 						when :*	then self.get_star(tvalue0)
 						when :+	then self.get_plus(tvalue0)
 						else			tvalue0
@@ -185,16 +187,20 @@ module RLTK # :nodoc:
 			
 			# 1st Production
 			production, _ = self.production(symbol, '')
-			@callback.call(production, :elp, :first)
+			@callback.call(:elp, :first, production)
 			
 			# 2nd Production
 			production, _ = self.production(symbol, prime.to_s)
-			@callback.call(production, :elp, :second)
+			@callback.call(:elp, :second, production)
 			
 			self.nonempty_list(prime, list_elements, separator)
 		end
 		alias :empty_list :empty_list_production
 		
+		# This function calculates the *first* set of a series of tokens.  It
+		# uses the {CFG#first_set} helper function to find the first set of
+		# individual symbols.
+		#
 		# @param [Symbol, Array<Symbol>] sentence Sentence to find the *first set* for.
 		#
 		# @return [Array<Symbol>] The *first set* for the given sentence.
@@ -217,9 +223,7 @@ module RLTK # :nodoc:
 		end
 		
 		# This function is responsible for calculating the *first* set of
-		# individual symbols.  {CFG#first_set} is a wrapper around this
-		# function to provide support for calculating the *first* set for
-		# sentences.
+		# individual symbols.
 		#
 		# @param [Symbol]		sym0			The symbol to find the *first set* of.
 		# @param [Array<Symbol>]	seen_lh_sides	Previously seen LHS symbols.
@@ -331,11 +335,11 @@ module RLTK # :nodoc:
 				
 				# 1st production
 				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(production, :+, :first)
+				@callback.call(:+, :first, production)
 				
 				# 2nd production
 				production = self.add_production(Production.new(self.next_id, new_symbol, [new_symbol, symbol]))
-				@callback.call(production, :+, :second)
+				@callback.call(:+, :second, production)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -359,11 +363,11 @@ module RLTK # :nodoc:
 				
 				# 1st (empty) production.
 				production = self.add_production(Production.new(self.next_id, new_symbol, []))
-				@callback.call(production, :'?', :first)
+				@callback.call(:'?', :first, production)
 				
 				# 2nd production
 				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(production, :'?', :second)
+				@callback.call(:'?', :second, production)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -387,11 +391,11 @@ module RLTK # :nodoc:
 				
 				# 1st (empty) production
 				production = self.add_production(Production.new(self.next_id, new_symbol, []))
-				@callback.call(production, :*, :first)
+				@callback.call(:*, :first, production)
 				
 				# 2nd production
 				production = self.add_production(Production.new(self.next_id, new_symbol, [new_symbol, symbol]))
-				@callback.call(production, :*, :second)
+				@callback.call(:*, :second, production)
 				
 				# Add the new symbol to the list of nonterminals.
 				@nonterms[new_symbol] = true
@@ -417,9 +421,9 @@ module RLTK # :nodoc:
 		def nonempty_list_production(symbol, list_elements, separator = '')
 			# Add the items for the following productions:
 			#
-			# symbol_elements: #{list_elements.join('|')}
-			#
 			# symbol: symbol_elements | symbol separator symbol_elements
+			#
+			# symbol_elements: #{list_elements.join('|')}
 			
 			if list_elements.is_a?(String) or list_elements.is_a?(Symbol)
 				list_elements = [list_elements.to_s]
@@ -435,20 +439,20 @@ module RLTK # :nodoc:
 				raise ArgumentError, 'Parameter list_elements must be a String, Symbol, or array of Strings and Symbols.'
 			end
 			
-			el_symbol = (symbol.to_s + '_elements').to_sym
+			symbol_elements = symbol.to_s + '_elements'
 			
 			# 1st Production
-			production, _ = self.production(symbol, el_symbol.to_s)
-			@callback.call(production, :nelp, :first)
+			production, _ = self.production(symbol, symbol_elements)
+			@callback.call(:nelp, :first, production)
 			
 			# 2nd Production
-			production, _ = self.production(symbol, "#{symbol} #{separator} #{el_symbol}")
-			@callback.call(production, :nelp, :second)
+			production, _ = self.production(symbol, "#{symbol} #{separator} #{symbol_elements}")
+			@callback.call(:nelp, :second, production)
 			
 			# 3rd Productions
 			list_elements.each do |el|
-				production, _ = self.production(el_symbol, el)
-				@callback.call(production, :nelp, :third)
+				production, _ = self.production(symbol_elements, el)
+				@callback.call(:nelp, :third, production)
 			end
 		end
 		alias :nonempty_list :nonempty_list_production

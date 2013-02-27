@@ -2,16 +2,16 @@
 # Bugs #
 ########
 
-* Finish adding support for an empty separator for list production helpers.  (parser.rb, cfg.rb)
+* Update the documentation for the empty and nonempty list helpers. (parser.rb, cfg.rb, README.md)
+* Update the documentation for the argument handling for clause actions. (parser.rb)
+* Check to make sure AST.map and AST.map! weren't broken by the changes to AST.each. (ast.rb)
 * Get associativity information to line up in explain. (parser.rb)
 * Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors. (ast.rb)
-* Re-do how callbacks are set.  Should be something like @grammar.callbacks[:tag][0] or @grammar.callbacks.tag(0).  Also provide a way to set in mass like currently. (cfg.rb)
 
 ############
 # Features #
 ############
 
-* Change it so production actions can be passed arrays or individual arguments individually.  This will allow the necessity for only a single set of CFG callbacks. (parser.rb)
 * Add a function to print out ASTs in dot language. (ast.rb)
 * Allow the right-hand side of a production to be a symbol (call to_s on it). (cfg.rb)
 * Add support for arrays of objects.  This should support matching (e.g. `on [:fib, Integer]` or `on [Integer, String]`. (visitor.rb)
@@ -38,7 +38,7 @@
 # Crazy Ideas #
 ###############
 
-* Add an optimization function for grammars.  One example optimization would be replacing nonterminals that only produce a single item.  Kind of like constant and reference propagation. (parser.rb, cfg.rb)
+* Add an optimization function for grammars.  One example optimization would be replacing nonterminals that only produce a single item.  Kind of like constant and reference propagation.  Another optimization would be looking for different productions that have different left-hand side symbols but the same right-hand side. (parser.rb, cfg.rb)
 * Composable parsers. (parser.rb)
 * Add functionality to automatically add lexical scoping/binding to an AST.
 * Make the parser able to parse a single token at a time, thus allowing the lexer to be changed in the middle of parsing. (parser.rb)

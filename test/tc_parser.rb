@@ -75,7 +75,7 @@ class ParserTester < Test::Unit::TestCase
 	end
 	
 	class ArrayCalc < RLTK::Parser
-		array_args
+		dat :array
 		
 		production(:e) do
 			clause('NUM') { |v| v[0] }
@@ -96,7 +96,7 @@ class ParserTester < Test::Unit::TestCase
 	end
 	
 	class EmptyListParser1 < RLTK::Parser
-		array_args
+		dat :array
 		
 		empty_list('list', ['A', 'B', 'C D'], :COMMA)
 		
@@ -123,6 +123,18 @@ class ParserTester < Test::Unit::TestCase
 	
 	class NonEmptyListParser3 < RLTK::Parser
 		nonempty_list('list', 'A+', :COMMA)
+		
+		finalize
+	end
+	
+	class NonEmptyListParser4 < RLTK::Parser
+		nonempty_list('list', :A)
+		
+		finalize
+	end
+	
+	class NonEmptyListParser5 < RLTK::Parser
+		nonempty_list('list', :A, 'B C?')
 		
 		finalize
 	end
@@ -381,6 +393,7 @@ class ParserTester < Test::Unit::TestCase
 		assert_equal(expected, actual)
 		
 		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a b')) }
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a, ')) }
 		
 		#######################
 		# NonEmptyListParser2 #
@@ -416,6 +429,24 @@ class ParserTester < Test::Unit::TestCase
 		expected	= [['a'], ['a', 'a'], ['a', 'a', 'a']]
 		actual	= NonEmptyListParser3.parse(AlphaLexer.lex('a, aa, aaa'))
 		assert_equal(expected, actual)
+		
+		#######################
+		# NonEmptyListParser4 #
+		#######################
+		
+		expected	= ['a', 'a', 'a']
+		actual	= NonEmptyListParser4.parse(AlphaLexer.lex('a a a'))
+		assert_equal(expected, actual)
+		
+		#######################
+		# NonEmptyListParser5 #
+		#######################
+		
+		expected	= ['a', 'a', 'a']
+		actual	= NonEmptyListParser5.parse(AlphaLexer.lex('a b a b c a'))
+		assert_equal(expected, actual)
+		
+		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser5.parse(AlphaLexer.lex('a b b a')) }
 	end
 	
 	def test_postfix_calc
