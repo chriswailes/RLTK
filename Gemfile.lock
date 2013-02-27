@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rltk (2.0.0)
+    rltk (2.2.1)
       ffi (>= 1.0.0)
 
 GEM
@@ -19,6 +19,8 @@ GEM
       method_source (~> 0.7.1)
       slop (>= 2.4.4, < 3)
     rake (0.9.2.2)
+    rake-notes (0.0.1)
+      rake
     rubygems-tasks (0.2.3)
     simplecov (0.6.4)
       multi_json (~> 1.0)
@@ -36,6 +38,7 @@ DEPENDENCIES
   minitest
   pry
   rake
+  rake-notes
   rltk!
   rubygems-tasks
   simplecov

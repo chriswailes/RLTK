@@ -2,9 +2,7 @@
 # Bugs #
 ########
 
-* Update the documentation for the empty and nonempty list helpers. (parser.rb, cfg.rb, README.md)
-* Update the documentation for the argument handling for clause actions. (parser.rb)
-* Check to make sure AST.map and AST.map! weren't broken by the changes to AST.each. (ast.rb)
+* Fix AST.map and AST.map!.  They don't currently copy values correctly (problem with where new nodes are created), and do not handle array children correctly. (ast.rb)
 * Get associativity information to line up in explain. (parser.rb)
 * Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors. (ast.rb)
 

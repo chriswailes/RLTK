@@ -176,7 +176,7 @@ The default starting symbol of the grammar is the left-hand side of the first pr
 
 ### Shortcuts
 
-RLTK provides several shortcuts for common grammar constructs.  Right now these shortcuts include the {RLTK::Parser.empty_list} and {RLTK::Parser.nonempty_list} methods.  An empty list is a list that may contain 0, 1, or more elements, with a given token seperating each element.  A non-empty list contains **at least** 1 element.
+RLTK provides several shortcuts for common grammar constructs.  Right now these shortcuts include the {RLTK::Parser.empty_list} and {RLTK::Parser.nonempty_list} methods.  An empty list is a list that may contain 0, 1, or more elements, with an optional token or tokens seperating each element.  A non-empty list contains **at least** 1 element.  An empty list with only a single list element and an empty separator is equivelent to the Kleene star.  Simillarly, a nonempty list with only a single list element and an empty separator is equivelent to the Kleene plus.
 
 This example shows how these shortcuts may be used to define a list of integers separated by a `:COMMA` token:
 
@@ -190,6 +190,22 @@ If you wanted to define a list of floats or integers you could define your parse
 
 	class ListParser < RLTK::Parser
 		nonempty_list(:mixed_list, [:INT, :FLOAT], :COMMA)
+		
+		finalize
+	end
+
+If you don't want to require a separator you can do this:
+
+	class ListParser < RLTK::Parser
+		nonempty_list(:mixed_nonsep_list, [:INT, :FLOAT])
+		
+		finalize
+	end
+
+You can also use separators that are made up of multiple tokens:
+
+	class ListParser < RLTK::Parser
+		nonempty_list(:mixed_nonsep_list, [:INT, :FLOAT], 'COMMA NEWLINE?')
 		
 		finalize
 	end
@@ -245,9 +261,11 @@ Let's look at the infix calculator example now:
 
 Here we use associativity information to properly deal with the different precedence of the addition, subtraction, multiplication, and division operators.  The PLS and SUB terminals are given left associativity with precedence of 1 (by default all terminals and productions have precedence of zero, which is to say no precedence), and the MUL and DIV terminals are given right associativity with precedence of 1.
 
-### Array Arguments
+### Argument Passing for Actions
 
-By default the proc objects associated with productions are passed one argument for each symbol on the right-hand side of the production.  This can lead to long, unwieldy argument lists.  To have your parser pass in an array of the values of the right-hand side symbols as the only argument to procs you may use the {RLTK::Parser.array_args} method.  It must be invoked before any productions are declared, and affects all proc objects passed to `production` and `clause` methods.
+By default the proc objects associated with productions are passed one argument for each symbol on the right-hand side of the production.  This can lead to long, unwieldy argument lists.  To change this behaviour you can use the {RLTK::Parser.default_arg_type} method, which accepts the `:splat` (default) and `:array` arguments.  Any production actions that are defined after a call to {RLTK::Parser.default_arg_type} will use the argument passing method currently set as the default.  You can switch between the different argument passing methods by calling {RLTK::Parser.default_arg_type repeatedly.
+
+Individual productions may specify the argument type used by their action via the `arg_type` parameter.  If the {RLTK::Parser.production} method is passed an argument type and a block, any clauses defined inside the block will use the argument type specified by the `arg_type` parameter.
 
 ### The Parsing Environment
 

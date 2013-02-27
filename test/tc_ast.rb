@@ -78,6 +78,16 @@ class ASTNodeTester < Test::Unit::TestCase
 					[ENode.new('three')]),
 				ENode.new('four')])
 		
+		@tree6 = FNode.new('one',
+				[FNode.new('two',
+					[ENode.new('three')]),
+				ENode.new('four')])
+		
+		@tree7 = FNode.new('one!',
+				[FNode.new('two!',
+					[ENode.new('three!')]),
+				ENode.new('four!')])
+		
 		@bc_proc = Proc.new do |n|
 			case n
 			when BNode then	CNode.new(n.left, n.right)
@@ -175,6 +185,13 @@ class ASTNodeTester < Test::Unit::TestCase
 		
 		assert_equal(@tree0, @tree1)
 		assert_equal(@tree3, mapped_tree)
+		
+		mapped_tree = @tree5.map do |c|
+			c.str += '!'
+		end
+		
+		assert_equal(@tree6, @tree5)
+		assert_equal(@tree7, mapped_tree)
 	end
 	
 	def test_map!

@@ -171,11 +171,13 @@ module RLTK # :nodoc:
 		
 		# This method adds the necessary productions for empty lists to the
 		# grammar.  These productions are named `symbol`, `symbol + '_prime'`
-		# and `symbol + '_elements'`
+		# and `symbol + '_elements'`.  The separator may be an empty string,
+		# a single parser symbol (as a String or Symbol), or a String
+		# containing multiple symbols.
 		#
-		# @param [Symbol]		symbol		The name of the production to add.
-		# @param [Array<String>]	list_elements	An array of expressions that may appear in the list.
-		# @param [Symbol]		separator		The list separator symbol.
+		# @param [Symbol]						symbol		The name of the production to add.
+		# @param [String, Symbol, Array<String>]	list_elements	Expression(s) that may appear in the list.
+		# @param [Symbol, String]				separator		The list separator symbol or symbols.
 		#
 		# @return [void]
 		def empty_list_production(symbol, list_elements, separator = '')
@@ -411,11 +413,13 @@ module RLTK # :nodoc:
 		
 		# This method adds the necessary productions for non-empty lists to
 		# the grammar.  These productions are named `symbol` and
-		# `symbol + '_elements'`
+		# `symbol + '_elements'`.  The separator may be an empty string,
+		# a single parser symbol (as a String or Symbol), or a String
+		# containing multiple symbols.
 		#
 		# @param [Symbol]						symbol		The name of the production to add.
 		# @param [String, Symbol, Array<String>]	list_elements	Expression(s) that may appear in the list.
-		# @param [Symbol]						separator		The list separator symbol.
+		# @param [Symbol, String]				separator		The list separator symbol or symbols.
 		#
 		# @return [void]
 		def nonempty_list_production(symbol, list_elements, separator = '')

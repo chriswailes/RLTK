@@ -995,13 +995,14 @@ module RLTK # :nodoc:
 			# Parser.clause.  A precedence can be associate with this
 			# production by setting *precedence* to a terminal symbol.
 			#
-			# @param [Symbol]		symbol		Left-hand side of the production.
-			# @param [String, nil]	expression	Right-hand side of the production.
-			# @param [Symbol, nil]	precedence	Symbol representing the precedence of this produciton.
-			# @param [Proc]		action		Action associated with this production.
+			# @param [Symbol]			symbol		Left-hand side of the production.
+			# @param [String, nil]		expression	Right-hand side of the production.
+			# @param [Symbol, nil]		precedence	Symbol representing the precedence of this produciton.
+			# @param [:array, :splat]	arg_type		Method to use when passing arguments to the action.
+			# @param [Proc]			action		Action associated with this production.
 			#
 			# @return [void]
-			def production(symbol, expression = nil, precedence = nil, &action)
+			def production(symbol, expression = nil, precedence = nil, arg_type = @default_arg_type, &action)
 				
 				# Check the symbol.
 				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or not CFG::is_nonterminal?(symbol)
@@ -1011,11 +1012,19 @@ module RLTK # :nodoc:
 				@grammar.curr_lhs	= symbol.to_sym
 				@curr_prec		= precedence
 				
+				orig_dat = nil
+				if arg_type != @default_arg_type
+					orig_dat = @default_arg_type
+					@default_arg_type = arg_type
+				end
+				
 				if expression
 					self.clause(expression, precedence, &action)
 				else
 					self.instance_exec(&action)
 				end
+				
+				@default_arg_type = orig_dat if not orig_dat.nil?
 				
 				@grammar.curr_lhs	= nil
 				@curr_prec		= nil
