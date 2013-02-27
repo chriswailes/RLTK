@@ -55,7 +55,7 @@ else
 		end
 	
 		begin
-			jit.visit(Brainfuck::Parser.parse(Brainfuck::Lexer.lex_file(ARGV[0])))
+			jit.visit(Brainfuck::Parser.parse(Brainfuck::Lexer.lex(line)))
 	
 		rescue Exception => e
 			puts e.message

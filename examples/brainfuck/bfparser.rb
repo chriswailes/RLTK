@@ -26,12 +26,7 @@ module Brainfuck
 	
 	class Parser < RLTK::Parser
 		
-		p(:program, 'ops') { |ops| Program.new(ops) }
-		
-		p :ops do
-			c('op')		{ |o| [o] }
-			c('ops op')	{ |os, o| os + [o] }
-		end
+		p(:program, 'op+') { |ops| Program.new(ops) }
 		
 		p :op do
 			c('PTRRIGHT')				{ |_| PtrRight.new          }
@@ -40,7 +35,7 @@ module Brainfuck
 			c('DEC')					{ |_| Decrement.new         }
 			c('PUT')					{ |_| Put.new               }
 			c('GET')					{ |_| Get.new               }
-			c('LBRACKET ops RBRACKET')	{ |_, ops, _| Loop.new(ops) }
+			c('LBRACKET op+ RBRACKET')	{ |_, ops, _| Loop.new(ops) }
 		end
 		
 		finalize
