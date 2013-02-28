@@ -100,12 +100,12 @@ module Brainfuck
 			@engine.run_function(fun)
 		end
 		
-		on(Brainfuck::PtrRight)	{ store (add (load @offset), ONE), @offset }
-		on(Brainfuck::PtrLeft)	{ store (sub (load @offset), ONE), @offset }
-		on(Brainfuck::Increment)	{ store (add curr_val, ONE), curr_cell     }
-		on(Brainfuck::Decrement)	{ store (sub curr_val, ONE), curr_cell     }
-		on(Brainfuck::Put)		{ call @putchar, curr_val                  }
-		on(Get)				{ store (call @getchar), curr_cell         }
+		on(PtrRight)	{ store (add (load @offset), ONE), @offset }
+		on(PtrLeft)	{ store (sub (load @offset), ONE), @offset }
+		on(Increment)	{ store (add curr_val, ONE), curr_cell     }
+		on(Decrement)	{ store (sub curr_val, ONE), curr_cell     }
+		on(Put)		{ call @putchar, curr_val                  }
+		on(Get)		{ store (call @getchar), curr_cell         }
 		
 		on Loop do |l|
 			fun = current_block.parent
