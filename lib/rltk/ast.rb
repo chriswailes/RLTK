@@ -39,6 +39,9 @@ module RLTK # :nodoc:
 		# @return [ASTNode] Reference to the parent node.
 		attr_accessor :parent
 		
+		# @return [Hash] The notes hash for this node.
+		attr_reader :notes
+		
 		#################
 		# Class Methods #
 		#################
@@ -275,6 +278,13 @@ module RLTK # :nodoc:
 			end
 		end
 		
+		# Produce an exact copy of this tree.
+		#
+		# @return [ASTNode] A copy of the tree.
+		def copy
+			self.map { |c| c }
+		end
+		
 		# Removes the note *key* from this node.  If the *recursive* argument
 		# is true it will also remove the note from the node's children.
 		#
@@ -390,8 +400,19 @@ module RLTK # :nodoc:
 		#
 		# @return [Object] The result of calling the given block on the root node.
 		def map(&block)
-			new_children	= self.children.map { |c| if c.nil? then block.call(c) else c.map(&block) end }
-			new_node		= self.class.new(*self.values, *new_children)
+			new_values = self.values.map { |v| v.clone }
+			
+			new_children =
+			self.children.map do |c0|
+				case c0
+				when Array	then c0.map { |c1| c1.map(&block) }
+				when ASTNode	then c0.map(&block)
+				when NilClass	then nil
+				end
+			end
+			
+			new_node		= self.class.new(*new_values, *new_children)
+			new_node.notes = self.notes
 			
 			block.call(new_node)
 		end
@@ -406,9 +427,25 @@ module RLTK # :nodoc:
 		#
 		# @return [Object] The result of calling the given block on the root node.
 		def map!(&block)
-			self.children = self.children.map { |c| if c.nil? then block.call(c) else c.map!(&block) end }
+			self.children =
+			self.children.map do |c0|
+				case c0
+				when Array	then c0.map { |c1| c1.map!(&block) }
+				when ASTNode	then c0.map!(&block)
+				when NilClass	then nil
+				end
+			end
 			
 			block.call(self)
+		end
+		
+		# Set the notes for this node from a given hash.
+		#
+		# @param [Hash] The new notes for this node.
+		#
+		# @return [void]
+		def notes=(new_notes)
+			@notes = new_notes.clone
 		end
 		
 		# @return [ASTNode] Root of the abstract syntax tree.

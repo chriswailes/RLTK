@@ -111,6 +111,12 @@ class ASTNodeTester < Test::Unit::TestCase
 		assert_equal(node.children(Hash), expected_children)
 	end
 	
+	def test_copy
+		new_tree = @tree5.copy
+		
+		assert_equal(@tree5, new_tree)
+	end
+	
 	def test_value
 		node = VNode.new
 		
@@ -188,6 +194,8 @@ class ASTNodeTester < Test::Unit::TestCase
 		
 		mapped_tree = @tree5.map do |c|
 			c.str += '!'
+			
+			c
 		end
 		
 		assert_equal(@tree6, @tree5)
@@ -205,6 +213,15 @@ class ASTNodeTester < Test::Unit::TestCase
 		replace_node = replace_node.map!(&@bc_proc)
 		
 		assert_equal(CNode.new, replace_node)
+		
+		mapped_tree = @tree5.map! do |c|
+			c.str += '!'
+			
+			c
+		end
+		
+		assert_not_equal(@tree6, @tree5)
+		assert_equal(@tree7, @tree5)
 	end
 	
 	def test_notes
