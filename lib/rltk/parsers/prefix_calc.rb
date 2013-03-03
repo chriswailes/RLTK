@@ -28,7 +28,7 @@ module RLTK # :nodoc:
 				clause('DIV e e') { |_, e0, e1| e0 / e1 }
 			end
 			
-			finalize
+			finalize use: 'prefix.tbl'
 		end
 	end
 end

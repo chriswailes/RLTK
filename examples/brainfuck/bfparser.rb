@@ -38,6 +38,6 @@ module Brainfuck
 			c('LBRACKET op+ RBRACKET')	{ |_, ops, _| Loop.new(ops) }
 		end
 		
-		finalize
+		finalize use: 'braunfuck.tbl'
 	end
 end

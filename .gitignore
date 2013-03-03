@@ -3,7 +3,8 @@ doc/*
 coverage/*
 examples/kazoo/**/*.o
 examples/kazoo/**/*.so
-examples/kazoo/**/*.tbl
+
+*.tbl
 
 .yardoc/*
 

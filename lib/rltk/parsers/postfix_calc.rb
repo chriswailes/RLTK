@@ -28,7 +28,7 @@ module RLTK # :nodoc:
 				clause('e e DIV') { |e0, e1, _| e0 / e1 }
 			end
 			
-			finalize
+			finalize use: 'postfix.tbl'
 		end
 	end
 end

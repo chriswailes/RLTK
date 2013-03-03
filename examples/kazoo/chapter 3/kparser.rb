@@ -49,6 +49,6 @@ module Kazoo
 		
 		empty_list(:arg_defs, :IDENT, :COMMA)
 	
-		finalize({:use => 'kparser.tbl'})
+		finalize use: 'kparser.tbl'
 	end
 end
