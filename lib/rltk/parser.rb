@@ -381,13 +381,21 @@ module RLTK # :nodoc:
 					io.puts('###############')
 					io.puts
 					
+					max_id_length = @grammar.productions(:id).length.to_s.length
+					
 					# Print the productions.
 					@grammar.productions.each do |sym, productions|
+						
+						max_rhs_length = productions.inject(0) { |m, p| if (len = p.to_s.length) > m then len else m end }
+						
 						productions.each do |production|
-							io.print("\tProduction #{production.id}: #{production.to_s}")
+							p_string = production.to_s
+							
+							io.print("\tProduction #{sprintf("%#{max_id_length}d", production.id)}: #{p_string}")
 							
 							if (prec = @production_precs[production.id])
-								io.print(" : (#{prec.first} , #{prec.last})")
+								io.print(' ' * (max_rhs_length - p_string.length))
+								io.print(" : (#{sprintf("%-5s", prec.first)}, #{prec.last})")
 							end
 							
 							io.puts
@@ -401,11 +409,14 @@ module RLTK # :nodoc:
 					io.puts('##########')
 					io.puts
 					
+					max_token_len = @grammar.terms.inject(0) { |m, t| if t.length > m then t.length else m end }
+					
 					@grammar.terms.sort {|a,b| a.to_s <=> b.to_s }.each do |term|
 						io.print("\t#{term}")
 						
 						if (prec = @token_precs[term])
-							io.print(" : (#{prec.first}, #{prec.last})")
+							io.print(' ' * (max_token_len - term.length))
+							io.print(" : (#{sprintf("%-5s", prec.first)}, #{prec.last})")
 						end
 						
 						io.puts

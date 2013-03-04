@@ -2,8 +2,6 @@
 # Bugs #
 ########
 
-* Get associativity information to line up in explain. (parser.rb)
-
 ############
 # Features #
 ############
