@@ -9,7 +9,6 @@
 ############
 
 * Add a function to print out ASTs in dot language. (ast.rb)
-* Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors. (ast.rb)
 * Get rid of the redundant start production.
 * Allow the right-hand side of a production to be a symbol (call to_s on it). (cfg.rb)
 * Add support for parentheses in CFGs.
@@ -32,6 +31,7 @@
 * Add a way of setting a default lexer class for a parser. (parser.rb)
 * Allow a parser to accept strings as input and then use either a provided lexer or the default lexer to lex the string (parser.rb)
 * Allow the first argument of the associativity methods to be an integer to be used as the value for those tokens.  an error should be raised if associativity values are given in a non-increasing order. (parser.rb)
+* Investigate a better way of storing name and type information for values and children, as well as better ways to define the accessors. (ast.rb)
 * Figure out what an AssemblyAnnotationWriter is and what it is used for.
 
 ###############
