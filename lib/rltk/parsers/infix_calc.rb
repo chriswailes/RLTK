@@ -37,7 +37,7 @@ module RLTK # :nodoc:
 				clause('e DIV e') { |e0, _, e1| e0 / e1 }
 			end
 			
-			finalize use: 'infix.tbl'
+			finalize
 		end
 	end
 end

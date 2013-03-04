@@ -508,6 +508,8 @@ class ParserTester < Test::Unit::TestCase
 	def test_use
 		tmpfile = File.join(Dir.tmpdir, 'usetest')
 		
+		FileUtils.rm(tmpfile) if File.exist?(tmpfile)
+		
 		parser0 = Class.new(RLTK::Parser) do
 			production(:a, 'A+') { |a| a.length }
 			
