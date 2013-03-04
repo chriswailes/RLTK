@@ -441,7 +441,7 @@ module RLTK # :nodoc:
 		
 		# Set the notes for this node from a given hash.
 		#
-		# @param [Hash] The new notes for this node.
+		# @param [Hash] new_notes The new notes for this node.
 		#
 		# @return [void]
 		def notes=(new_notes)

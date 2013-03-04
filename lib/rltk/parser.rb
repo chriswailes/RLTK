@@ -532,8 +532,8 @@ module RLTK # :nodoc:
 					return self.clean
 				end
 				
-				# Grab all of the symbols that comprise the grammar (besides
-				# the start symbol).
+				# Grab all of the symbols that comprise the grammar
+				# (besidesthe start symbol).
 				@symbols = @grammar.symbols << :ERROR
 				
 				# Add our starting state to the state list.
@@ -1276,8 +1276,24 @@ module RLTK # :nodoc:
 			#
 			# @return [ParseStack]
 			def branch(new_id)
-				ParseStack.new(new_id, @output_stack.clone, @state_stack.clone, @node_stack.clone,
-					@connections.clone, @labels.clone, @positions.clone)
+				# We have to do a deeper copy of the output stack to avoid
+				# interactions between the Proc objects for the different
+				# parsing paths.
+				#
+				# The being/rescue block is needed because some classes
+				# respond to `clone` but always raise an error.
+				new_output_stack = @output_stack.map do |o|
+					# Check to see if we can obtain a deep copy.
+					if 0.respond_to?(:copy)
+						o.copy
+					
+					else
+						begin o.clone rescue o end
+					end
+				end
+				
+				ParseStack.new(new_id, new_output_stack, @state_stack.clone,
+					@node_stack.clone, @connections.clone, @labels.clone, @positions.clone)
 			end
 			
 			# @return [StreamPosition] Position data for the last symbol on the stack.

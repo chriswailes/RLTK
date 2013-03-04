@@ -89,6 +89,22 @@ class ParserTester < Test::Unit::TestCase
 		finalize
 	end
 	
+	# This grammar is purposefully ambiguous.  This should not be equivalent
+	# to the grammar produced with `e -> A B? B?`, due to greedy Kleene
+	# operators.
+	class AmbiguousParseStackParser < RLTK::Parser
+		production(:s, 'e*') { |e| e }
+		
+		production(:e, 'A b_question b_question') { |a, b0, b1| [a, b0, b1] }
+		
+		production(:b_question) do
+			clause('')	{ | | nil }
+			clause('B')	{ |b|   b }
+		end
+		
+		finalize
+	end
+	
 	class EmptyListParser0 < RLTK::Parser
 		empty_list('list', :A, :COMMA)
 		
@@ -220,6 +236,13 @@ class ParserTester < Test::Unit::TestCase
 	def test_ambiguous_grammar
 		actual = AmbiguousParser.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'), {:accept => :all})
 		assert_equal([7, 9], actual.sort)
+	end
+	
+	# This test is to ensure that objects placed on the output stack are
+	# cloned when we split the parse stack.  This was posted as Issue #17 on
+	# Github.
+	def test_ambiguous_parse_stack
+		assert_equal(1, AmbiguousParseStackParser.parse(ABLexer.lex('ab')).length)
 	end
 	
 	def test_array_args
@@ -488,7 +511,7 @@ class ParserTester < Test::Unit::TestCase
 		parser0 = Class.new(RLTK::Parser) do
 			production(:a, 'A+') { |a| a.length }
 			
-			finalize :use => tmpfile
+			finalize use: tmpfile
 		end
 		
 		result0 = parser0.parse(ABLexer.lex('a'))
@@ -498,7 +521,7 @@ class ParserTester < Test::Unit::TestCase
 		parser1 = Class.new(RLTK::Parser) do
 			production(:a, 'A+') { |a| a.length }
 			
-			finalize :use => tmpfile
+			finalize use: tmpfile
 		end
 		
 		result1 = parser1.parse(ABLexer.lex('a'))
