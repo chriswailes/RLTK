@@ -294,7 +294,7 @@ module RLTK # :nodoc:
 			# production can be changed by setting the *precedence* argument
 			# to some terminal symbol.
 			#
-			# @param [String]			expression	Right-hand side of a production.
+			# @param [String, Symbol]	expression	Right-hand side of a production.
 			# @param [Symbol]			precedence	Symbol representing the precedence of this production.
 			# @param [:array, :splat]	arg_type		Method to use when passing arguments to the action.
 			# @param [Proc]			action		Action to be taken when the production is reduced.
@@ -1006,11 +1006,11 @@ module RLTK # :nodoc:
 			# Parser.clause.  A precedence can be associate with this
 			# production by setting *precedence* to a terminal symbol.
 			#
-			# @param [Symbol]			symbol		Left-hand side of the production.
-			# @param [String, nil]		expression	Right-hand side of the production.
-			# @param [Symbol, nil]		precedence	Symbol representing the precedence of this produciton.
-			# @param [:array, :splat]	arg_type		Method to use when passing arguments to the action.
-			# @param [Proc]			action		Action associated with this production.
+			# @param [Symbol]				symbol		Left-hand side of the production.
+			# @param [String, Symbol, nil]	expression	Right-hand side of the production.
+			# @param [Symbol, nil]			precedence	Symbol representing the precedence of this produciton.
+			# @param [:array, :splat]		arg_type		Method to use when passing arguments to the action.
+			# @param [Proc]				action		Action associated with this production.
 			#
 			# @return [void]
 			def production(symbol, expression = nil, precedence = nil, arg_type = @default_arg_type, &action)

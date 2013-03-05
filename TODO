@@ -7,8 +7,6 @@
 ############
 
 * Add a function to print out ASTs in dot language. (ast.rb)
-* Get rid of the redundant start production.
-* Allow the right-hand side of a production to be a symbol (call to_s on it). (cfg.rb)
 * Add support for parentheses in CFGs.
 * Give generated empty productions an associativity and precedence of (left, 0).  This will make the ?, *, and + operators greedy.  Provide an option to turn this off.  This is motivated by the 'A B? B?' example.  Make sure this works as expected with 'B? B' when parsing 'B' (meaning that B? is nil and B hold the value).
 * Add support for arrays of objects.  This should support matching (e.g. `on [:fib, Integer]` or `on [Integer, String]`. (visitor.rb)

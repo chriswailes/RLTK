@@ -116,7 +116,7 @@ module RLTK # :nodoc:
 		# CFG.production call's argument.  This is the function that is
 		# responsible for removing EBNF symbols from the grammar.
 		#
-		# @param [String] expression The right-hand side of a CFG production.
+		# @param [String, Symbol] expression The right-hand side of a CFG production.
 		#
 		# @return [Production]
 		def clause(expression)
@@ -124,7 +124,7 @@ module RLTK # :nodoc:
 			
 			lhs		= @curr_lhs.to_sym
 			rhs		= Array.new
-			tokens	= @lexer.lex(expression)
+			tokens	= @lexer.lex(expression.to_s)
 			
 			# Set this as the start symbol if there isn't one already
 			# defined.
@@ -471,9 +471,9 @@ module RLTK # :nodoc:
 		# production.  If *expression* is nil then *block* is evaluated, and
 		# expected to make one or more calls to {CFG#clause}.
 		#
-		# @param [Symbol]	symbol		The right-hand side of a production.
-		# @param [String]	expression	The left-hand side of a production.
-		# @param [Proc]	block		Optional block for defining production clauses.
+		# @param [Symbol]			symbol		The right-hand side of a production.
+		# @param [String, Symbol]	expression	The left-hand side of a production.
+		# @param [Proc]			block		Optional block for defining production clauses.
 		#
 		# @return [Array<Production>]
 		def production(symbol, expression = nil, &block)
