@@ -3,6 +3,6 @@
 # Date:		2012/03/21
 # Description:	Gemfile for the RLTK project.
 
-source :rubygems
+source 'https://rubygems.org'
 
 gemspec
