@@ -1017,7 +1017,7 @@ module RLTK # :nodoc:
 				
 				# Check the symbol.
 				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or not CFG::is_nonterminal?(symbol)
-					riase ParserConstructionException, 'Production symbols must be Strings or Symbols and be in all lowercase.'
+					raise ParserConstructionException, 'Production symbols must be Strings or Symbols and be in all lowercase.'
 				end
 				
 				@grammar.curr_lhs	= symbol.to_sym
