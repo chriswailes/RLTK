@@ -14,7 +14,7 @@ begin
 		add_filter 'tc_*'
 		add_filter 'generated*'
 	end
-	
+
 rescue LoadError
 	puts 'SimpleCov not installed.  Continuing without it.'
 end
@@ -39,11 +39,13 @@ require 'util/ts_util'
 begin
 	class Tester
 		extend FFI::Library
-		
+
 		ffi_lib("LLVM-#{RLTK::LLVM_TARGET_VERSION}")
 	end
-	
+
 	# The test suite for the LLVM bindings
 	require 'cg/ts_cg'
+rescue LoadError
+  puts "Unable to load LLVM #{RLTK::LLVM_TARGET_VERSION}."
 rescue
 end
