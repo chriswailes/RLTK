@@ -148,7 +148,7 @@ module RLTK # :nodoc:
 							line_offset += txt.length()
 						end
 					else
-						error = LexingError.new(stream_offset, line_number, line_offset, scanner.post_match)
+						error = LexingError.new(stream_offset, line_number, line_offset, scanner.rest)
 						raise(error, 'Unable to match string with any of the given rules')
 					end
 				end
