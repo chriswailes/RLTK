@@ -1502,7 +1502,11 @@ module RLTK # :nodoc:
 			#
 			# @return [void]
 			def each
-				@items.each {|item| yield item}
+				current_item = 0
+				while current_item < @items.count
+					yield @items.at(current_item)
+					current_item += 1
+				end
 			end
 			
 			# Specify an Action to perform when the input token is *symbol*.
