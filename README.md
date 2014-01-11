@@ -752,3 +752,7 @@ If you are interested in contributing to RLTK you can:
 * Write a class for dealing with regular languages.
 * Extend the RLTK::CFG class with additional functionality.
 * Let me know if you found any part of this documentation unclear or incomplete.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/chriswailes/rltk/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
