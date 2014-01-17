@@ -722,14 +722,14 @@ Because we want to keep things simple the only datatype in Kazoo is a 64-bit flo
 
 The tutorial is organized as follows:
 
-  * [Chapter 1: The Lexer](file.Chapter1.html)
-  * [Chapter 2: The AST Nodes](file.Chapter2.html)
-  * [Chapter 3: The Parser](file.Chapter3.html)
-  * [Chapter 4: AST Translation](file.Chapter4.html)
-  * [Chapter 5: JIT Compilation](file.Chapter5.html)
-  * [Chapter 6: Adding Control Flow](file.Chapter6.html)
-  * [Chapter 7: Playtime](file.Chapter7.html)
-  * [Chapter 8: Mutable Variables](file.Chapter8.html)
+  * [Chapter 1: The Lexer](https://github.com/chriswailes/RLTK/blob/master/examples/kazoo/chapter%201/Chapter1.md)
+  * [Chapter 2: The AST Nodes](https://github.com/chriswailes/RLTK/blob/master/examples/kazoo/chapter%202/Chapter2.md)
+  * [Chapter 3: The Parser](https://github.com/chriswailes/RLTK/blob/master/examples/kazoo/chapter%203/Chapter3.md)
+  * [Chapter 4: AST Translation](https://github.com/chriswailes/RLTK/blob/master/examples/kazoo/chapter%204/Chapter4.md)
+  * [Chapter 5: JIT Compilation](https://github.com/chriswailes/RLTK/blob/master/examples/kazoo/chapter%205/Chapter5.md)
+  * [Chapter 6: Adding Control Flow](https://github.com/chriswailes/RLTK/blob/master/examples/kazoo/chapter%206/Chapter6.md)
+  * [Chapter 7: Playtime](https://github.com/chriswailes/RLTK/blob/master/examples/kazoo/chapter%207/Chapter7.md)
+  * [Chapter 8: Mutable Variables](https://github.com/chriswailes/RLTK/blob/master/examples/kazoo/chapter%208/Chapter8.md)
 
 Before starting this tutorial you should know about regular expressions, the basic ideas behind lexing and parsing, and be able to read context-free grammar (CFG) definitions.  By the end of this tutorial we will have written 372 lines of source code and have a JIT compiler for a Turing complete language.
 
