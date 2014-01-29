@@ -259,7 +259,11 @@ Let's look at the infix calculator example now:
 		finalize
 	end
 
-Here we use associativity information to properly deal with the different precedence of the addition, subtraction, multiplication, and division operators.  The PLS and SUB terminals are given left associativity with precedence of 1 (by default all terminals and productions have precedence of zero, which is to say no precedence), and the MUL and DIV terminals are given right associativity with precedence of 1.
+The standard order of mathematical operations tells us that the correct way to group the operations in the expression `2 + 3 * 4` is `2 + (3 * 4)`.  However, our grammar tells us that `(2 + 3) * 5` is also a valid way to parse the expression, leading to a shift/reduce error in the parser.  To get rid of the shift/reduce error we need some way to tell the parser how to distinguish between these two parse trees.  This is where associativity comes in.  If the parser has already read `NUM PLS NUM` and the current symbol is a `MUL` symbol we want to tell the parser to shift the new `MUL` symbol onto the stack and continue on.  We do this by making the `MUL` symbol right associative.  When the parser generator encounters a shift/reduce error it looks at the token currently being read.  If it has no associativity information, the error can't be resolved; if the token is left associative, it will remove the shift action from the parser (leaving only the reduce action); if the token is right associative, it will remove the reduce action from the parser (leaving only the shift action).
+
+Now, let us consider the expression `3 - 2 - 1`.  Here, the correct way to parse the expression is `(3 - 2) - 2`.  To ensure that this case is selected over `3 - (2 - 1)` we can make the `SUB` token left associative.  This will cause the symbols `NUM SUB NUM` to be reduced before the second `SUB` symbol is shifted onto the parse stack.
+
+Not that, to resolve a shift/reduce or reduce/reduce conflict, precedence and associativty information must be present for all actions involved in the conflict.  As such, it isn't enough to simply make the `MUL` and `DIV` tokens right associative; we must also make the `PLS` and `SUB` tokens left associative.
 
 ### Argument Passing for Actions
 
@@ -748,3 +752,7 @@ If you are interested in contributing to RLTK you can:
 * Write a class for dealing with regular languages.
 * Extend the RLTK::CFG class with additional functionality.
 * Let me know if you found any part of this documentation unclear or incomplete.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/chriswailes/rltk/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
