@@ -6,12 +6,14 @@
 # Features #
 ############
 
+* Pull the patches from Github.
+* Think about removing map! from the ASTNode class. (ast.rb)
+* Release the last version of RLTK to support Ruby 1.8.
+* Switch to using Filigree.
+	* Move visitor.rb to Filigree.
 * Add a function to print out ASTs in dot language. (ast.rb)
 * Add support for parentheses in CFGs.
 * Give generated empty productions an associativity and precedence of (left, 0).  This will make the ?, *, and + operators greedy.  Provide an option to turn this off.  This is motivated by the 'A B? B?' example.  Make sure this works as expected with 'B? B' when parsing 'B' (meaning that B? is nil and B hold the value).
-* Add support for arrays of objects.  This should support matching (e.g. `on [:fib, Integer]` or `on [Integer, String]`. (visitor.rb)
-* Allow blocks to be passed to the `on` clauses of the Visitor class. (visitor.rb)
-* Support matching literals. (visitor.rb)
 * Add the ability to print out grammars in a textual form. (cfg.rb)
 * Make the classes representing LLVM types into modules and then in the cg/value.rb file extend each of the classes representing LLVM values with the appropriate type module.  This will require changes to the documentation and Kazoo tutorial if successful. (cg/types.rb)
 * Add ability to set tail call info on call instructions. (cg/value.rb)
@@ -23,7 +25,7 @@
 	* New hash syntax.
 	* Inject methods.
 * Update the documentation to use the @overloaded tag.
-* Update to LLVM 3.2.
+* Update to LLVM 3.4.
 * Add a way of setting a default lexer class for a parser. (parser.rb)
 * Allow a parser to accept strings as input and then use either a provided lexer or the default lexer to lex the string (parser.rb)
 * Allow the first argument of the associativity methods to be an integer to be used as the value for those tokens.  an error should be raised if associativity values are given in a non-increasing order. (parser.rb)

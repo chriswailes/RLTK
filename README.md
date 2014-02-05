@@ -748,3 +748,5 @@ If you are interested in contributing to RLTK you can:
 * Write a class for dealing with regular languages.
 * Extend the RLTK::CFG class with additional functionality.
 * Let me know if you found any part of this documentation unclear or incomplete.
+
+{{md NEWS.md}}
