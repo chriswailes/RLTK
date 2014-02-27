@@ -8,10 +8,10 @@ require File.expand_path("../lib/rltk/version", __FILE__)
 Gem::Specification.new do |s|
 	s.platform = Gem::Platform::RUBY
 	
-	s.name		= 'rltk'
-	s.version		= RLTK::VERSION
-	s.summary		= 'The Ruby Language Toolkit'
-	s.description	=
+	s.name        = 'rltk'
+	s.version     = RLTK::VERSION
+	s.summary     = 'The Ruby Language Toolkit'
+	s.description =
 		'The Ruby Language Toolkit provides classes for creating ' +
 		'context-free grammars, lexers, parsers, and abstract syntax trees.'
 	
@@ -26,14 +26,15 @@ Gem::Specification.new do |s|
 			
 	s.require_path	= 'lib'
 	
-	s.author		= 'Chris Wailes'
-	s.email		= 'chris.wailes+rltk@gmail.com'
-	s.homepage	= 'http://github.com/chriswailes/RLTK'
-	s.license		= 'University of Illinois/NCSA Open Source License'
+	s.author   = 'Chris Wailes'
+	s.email    = 'chris.wailes+rltk@gmail.com'
+	s.homepage = 'http://github.com/chriswailes/RLTK'
+	s.license  = 'University of Illinois/NCSA Open Source License'
 	
 	s.required_ruby_version = '>= 1.9.1'
 	
 	s.add_dependency('ffi', '>= 1.0.0')
+	s.add_dependency('filigree', '>= 0.1.2')
 	
 	s.add_development_dependency('bundler')
 	s.add_development_dependency('ffi_gen', '>= 1.1.0')

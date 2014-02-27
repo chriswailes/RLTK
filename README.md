@@ -46,19 +46,21 @@ Here are some reasons to use RLTK to build your lexers, parsers, and abstract sy
 
 To create your own lexer using RLTK you simply need to subclass the {RLTK::Lexer} class and define the *rules* that will be used for matching text and generating tokens.  Here we see a simple lexer for a calculator:
 
-	class Calculator < RLTK::Lexer
-		rule(/\+/)	{ :PLS }
-		rule(/-/)	{ :SUB }
-		rule(/\*/)	{ :MUL }
-		rule(/\//)	{ :DIV }
+```Ruby
+class Calculator < RLTK::Lexer
+  rule(/\+/) { :PLS }
+  rule(/-/)  { :SUB }
+  rule(/\*/) { :MUL }
+  rule(/\//) { :DIV }
 
-		rule(/\(/)	{ :LPAREN }
-		rule(/\)/)	{ :RPAREN }
+  rule(/\(/) { :LPAREN }
+  rule(/\)/) { :RPAREN }
 
-		rule(/[0-9]+/)	{ |t| [:NUM, t.to_i] }
+  rule(/[0-9]+/) { |t| [:NUM, t.to_i] }
 
-		rule(/\s/)
-	end
+  rule(/\s/)
+end
+```
 
 The {RLTK::Lexer.rule} method's first argument is the regular expression used for matching text.  The block passed to the function is the action that executes when a substring is matched by the rule.  These blocks must return the *type* of the token (which must be in ALL CAPS; see the Parsers section), and optionally a *value*.  In the latter case you must return an array containing the *type* and *value*, which you can see an example of in the Calculator lexer shown above.  The values returned by the proc object are used to build a {RLTK::Token} object that includes the *type* and *value* information, as well as information about the line number the token was found on, the offset from the beginning of the line to the start of the token, and the length of the token's text.  If the *type* value returned by the proc is `nil` the input is discarded and no token is produced.
 
@@ -68,17 +70,19 @@ The {RLTK::Lexer} class provides both {RLTK::Lexer.lex} and {RLTK::Lexer.lex_fil
 
 The proc objects passed to the {RLTK::Lexer.rule} methods are evaluated inside an instance of the {RLTK::Lexer::Environment} class.  This gives you access to methods for manipulating the lexer's state and flags (see bellow).  You can also subclass the environment inside your lexer to provide additional functionality to your rule blocks.  When doing so you need to ensure that you name your new class Environment like in the following example:
 
-	class MyLexer < RLTK::Lexer
-		...
-		
-		class Environment < Environment
-			def helper_function
-				...
-			end
-			
-			...
-		end
-	end
+```Ruby
+class MyLexer < RLTK::Lexer
+  ...
+
+  class Environment < Environment
+    def helper_function
+      ...
+    end
+
+  ...
+  end
+end
+```
 
 ### Using States
 
@@ -93,16 +97,18 @@ The methods used to manipulate state are:
 
 States may be used to easily support nested comments.
 
-	class StateLexer < RLTK::Lexer
-		rule(/a/)		{ :A }
-		rule(/\s/)
-		
-		rule(/\(\*/)	{ push_state(:comment) }
-		
-		rule(/\(\*/, :comment)	{ push_state(:comment) }
-		rule(/\*\)/, :comment)	{ pop_state }
-		rule(/./,    :comment)
-	end
+```Ruby
+class StateLexer < RLTK::Lexer
+  rule(/a/) { :A }
+  rule(/\s/)
+
+  rule(/\(\*/) { push_state(:comment) }
+
+  rule(/\(\*/, :comment) { push_state(:comment) }
+  rule(/\*\)/, :comment) { pop_state            }
+  rule(/./,    :comment)
+end
+```
 
 By default the lexer will start in the `:default` state.  To change this, you may use the {RLTK::Lexer.start} method.
 
@@ -116,14 +122,16 @@ The lexing environment also maintains a set of *flags*.  This set is manipulated
 
 When *rules* are defined they may use a third parameter to specify a list of flags that must be set before the rule is considered when matching substrings.  An example of this usage follows:
 
-	class FlagLexer < RLTK::Lexer
-		rule(/a/)		{ set_flag(:a); :A }
-		
-		rule(/\s/)
-		
-		rule(/b/, :default, [:a])     { set_flag(:b); :B }
-		rule(/c/, :default, [:a, :b]) { :C }
-	end
+```Ruby
+class FlagLexer < RLTK::Lexer
+  rule(/a/) { set_flag(:a); :A }
+
+  rule(/\s/)
+
+  rule(/b/, :default, [:a])     { set_flag(:b); :B }
+  rule(/c/, :default, [:a, :b]) { :C               }
+end
+```
 
 ### Instantiating Lexers
 
@@ -133,11 +141,13 @@ In addition to using the {RLTK::Lexer.lex} class method you may also instantiate
 
 A RLTK::Lexer may be told to select either the first substring that is found to match a rule or the longest substring to match any rule.  The default behavior is to match the longest substring possible, but you can change this by using the {RLTK::Lexer.match_first} method inside your class definition as follows:
 
-	class MyLexer < RLTK::Lexer
-		match_first
-		
-		...
-	end
+```Ruby
+class MyLexer < RLTK::Lexer
+  match_first
+
+  ...
+end
+```
 
 ### Match Data
 
@@ -153,18 +163,20 @@ RLTK parsers, on the other hand, can handle *all* context-free grammars by forki
 
 Let us look at the simple prefix calculator included with RLTK:
 
-	class PrefixCalc < RLTK::Parser
-		production(:e) do
-			clause('NUM') {|n| n}
-			
-			clause('PLS e e') { |_, e0, e1| e0 + e1 }
-			clause('SUB e e') { |_, e0, e1| e0 - e1 }
-			clause('MUL e e') { |_, e0, e1| e0 * e1 }
-			clause('DIV e e') { |_, e0, e1| e0 / e1 }
-		end
-		
-		finalize
-	end
+```Ruby
+class PrefixCalc < RLTK::Parser
+  production(:e) do
+    clause('NUM') {|n| n}
+
+    clause('PLS e e') { |_, e0, e1| e0 + e1 }
+    clause('SUB e e') { |_, e0, e1| e0 - e1 }
+    clause('MUL e e') { |_, e0, e1| e0 * e1 }
+    clause('DIV e e') { |_, e0, e1| e0 / e1 }
+  end
+
+  finalize
+end
+```
 
 The parser uses the same method for defining productions as the {RLTK::CFG} class.  In fact, the parser forwards the {RLTK::Parser.production} and {RLTK::Parser.clause} method invocations to an internal {RLTK::CFG} object after removing the parser specific information.  To see a detailed description of grammar definitions please read the Context-Free Grammars section bellow.
 
@@ -180,51 +192,63 @@ RLTK provides several shortcuts for common grammar constructs.  Right now these 
 
 This example shows how these shortcuts may be used to define a list of integers separated by a `:COMMA` token:
 
-	class ListParser < RLTK::Parser
-		nonempty_list(:int_list, :INT, :COMMA)
-		
-		finalize
-	end
+```Ruby
+class ListParser < RLTK::Parser
+  nonempty_list(:int_list, :INT, :COMMA)
+
+  finalize
+end
+```
 
 If you wanted to define a list of floats or integers you could define your parser like this:
 
-	class ListParser < RLTK::Parser
-		nonempty_list(:mixed_list, [:INT, :FLOAT], :COMMA)
-		
-		finalize
-	end
+```Ruby
+class ListParser < RLTK::Parser
+  nonempty_list(:mixed_list, [:INT, :FLOAT], :COMMA)
+
+  finalize
+end
+```
 
 If you don't want to require a separator you can do this:
 
-	class ListParser < RLTK::Parser
-		nonempty_list(:mixed_nonsep_list, [:INT, :FLOAT])
-		
-		finalize
-	end
+```Ruby
+class ListParser < RLTK::Parser
+  nonempty_list(:mixed_nonsep_list, [:INT, :FLOAT])
+
+  finalize
+end
+```
 
 You can also use separators that are made up of multiple tokens:
 
-	class ListParser < RLTK::Parser
-		nonempty_list(:mixed_nonsep_list, [:INT, :FLOAT], 'COMMA NEWLINE?')
-		
-		finalize
-	end
+```Ruby
+class ListParser < RLTK::Parser
+  nonempty_list(:mixed_nonsep_list, [:INT, :FLOAT], 'COMMA NEWLINE?')
+
+  finalize
+end
+```
 
 A list may also contain multiple tokens between the separator:
 
-	class ListParser < RLTK::Parser
-		nonempty_list(:foo_bar_list, 'FOO BAR', :COMMA)
-		
-		finalize
-	end
+```Ruby
+class ListParser < RLTK::Parser
+  nonempty_list(:foo_bar_list, 'FOO BAR', :COMMA)
+
+  finalize
+end
+```
 
 Lastly, you can mix all of these features together:
 
-	class ListParser < RLTK::Parser
-		nonempty_list(:foo_list, ['FOO BAR', 'FOO BAZ+'], :COMMA)
-		
-		finalize
-	end
+```Ruby
+class ListParser < RLTK::Parser
+  nonempty_list(:foo_list, ['FOO BAR', 'FOO BAZ+'], :COMMA)
+
+  finalize
+end
+```
 
 The productions generated by these shortcuts will always evaluate to an array.  In the first two examples above the productions will produce a 1-D array containing the values of the `INT` or `FLOAT` tokens.  In the last two examples the productions `foo_bar_list` and `foo_list` will produce 2-D arrays where the top level array is composed of tuples coresponding to the values of `FOO`, and `BAR` or one or more `BAZ`s.
 
@@ -240,24 +264,26 @@ To assign precedence to terminal symbols you can use the {RLTK::Parser.left}, {R
 
 Let's look at the infix calculator example now:
 
-	class InfixCalc < Parser
-		
-		left :PLS, :SUB
-		right :MUL, :DIV
-		
-		production(:e) do
-			clause('NUM') { |n| n }
-			
-			clause('LPAREN e RPAREN') { |_, e, _| e }
-			
-			clause('e PLS e') { |e0, _, e1| e0 + e1 }
-			clause('e SUB e') { |e0, _, e1| e0 - e1 }
-			clause('e MUL e') { |e0, _, e1| e0 * e1 }
-			clause('e DIV e') { |e0, _, e1| e0 / e1 }
-		end
-		
-		finalize
-	end
+```Ruby
+class InfixCalc < Parser
+
+  left  :PLS, :SUB
+  right :MUL, :DIV
+
+  production(:e) do
+    clause('NUM') { |n| n }
+
+    clause('LPAREN e RPAREN') { |_, e, _| e }
+
+    clause('e PLS e') { |e0, _, e1| e0 + e1 }
+    clause('e SUB e') { |e0, _, e1| e0 - e1 }
+    clause('e MUL e') { |e0, _, e1| e0 * e1 }
+    clause('e DIV e') { |e0, _, e1| e0 / e1 }
+  end
+
+  finalize
+end
+```
 
 The standard order of mathematical operations tells us that the correct way to group the operations in the expression `2 + 3 * 4` is `2 + (3 * 4)`.  However, our grammar tells us that `(2 + 3) * 5` is also a valid way to parse the expression, leading to a shift/reduce error in the parser.  To get rid of the shift/reduce error we need some way to tell the parser how to distinguish between these two parse trees.  This is where associativity comes in.  If the parser has already read `NUM PLS NUM` and the current symbol is a `MUL` symbol we want to tell the parser to shift the new `MUL` symbol onto the stack and continue on.  We do this by making the `MUL` symbol right associative.  When the parser generator encounters a shift/reduce error it looks at the token currently being read.  If it has no associativity information, the error can't be resolved; if the token is left associative, it will remove the shift action from the parser (leaving only the reduce action); if the token is right associative, it will remove the reduce action from the parser (leaving only the shift action).
 
@@ -275,19 +301,21 @@ Individual productions may specify the argument type used by their action via th
 
 The parsing environment is the context in which the proc objects associated with productions are evaluated, and can be used to provide helper functions and to keep state while parsing.  To define a custom environment simply subclass {RLTK::Parser::Environment} inside your parser definition as follows:
 
-	class MyParser < RLTK::Parser
-		...
-		
-		finalize
-		
-		class Environment < Environment
-			def helper_function
-				...
-			end
-			
-			...
-		end
-	end
+```Ruby
+class MyParser < RLTK::Parser
+  ...
+
+  class Environment < Environment
+    def helper_function
+    ...
+    end
+
+  ...
+  end
+
+  finalize
+end
+```
 
 (The definition of the Environment class may occur anywhere inside the MyParser class definition.)
 
@@ -346,23 +374,25 @@ The value of an `ERROR` non-terminal will be an array containing all of the toke
 
 The example below, based on one of the unit tests, shows a very basic usage of error productions:
 
-	class ErrorCalc < RLTK::Parser
-		left :ERROR
-		right :PLS, :SUB, :MUL, :DIV, :NUM
-		
-		production(:e) do
-			clause('NUM') {|n| n}
-		
-			clause('e PLS e') { |e0, _, e1| e0 + e1 }
-			clause('e SUB e') { |e0, _, e1| e0 - e1 }
-			clause('e MUL e') { |e0, _, e1| e0 * e1 }
-			clause('e DIV e') { |e0, _, e1| e0 / e1 }
-		
-			clause('e PLS ERROR e') { |e0, _, err, e1| error("#{err.len} tokens skipped."); e0 + e1 }
-		end
-	
-		finalize
-	end
+```Ruby
+class ErrorCalc < RLTK::Parser
+  left  :ERROR
+  right :PLS, :SUB, :MUL, :DIV, :NUM
+
+  production(:e) do
+    clause('NUM') {|n| n}
+
+    clause('e PLS e') { |e0, _, e1| e0 + e1 }
+    clause('e SUB e') { |e0, _, e1| e0 - e1 }
+    clause('e MUL e') { |e0, _, e1| e0 * e1 }
+    clause('e DIV e') { |e0, _, e1| e0 / e1 }
+
+    clause('e PLS ERROR e') { |e0, _, err, e1| error("#{err.len} tokens skipped."); e0 + e1 }
+  end
+
+  finalize
+end
+```
 
 ## A Note on Token Naming
 
@@ -375,42 +405,48 @@ The {RLTK::ASTNode} base class is meant to be a good starting point for implemen
 To create your own AST node classes you subclass the {RLTK::ASTNode} class and then use the {RLTK::ASTNode.child} and {RLTK::ASTNode.value} methods.  By declaring the children and values of a node the class will define the appropriate accessors with type checking, know how to pack and unpack a node's children, and know how to handle constructor arguments.
 
 Here we can see the definition of several AST node classes that might be used to implement binary operations for a language:
-	
-	class Expression < RLTK::ASTNode; end
-	
-	class Number < Expression
-		value :value, Fixnum
-	end
-	
-	class BinOp < Expression
-		value :op, String
-		
-		child :left,  Expression
-		child :right, Expression
-	end
+
+```Ruby
+class Expression < RLTK::ASTNode; end
+
+class Number < Expression
+  value :value, Fixnum
+end
+
+class BinOp < Expression
+  value :op, String
+
+  child :left,  Expression
+  child :right, Expression
+end
+```
 
 The assignment functions that are generated for the children and values perform type checking to make sure that the AST is well-formed.  The type of a child must be a subclass of the {RLTK::ASTNode} class, whereas the type of a value must **NOT** be a subclass of the {RLTK::ASTNode} class.  While child and value objects are stored as instance variables it is unsafe to assign to these variables directly, and it is strongly recommended to always use the accessor functions.
 
 When instantiating a subclass of {RLTK::ASTNode} the arguments to the constructor should be the node's values (in order of definition) followed by the node's children (in order of definition).  If a constructor is given fewer arguments then the number of values and children the remaining arguments are assumed to be `nil`.  Example:
 
-	class Foo < RLTK::ASTNode
-		value :a, Fixnum
-		child :b, Bar
-		value :c, String
-		child :d, Bar
-	end
-	
-	class Bar < RLTK::ASTNode
-		value :a, String
-	end
-	
-	Foo.new(1, 'baz', Bar.new)
+```Ruby
+class Foo < RLTK::ASTNode
+  value :a, Fixnum
+  child :b, Bar
+  value :c, String
+  child :d, Bar
+end
+
+class Bar < RLTK::ASTNode
+  value :a, String
+end
+
+Foo.new(1, 'baz', Bar.new)
+```
 
 Lastly, the type of a child or value can be defined as an array of objects of a specific type as follows:
 
-	class Foo < RLTK::ASTNode
-		value :strings, [String]
-	end
+```Ruby
+class Foo < RLTK::ASTNode
+  value :strings, [String]
+end
+```
 
 ### Tree Iteration and Mapping
 
@@ -498,40 +534,54 @@ Functions in LLVM are much like C functions; they have a return type, argument t
 
 The first way to create functions is via a module's function collection:
 
-	mod.functions.add('my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+```Ruby
+mod.functions.add('my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+```
 
 Here we have defined a function named 'my function' in the `mod` module.  It takes two native integers as arguments and returns a native integer.  It is also possible to define the type of a function ahead of time and pass it to this method:
 
-	type = RLTK::CG::FunctionType.new(RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	mod.functions.add('my function', type)
+```Ruby
+type = RLTK::CG::FunctionType.new(RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+mod.functions.add('my function', type)
+```
 
 Functions may also be created directly via the {RLTK::CG::Function#initialize RLTK::CG::Function.new} method, though a reference to a module is still necessary:
 
-	mod = Module.new('my module')
-	fun = Function.new(mod, 'my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+```Ruby
+mod = Module.new('my module')
+fun = Function.new(mod, 'my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+```
 
 or
-	
-	mod  = Module.new('my module')
-	type = RLTK::CG::FunctionType.new(RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	fun  = Function.new(mod, 'my function', type)
+
+```Ruby
+mod  = Module.new('my module')
+type = RLTK::CG::FunctionType.new(RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+fun  = Function.new(mod, 'my function', type)
+```
 
 Lastly, whenever you use one of these methods to create a function you may give it a block to be executed inside the context of the function object.  This allows for easier building of functions:
 
-	mod.functions.add('my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
-		bb = blocks.append('entry)'
-		...
-	end
+```Ruby
+mod.functions.add('my function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+  bb = blocks.append('entry)'
+  ...
+end
+```
 
 ### Basic Blocks
 
 Once a function has been added to a module you will need to add {RLTK::CG::BasicBlock BasicBlocks} to the function.  This can be done easily:
 
-	bb = fun.blocks.append('entry')
+```Ruby
+bb = fun.blocks.append('entry')
+```
 
 We now have a basic block that we can use to add instructions to our function and get it to actually do something.  You can also instantiate basic blocks directly:
 
-	bb = RLTK::CG::BasicBlock.new(fun, 'entry')
+```Ruby
+bb = RLTK::CG::BasicBlock.new(fun, 'entry')
+```
 
 ### The Builder
 
@@ -539,63 +589,75 @@ Now that you have a basic block you need to add instructions to it.  This is acc
 
 To add instructions using a builder directly (this is most similar to how it is done using C/C++) you create the builder, position it where you want to add instructions, and then build them:
 
-	fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	bb  = fun.blocks.append('entry')
-	
-	builder = RLTK::CG::Builder.new
-	
-	builder.position_at_end(bb)
-	
-	# Generate an add instruction.
-	inst0 = builder.add(fun.params[0], fun.params[1])
-	
-	# Generate a return instruction.
-	builder.ret(inst0)
+```Ruby
+fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+bb  = fun.blocks.append('entry')
+
+builder = RLTK::CG::Builder.new
+
+builder.position_at_end(bb)
+
+# Generate an add instruction.
+inst0 = builder.add(fun.params[0], fun.params[1])
+
+# Generate a return instruction.
+builder.ret(inst0)
+```
 
 You can get rid of some of those references to the builder by using the {RLTK::CG::Builder#build} method:
 
-	fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	bb  = fun.blocks.append('entry')
-	
-	builder = RLTK::CG::Builder.new
-	
-	builder.build(bb) do
-		ret add(fun.params[0], fun.params[1])
-	end
+```Ruby
+fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+bb  = fun.blocks.append('entry')
+
+builder = RLTK::CG::Builder.new
+
+builder.build(bb) do
+  ret add(fun.params[0], fun.params[1])
+end
+```
 
 To get rid of more code:
 
-	fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	bb  = fun.blocks.append('entry')
-	
-	RLTK::CG::Builder.new(bb) do
-		ret add(fun.params[0], fun.params[1])
-	end
+```Ruby
+fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+bb  = fun.blocks.append('entry')
 
-Or:
+RLTK::CG::Builder.new(bb) do
+  ret add(fun.params[0], fun.params[1])
+end
+```
 
-	fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-	fun.blocks.append('entry') do
-		ret add(fun.params[0], fun.params[1])
-	end
+or
 
-Or even:
+```Ruby
+fun = mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
+fun.blocks.append('entry') do
+  ret add(fun.params[0], fun.params[1])
+end
+```
 
-	mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
-		blocks.append('entry') do |fun|
-			ret add(fun.params[0], fun.params[1])
-		end
-	end
+or even
+
+```Ruby
+mod.functions.add('add', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+  blocks.append('entry') do |fun|
+    ret add(fun.params[0], fun.params[1])
+  end
+end
+```
 
 In the last two examples a new builder object is created for the block.  It is possible to specify the builder to be used:
 
-	builder = RLTK::CG::Builder.new
-	
-	mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
-		blocks.append('entry', builder) do |fun|
-			ret add(fun.params[0], fun.params[1])
-		end
-	end
+```Ruby
+builder = RLTK::CG::Builder.new
+
+mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+  blocks.append('entry', builder) do |fun|
+    ret add(fun.params[0], fun.params[1])
+  end
+end
+```
 
 For an example of where this is useful, see the Kazoo tutorial.
 
@@ -604,45 +666,49 @@ For an example of where this is useful, see the Kazoo tutorial.
 An alternative to using the {RLTK::CG::Builder} class is to use the {RLTK::CG::Contractor} class, which is a subclass of the Builder and includes the {RLTK::Visitor} module. (Get it? It's a visiting builder!)  By subclassing the Contractor you can define blocks of code for handling various types of AST nodes and leave the selection of the correct code up to the {RLTK::CG::Contractor#visit} method.  In addition, the `:at` and `:rcb` options to the *visit* method make it much easier to manage the positioning of the Builder.
 
 Here we can see how easy it is to define a block that builds the instructions for binary operations:
-	
-	on Binary do |node|
-		left  = visit node.left
-		right = visit node.right
-	
-		case node
-		when Add then fadd(left, right, 'addtmp')
-		when Sub then fsub(left, right, 'subtmp')
-		when Mul then fmul(left, right, 'multmp')
-		when Div then fdiv(left, right, 'divtmp')
-		when LT  then ui2fp(fcmp(:ult, left, right, 'cmptmp'), RLTK::CG::DoubleType, 'booltmp')
-		end
-	end
+
+```Ruby
+on Binary do |node|
+  left  = visit node.left
+  right = visit node.right
+
+  case node
+    when Add then fadd(left, right, 'addtmp')
+    when Sub then fsub(left, right, 'subtmp')
+    when Mul then fmul(left, right, 'multmp')
+    when Div then fdiv(left, right, 'divtmp')
+    when LT  then ui2fp(fcmp(:ult, left, right, 'cmptmp'), RLTK::CG::DoubleType, 'booltmp')
+  end
+end
+```
 
 AST nodes whos translation requires the generation of control flow will require the creation of new BasicBlocks and the repositioning of the builder.  This can be easily managed:
 
-	on If do |node|
-		cond_val = visit node.cond
-		fcmp :one, cond_val, ZERO, 'ifcond'
-		
-		start_bb = current_block
-		fun      = start_bb.parent
-		
-		then_bb               = fun.blocks.append('then')
-		then_val, new_then_bb = visit node.then, at: then_bb, rcb: true
-		
-		else_bb               = fun.blocks.append('else')
-		else_val, new_else_bb = visit node.else, at: else_bb, rcb: true
-		
-		merge_bb = fun.blocks.append('merge', self)
-		phi_inst = build(merge_bb) { phi RLTK::CG::DoubleType, {new_then_bb => then_val, new_else_bb => else_val}, 'iftmp' }
-		
-		build(start_bb) { cond cond_val, then_bb, else_bb }
-		
-		build(new_then_bb) { br merge_bb }
-		build(new_else_bb) { br merge_bb }
-		
-		returning(phi_inst) { target merge_bb }
-	end
+```Ruby
+on If do |node|
+  cond_val = visit node.cond
+  fcmp :one, cond_val, ZERO, 'ifcond'
+
+  start_bb = current_block
+  fun      = start_bb.parent
+
+  then_bb               = fun.blocks.append('then')
+  then_val, new_then_bb = visit node.then, at: then_bb, rcb: true
+
+  else_bb               = fun.blocks.append('else')
+  else_val, new_else_bb = visit node.else, at: else_bb, rcb: true
+
+  merge_bb = fun.blocks.append('merge', self)
+  phi_inst = build(merge_bb) { phi RLTK::CG::DoubleType, {new_then_bb => then_val, new_else_bb => else_val}, 'iftmp' }
+
+  build(start_bb) { cond cond_val, then_bb, else_bb }
+
+  build(new_then_bb) { br merge_bb }
+  build(new_else_bb) { br merge_bb }
+
+  returning(phi_inst) { target merge_bb }
+end
+```
 
 More extensive examples of how to use the Contractor class can be found in the Kazoo tutorial cchapters.
 
@@ -650,18 +716,22 @@ More extensive examples of how to use the Contractor class can be found in the K
 
 Once you have generated your code you may want to run it.  RLTK provides bindings to both the LLVM interpreter and JIT compiler to help you do just that.  Creating a JIT compiler is pretty simple.
 
-	mod = RLTK::CG::Module.new('my module')
-	jit = RLTK::CG::JITCompiler(mod)
-	
-	mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
-		blocks.append('entry', nil, nil, self) do |fun|
-			ret add(fun.params[0], fun.params[1])
-		end
-	end
+```Ruby
+mod = RLTK::CG::Module.new('my module')
+jit = RLTK::CG::JITCompiler(mod)
+
+mod.functions.add('add', RLTK:CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do
+  blocks.append('entry', nil, nil, self) do |fun|
+    ret add(fun.params[0], fun.params[1])
+  end
+end
+```
 
 Now you can run your 'add' function like this:
 
-	jit.run(fun, 1, 2)
+```Ruby
+jit.run(fun, 1, 2)
+```
 
 The result will be a {RLTK::CG::GenericValue} object, and you will want to use its {RLTK::CG::GenericValue#to\_i #to\_i} and {RLTK::CG::GenericValue#to\_f #to\_f} methods to get the Ruby value result.
 
@@ -673,17 +743,19 @@ The {RLTK::CFG} class provides an abstraction for context-free grammars.  For th
 
 A grammar is defined by first instantiating the {RLTK::CFG} class.  The {RLTK::CFG#production} and {RLTK::CFG#clause} methods may then be used to define the productions of the grammar.  The `production` method can take a Symbol denoting the left-hand side of the production and a string describing the right-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the `clause` method, each call producing a new production with the same left-hand side but different right-hand sides.  {RLTK::CFG#clause} may not be called outside of {RLTK::CFG#production}.  Bellow we see a grammar definition that uses both methods:
 
-	grammar = RLTK::CFG.new
-	
-	grammar.production(:s) do
-		clause('A G D')
-		clause('A a C')
-		clause('B a D')
-		clause('B G C')
-	end
-	
-	grammar.production(:a, 'b')
-	grammar.production(:b, 'G')
+```Ruby
+grammar = RLTK::CFG.new
+
+grammar.production(:s) do
+  clause('A G D')
+  clause('A a C')
+  clause('B a D')
+  clause('B G C')
+end
+
+grammar.production(:a, 'b')
+grammar.production(:b, 'G')
+```
 
 ### Extended Backus–Naur Form
 
@@ -714,11 +786,13 @@ The Kazoo toy language is a procedural language that allows you to define functi
 
 Because we want to keep things simple the only datatype in Kazoo is a 64-bit floating point type (a C double or a Ruby float).  As such, all values are implicitly double precision and the language doesn’t require type declarations.  This gives the language a very nice and simple syntax.  For example, the following example computes Fibonacci numbers:
 
-	def fib(x)
-		if x < 3 then
-			1
-		else
-			fib(x-1) + fib(x-2)
+```
+def fib(x)
+  if x < 3 then
+    1
+  else
+    fib(x-1) + fib(x-2)
+```
 
 The tutorial is organized as follows:
 
@@ -753,6 +827,10 @@ If you are interested in contributing to RLTK you can:
 * Extend the RLTK::CFG class with additional functionality.
 * Let me know if you found any part of this documentation unclear or incomplete.
 
-{{md NEWS.md}}
+## News
+
+Aaaaand we're back.  Development of RLTK has been on hold for a while as I worked on other projects.  If you want to see what I've been up to, you can check out [Clang's](http://llvm.org/clang) new `-Wconsumed` flag and the [Filigree](http://github.com/chriswailes/filigree) gem.
+
+The next version of RLTK is going to be updated to require Ruby 2.0 as well as LLVM 3.4.  Previous versions of RLTK required my LLVM-ECB libarary to expose extra LLVM features through the C bindings; this is no longer necessary as this functionality has been moved into LLVM proper.  If anyone has any requests for new or improved features for RLTK version 3.0, let me know.
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/chriswailes/rltk/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
