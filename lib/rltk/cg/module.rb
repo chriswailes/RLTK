@@ -15,7 +15,7 @@ require 'rltk/cg/context'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# This class represents a collection of functions, constants, and global
 	# variables.

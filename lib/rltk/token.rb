@@ -7,8 +7,7 @@
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
-	
+module RLTK
 	# The StreamPosition class is used to indicate the position of a token or
 	# other text inside a stream.
 	class StreamPosition

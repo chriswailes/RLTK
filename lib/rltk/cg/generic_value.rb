@@ -15,7 +15,7 @@ require 'rltk/cg/type'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# GenericValue objects are used to pass parameters into
 	# {ExecutionEngine ExecutionEngines} as well as retreive an evaluated

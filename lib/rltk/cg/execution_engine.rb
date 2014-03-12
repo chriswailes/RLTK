@@ -18,7 +18,7 @@ require 'rltk/cg/target'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# The ExecutionEngine class and its subclasses execute code from the
 	# provided module, as well as providing a {PassManager} and

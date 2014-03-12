@@ -15,7 +15,7 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# This module contains global operations on the LLVM compiler infrastructure.
 	module LLVM

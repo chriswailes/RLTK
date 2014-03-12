@@ -17,8 +17,7 @@ require 'rltk/lexers/ebnf'
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
-	
+module RLTK
 	# An exception class that represents a problem with a context-free
 	# grammar's definition.
 	class GrammarError < StandardError; end

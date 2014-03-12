@@ -8,8 +8,7 @@
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
-	
+module RLTK
 	# This module contains classes and methods for code generation.  Code
 	# generation functionality is provided by bindings to
 	# [LLVM](http://llvm.org).

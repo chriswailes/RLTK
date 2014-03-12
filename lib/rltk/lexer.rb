@@ -17,8 +17,7 @@ require 'rltk/token'
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
-	
+module RLTK
 	# A LexingError exception is raised when an input stream contains a
 	# substring that isn't matched by any of a lexer's rules.
 	class LexingError < StandardError

@@ -293,7 +293,7 @@ Not that, to resolve a shift/reduce or reduce/reduce conflict, precedence and as
 
 ### Argument Passing for Actions
 
-By default the proc objects associated with productions are passed one argument for each symbol on the right-hand side of the production.  This can lead to long, unwieldy argument lists.  To change this behaviour you can use the {RLTK::Parser.default_arg_type} method, which accepts the `:splat` (default) and `:array` arguments.  Any production actions that are defined after a call to {RLTK::Parser.default_arg_type} will use the argument passing method currently set as the default.  You can switch between the different argument passing methods by calling {RLTK::Parser.default_arg_type repeatedly.
+By default the proc objects associated with productions are passed one argument for each symbol on the right-hand side of the production.  This can lead to long, unwieldy argument lists.  To change this behaviour you can use the {RLTK::Parser.default_arg_type} method, which accepts the `:splat` (default) and `:array` arguments.  Any production actions that are defined after a call to {RLTK::Parser.default_arg_type} will use the argument passing method currently set as the default.  You can switch between the different argument passing methods by calling {RLTK::Parser.default_arg_type} repeatedly.
 
 Individual productions may specify the argument type used by their action via the `arg_type` parameter.  If the {RLTK::Parser.production} method is passed an argument type and a block, any clauses defined inside the block will use the argument type specified by the `arg_type` parameter.
 
@@ -832,5 +832,3 @@ If you are interested in contributing to RLTK you can:
 Aaaaand we're back.  Development of RLTK has been on hold for a while as I worked on other projects.  If you want to see what I've been up to, you can check out [Clang's](http://llvm.org/clang) new `-Wconsumed` flag and the [Filigree](http://github.com/chriswailes/filigree) gem.
 
 The next version of RLTK is going to be updated to require Ruby 2.0 as well as LLVM 3.4.  Previous versions of RLTK required my LLVM-ECB libarary to expose extra LLVM features through the C bindings; this is no longer necessary as this functionality has been moved into LLVM proper.  If anyone has any requests for new or improved features for RLTK version 3.0, let me know.
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/chriswailes/rltk/trend.png)](https://bitdeli.com/free "Bitdeli Badge")

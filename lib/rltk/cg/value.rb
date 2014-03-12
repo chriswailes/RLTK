@@ -16,7 +16,7 @@ require 'rltk/cg/type'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# This class represents LLVM IR "data", including integer and float
 	# literals, functions, and constant arrays, structs, and vectors.

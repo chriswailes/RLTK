@@ -16,7 +16,7 @@ require 'rltk/cg/builder'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	class Contractor < Builder
 		

@@ -14,8 +14,8 @@ require 'rltk/lexer'
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
-	module Lexers # :nodoc:
+module RLTK
+	module Lexers
 		
 		# The EBNF lexer is used by the RLTK::CFG class.
 		class EBNF < Lexer

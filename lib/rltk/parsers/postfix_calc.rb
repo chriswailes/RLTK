@@ -14,8 +14,8 @@ require 'rltk/parser'
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
-	module Parsers # :nodoc:
+module RLTK
+	module Parsers
 		
 		# A parser for a simple post-fix calculator.
 		class PostfixCalc < Parser

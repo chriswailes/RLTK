@@ -14,7 +14,7 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# Bindings for LLVM contexts.
 	class Context

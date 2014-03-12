@@ -7,7 +7,7 @@
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
+module RLTK
 	
 	# An implementation of the visitor pattern.
 	#

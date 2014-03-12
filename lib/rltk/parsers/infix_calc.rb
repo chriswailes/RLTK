@@ -14,7 +14,7 @@ require 'rltk/parser'
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
+module RLTK
 	
 	# The RLTK::Parsers module contains the parsers that are included as part
 	# of the RLKT project.

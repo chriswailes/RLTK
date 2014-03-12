@@ -14,7 +14,7 @@ require 'rltk/util/monkeys'
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
+module RLTK
 	# A TypeMismatch is raised when an object being set as a child or value of
 	# an ASTNode is of the wrong type.
 	class TypeMismatch < StandardError

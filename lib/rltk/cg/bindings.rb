@@ -20,7 +20,7 @@ require 'rltk/cg'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# This module provides access to stored FFI::Pointer objects and allows a
 	# class to be passed directly into FFI methods.  It also provides a

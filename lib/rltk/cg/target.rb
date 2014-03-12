@@ -15,7 +15,7 @@ require 'rltk/cg/triple'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 
 	# Class binding for the LLVM Triple class.
 	class Target

@@ -16,7 +16,7 @@ require 'rltk/cg/value'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# An LLVM IR function.
 	class Function < GlobalValue

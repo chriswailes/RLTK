@@ -19,7 +19,7 @@ require 'rltk/cg/context'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# The Type class and its sub-classes are used to describe the size and
 	# structure of various data objects inside LLVM and how different

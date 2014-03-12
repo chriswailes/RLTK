@@ -14,7 +14,7 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 
 	# Support functionality for LLVM code generation.
 	module Support

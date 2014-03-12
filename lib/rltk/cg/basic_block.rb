@@ -16,7 +16,7 @@ require 'rltk/cg/value'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 
 	# A BasicBlock is what instructions are inserted into and what functions
 	# are made of.  BasicBlock objects may be created either using

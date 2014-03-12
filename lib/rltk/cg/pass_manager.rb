@@ -14,7 +14,7 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# A PassManager is responsible for scheduling and running optimization
 	# passes on modules.

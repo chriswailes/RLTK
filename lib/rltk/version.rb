@@ -3,7 +3,7 @@
 # Date:		2012/03/08
 # Description:	This file specifies the version number of RLTK.
 
-module RLTK # :nodoc:
+module RLTK
 	# The version number of the RLTK library.
 	VERSION			= '2.2.1'
 	# The version of LLVM targeted by RLTK.

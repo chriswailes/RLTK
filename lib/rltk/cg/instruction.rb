@@ -15,7 +15,7 @@ require 'rltk/cg/value'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 	
 	# This class represents LLVM IR instructions.
 	class Instruction < User
@@ -179,10 +179,10 @@ module RLTK::CG # :nodoc:
 			# Add incoming {BasicBlock}/{Value} pairs to a Phi node.
 			#
 			# @example Adding a single block/value pair:
-			#	phi.incoming.add(bb, val)
+			#    phi.incoming.add(bb, val)
 			#
 			# @example Adding several block/value pairs:
-			#	phi.incoming.add({bb0 => val0, bb1 => val1})
+			#    phi.incoming.add({bb0 => val0, bb1 => val1})
 			#
 			# @param [BasicBlock, Hash{BasicBlock => Value}]	overloaded
 			# @param [Value, nil]						value

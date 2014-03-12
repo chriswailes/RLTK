@@ -14,8 +14,8 @@ require 'rltk/cfg'
 # Classes and Modules #
 #######################
 
-module RLTK # :nodoc:
-	
+# The RLTK root module
+module RLTK
 	# A BadToken error indicates that a token was observed in the input stream
 	# that wasn't used in the grammar's definition.
 	class BadToken < StandardError
@@ -350,7 +350,7 @@ module RLTK # :nodoc:
 			# Set the default argument type for the actions associated with
 			# clauses.  All actions defined after this call will be passed
 			# arguments in the way specified here, unless overridden in the
-			# call to {Parser#clause}.
+			# call to {Parser.clause}.
 			#
 			# @param [:array, :splat] type The default argument type.
 			#

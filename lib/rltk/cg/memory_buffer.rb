@@ -14,7 +14,7 @@ require 'rltk/cg/bindings'
 # Classes and Modules #
 #######################
 
-module RLTK::CG # :nodoc:
+module RLTK::CG
 
 	# This class is used by the {Module} class to dump and load LLVM bitcode.
 	class MemoryBuffer
