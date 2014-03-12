@@ -7,8 +7,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/cg/llvm'
@@ -17,7 +17,7 @@ require 'rltk/cg/module'
 require 'rltk/cg/function'
 require 'rltk/cg/type'
 
-class ControlFlowTester < Test::Unit::TestCase
+class ControlFlowTester < Minitest::Test
 	def setup
 		RLTK::CG::LLVM.init(:X86)
 		

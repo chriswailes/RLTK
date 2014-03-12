@@ -8,13 +8,13 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/cg/generic_value'
 
-class GenericValueTester < Test::Unit::TestCase
+class GenericValueTester < Minitest::Test
 	def setup
 		RLTK::CG::LLVM.init(:X86)
 	end

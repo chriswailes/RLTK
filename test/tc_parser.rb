@@ -8,8 +8,10 @@
 ############
 
 # Standard Library
-require 'test/unit'
 require 'tmpdir'
+
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/lexer'
@@ -23,7 +25,7 @@ require 'rltk/parsers/postfix_calc'
 # Classes and Modules #
 #######################
 
-class ParserTester < Test::Unit::TestCase
+class ParserTester < Minitest::Test
 	class ABLexer < RLTK::Lexer
 		rule(/a/) { [:A, 1] }
 		rule(/b/) { [:B, 2] }

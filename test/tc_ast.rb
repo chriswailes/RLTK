@@ -7,9 +7,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
-require 'pp'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/ast'
@@ -18,7 +17,7 @@ require 'rltk/ast'
 # Classes and Modules #
 #######################
 
-class ASTNodeTester < Test::Unit::TestCase
+class ASTNodeTester < Minitest::Test
 	class ANode < RLTK::ASTNode
 		child :left, ANode
 		child :right, ANode

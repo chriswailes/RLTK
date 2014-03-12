@@ -7,8 +7,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/cg/llvm'
@@ -16,7 +16,7 @@ require 'rltk/cg/module'
 require 'rltk/cg/function'
 require 'rltk/cg/type'
 
-class FunctionTester < Test::Unit::TestCase
+class FunctionTester < Minitest::Test
 	def setup
 		@mod = RLTK::CG::Module.new('Testing Module')
 		@fun = @mod.functions.add('testing_function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])

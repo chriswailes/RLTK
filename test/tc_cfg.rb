@@ -7,8 +7,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/cfg'
@@ -17,7 +17,7 @@ require 'rltk/cfg'
 # Classes and Modules #
 #######################
 
-class CFGTester < Test::Unit::TestCase
+class CFGTester < Minitest::Test
 	def setup
 		@grammar = RLTK::CFG.new
 		

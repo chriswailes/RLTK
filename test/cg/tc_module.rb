@@ -9,7 +9,9 @@
 
 # Standard Library
 require 'tempfile'
-require 'test/unit'
+
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/cg/llvm'
@@ -22,7 +24,7 @@ require 'rltk/cg/value'
 # Classes and Modules #
 #######################
 
-class ModuleTester < Test::Unit::TestCase
+class ModuleTester < Minitest::Test
 	def setup
 		RLTK::CG::LLVM.init(:X86)
 		

@@ -8,8 +8,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/util/abstract_class'
@@ -18,7 +18,7 @@ require 'rltk/util/abstract_class'
 # Classes and Modules #
 #######################
 
-class AbstractClassTester < Test::Unit::TestCase
+class AbstractClassTester < Minitest::Test
 	class Foo
 		include AbstractClass
 	end

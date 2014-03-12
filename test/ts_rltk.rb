@@ -8,19 +8,17 @@
 # Requires #
 ############
 
-begin
-	require 'simplecov'
+# Filigree
+require 'filigree/request_file'
+
+request_file('simplecov', 'SimpleCov is not installed.') do
 	SimpleCov.start do
 		add_filter 'tc_*'
 		add_filter 'generated*'
 	end
-	
-rescue LoadError
-	puts 'SimpleCov not installed.  Continuing without it.'
 end
 
-# Rubygems
-require 'rubygems'
+# Gems
 require 'ffi'
 
 # Ruby Language Toolkit
@@ -37,6 +35,7 @@ require 'tc_visitor'
 require 'util/ts_util'
 
 begin
+	# Check to make sure the target LLVM library is present.
 	class Tester
 		extend FFI::Library
 		

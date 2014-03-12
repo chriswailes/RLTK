@@ -7,8 +7,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/token'
@@ -17,7 +17,7 @@ require 'rltk/token'
 # Classes and Modules #
 #######################
 
-class TokenTester < Test::Unit::TestCase
+class TokenTester < Minitest::Test
 	def test_equal
 		t0 = RLTK::Token.new(:FOO, 0)
 		t1 = RLTK::Token.new(:FOO, 0)

@@ -7,8 +7,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/token'
@@ -20,7 +20,7 @@ require 'rltk/lexers/ebnf'
 # Classes and Modules #
 #######################
 
-class LexerTester < Test::Unit::TestCase
+class LexerTester < Minitest::Test
 	class ABLongest < RLTK::Lexer
 		rule(/a+/)	{ :APLUS }
 		rule(/b+/)	{ :BPLUS }

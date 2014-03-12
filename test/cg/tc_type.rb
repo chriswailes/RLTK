@@ -8,13 +8,13 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/cg/type'
 
-class TypeTester < Test::Unit::TestCase
+class TypeTester < Minitest::Test
 	def setup
 		@pointee = RLTK::CG::NativeIntType.instance
 		@pointer = RLTK::CG::PointerType.new(@pointee)

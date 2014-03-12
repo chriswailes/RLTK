@@ -7,8 +7,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/visitor'
@@ -17,7 +17,7 @@ require 'rltk/visitor'
 # Classes and Modules #
 #######################
 
-class VisitorTester < Test::Unit::TestCase
+class VisitorTester < Minitest::Test
 	class GuardedVisitor
 		include RLTK::Visitor
 		

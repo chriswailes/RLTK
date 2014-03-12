@@ -7,8 +7,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/version'
@@ -18,7 +18,7 @@ require 'rltk/cg/llvm'
 # Classes and Modules #
 #######################
 
-class LLVMTester < Test::Unit::TestCase
+class LLVMTester < Minitest::Tester
 	def test_init
 		assert_raise(ArgumentError)	{ RLTK::CG::LLVM.init(:foo) }
 		assert_nothing_raised		{ RLTK::CG::LLVM.init(:X86) }

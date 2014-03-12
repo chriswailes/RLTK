@@ -8,8 +8,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/util/monkeys'
@@ -18,7 +18,7 @@ require 'rltk/util/monkeys'
 # Classes and Modules #
 #######################
 
-class MonkeyTester < Test::Unit::TestCase
+class MonkeyTester < Minitest::Test
 	module Foo; end
 	
 	class Bar

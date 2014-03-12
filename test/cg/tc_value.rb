@@ -8,8 +8,8 @@
 # Requires #
 ############
 
-# Standard Library
-require 'test/unit'
+# Gems
+require 'minitest/autorun'
 
 # Ruby Language Toolkit
 require 'rltk/cg/llvm'
@@ -18,7 +18,7 @@ require 'rltk/cg/execution_engine'
 require 'rltk/cg/type'
 require 'rltk/cg/value'
 
-class ValueTester < Test::Unit::TestCase
+class ValueTester < Minitest::Test
 	def setup
 		RLTK::CG::LLVM.init(:X86)
 		
