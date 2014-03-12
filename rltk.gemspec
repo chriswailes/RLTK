@@ -23,28 +23,38 @@ Gem::Specification.new do |s|
 			] +
 			Dir.glob('lib/**/*.rb')
 			
-			
+	s.test_files = Dir['test/**/**.rb']
+	
 	s.require_path	= 'lib'
 	
 	s.author   = 'Chris Wailes'
 	s.email    = 'chris.wailes+rltk@gmail.com'
-	s.homepage = 'http://github.com/chriswailes/RLTK'
+	s.homepage = 'https://github.com/chriswailes/RLTK'
 	s.license  = 'University of Illinois/NCSA Open Source License'
 	
-	s.required_ruby_version = '>= 1.9.1'
+	s.required_ruby_version = '>= 2.0.0'
+	
+	################
+	# Dependencies #
+	################
 	
 	s.add_dependency('ffi', '>= 1.0.0')
-	s.add_dependency('filigree', '>= 0.1.2')
+	s.add_dependency('filigree', '>= 0.2.0')
+	
+	############################
+	# Development Dependencies #
+	############################
 	
 	s.add_development_dependency('bundler')
 	s.add_development_dependency('ffi_gen', '>= 1.1.0')
+	s.add_development_dependency('flay')
+	s.add_development_dependency('flog')
 	s.add_development_dependency('minitest')
 	s.add_development_dependency('pry')
 	s.add_development_dependency('rake')
 	s.add_development_dependency('rake-notes')
+	s.add_development_dependency('reek')
 	s.add_development_dependency('rubygems-tasks')
 	s.add_development_dependency('simplecov')
 	s.add_development_dependency('yard', '>= 0.8.1')
-	
-	s.test_files	= Dir.glob('test/tc_*.rb') + Dir.glob('test/ts_*.rb')
 end

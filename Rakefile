@@ -8,55 +8,109 @@
 ##############
 
 # Gems
-require 'rake/notes/rake_task'
-require 'rake/testtask'
-require 'bundler'
+require 'filigree/request_file'
 
+# RLTK
 require File.expand_path("../lib/rltk/version", __FILE__)
 
-begin
-	require 'yard'
+###########
+# Bundler #
+###########
 
+request_file('bundler', 'Bundler is not installed.') do
+	Bundler::GemHelper.install_tasks
+end
+
+########
+# Flay #
+########
+
+request_file('flay', 'Flay is not installed.') do
+	desc 'Analyze code for similarities with Flay'
+	task :flay do
+		flay = Flay.new
+		flay.process(*Dir['lib/**/*.rb'])
+		flay.report
+	end
+end
+
+########
+# Flog #
+########
+
+request_file('flog_cli', 'Flog is not installed.') do
+	desc 'Analyze code complexity with Flog'
+	task :flog do
+		whip = FlogCLI.new
+		whip.flog('lib')
+		whip.report
+	end
+end
+
+############
+# MiniTest #
+############
+
+request_file('rake/testtask', 'Minitest is not installed.') do
+	Rake::TestTask.new do |t|
+		t.libs << 'test'
+		t.loader     = :testrb
+		t.test_files = FileList['test/ts_rltk.rb']
+	end
+end
+
+#########
+# Notes #
+#########
+
+request_file('rake/notes/rake_task', 'Rake-notes is not installed.')
+
+########
+# Reek #
+########
+
+request_file('reek/rake/task', 'Reek is not installed.') do
+	Reek::Rake::Task.new do |t|
+	  t.fail_on_error = false
+	end
+end
+
+##################
+# Rubygems Tasks #
+##################
+
+request_file('rubygems/tasks', 'Rubygems-tasks is not installed.') do
+	Gem::Tasks.new do |t|
+		t.console.command = 'pry'
+	end
+end
+
+########
+# YARD #
+########
+
+request_file('yard', 'Yard is not installed.') do
 	YARD::Rake::YardocTask.new do |t|
 		yardlib = File.join(File.dirname(__FILE__), 'yardlib/rltk.rb')
 		
 		t.options	= [
-			'-e',		yardlib,
-			'--title',	'The Ruby Language Toolkit',
-			'-m',		'markdown',
-			'-M',		'redcarpet',
-			'-c',		'.yardoc/cache',
+			'-e',       yardlib,
+			'--title',  'The Ruby Language Toolkit',
+			'-m',       'markdown',
+			'-M',       'redcarpet',
+			'-c',       '.yardoc/cache',
 			'--private'
 		]
 		
-		
-		t.files	= Dir['lib/**/*.rb'] + ['-'] + Dir['examples/kazoo/**/*.md'].sort
+		t.files = Dir['lib/**/*.rb'] +
+		          ['-'] +
+		          Dir['examples/kazoo/**/*.md'].sort
 	end
-	
-rescue LoadError
-	warn 'Yard is not installed. `gem install yard` to build documentation.'
 end
 
-Rake::TestTask.new do |t|
-	t.libs << 'test'
-	t.loader = :testrb
-	t.test_files = FileList['test/ts_rltk.rb']
-end
-
-# Bundler tasks.
-Bundler::GemHelper.install_tasks
-
-# Rubygems Taks
-begin
-	require 'rubygems/tasks'
-	
-	Gem::Tasks.new do |t|
-		t.console.command = 'pry'
-	end
-	
-rescue LoadError
-	'rubygems-tasks not installed.'
-end
+##############
+# RLTK Tasks #
+##############
 
 desc 'Generate the bindings for LLVM.'
 task :gen_bindings do
@@ -108,43 +162,14 @@ task :gen_bindings do
 	]
 	
 	FFIGen.generate(
-		:module_name	=> 'RLTK::CG::Bindings',
-		:ffi_lib		=> "LLVM-#{RLTK::LLVM_TARGET_VERSION}",
-		:headers		=> headers,
-		:cflags		=> `llvm-config --cflags`.split,
-		:prefixes		=> ['LLVM'],
-		:blacklist	=> blacklist + deprecated,
-		:output		=> 'lib/rltk/cg/generated_bindings.rb'
+		module_name: 'RLTK::CG::Bindings',
+		ffi_lib:     "LLVM-#{RLTK::LLVM_TARGET_VERSION}",
+		headers:     headers,
+		cflags:      `llvm-config --cflags`.split,
+		prefixes:    ['LLVM'],
+		blacklist:   blacklist + deprecated,
+		output:      'lib/rltk/cg/generated_bindings.rb'
 	)
-	
-	# Generate the extended LLVM bindings.
-	
-	headers = [
-		'llvm-ecb.h',
-		
-		'llvm-ecb/asm.h',
-		'llvm-ecb/module.h',
-		'llvm-ecb/support.h',
-		
-		'llvm-ecb/value.h',
-		'llvm-ecb/target.h'
-
-		# This causes value.h to not be included.
-		#'llvm-ecb/target.h',
-		#'llvm-ecb/value.h'
-	]
-	
-	begin
-		FFIGen.generate(
-			:module_name	=> 'RLTK::CG::Bindings',
-			:ffi_lib		=> "LLVM-ECB-#{RLTK::LLVM_TARGET_VERSION}",
-			:headers		=> headers,
-			:cflags		=> `llvm-config --cflags`.split,
-			:prefixes		=> ['LLVM'],
-			:output		=> 'lib/rltk/cg/generated_extended_bindings.rb'
-		)
-	rescue
-	end
 end
 
 desc 'Find LLVM bindings with a regular expression.'
