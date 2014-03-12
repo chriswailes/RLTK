@@ -119,12 +119,25 @@ module RLTK
 						rule = match.last
 					
 						txt = scanner.scan(rule.pattern)
-						type, value = env.rule_exec(rule.pattern.match(txt), txt, &rule.action)
+						results = env.rule_exec(rule.pattern.match(txt), txt, &rule.action)
+                                                result_processor = proc do |result|
+                                                        type, value = result
+
+                                                        if type
+                                                                pos = StreamPosition.new(stream_offset, line_number, line_offset, txt.length, file_name)
+                                                                tokens << Token.new(type, value, pos) 
+                                                        end
+                                                end
 					
-						if type
-							pos = StreamPosition.new(stream_offset, line_number, line_offset, txt.length, file_name)
-							tokens << Token.new(type, value, pos) 
-						end
+                                                if result.is_a? Array
+                                                        if results.all? { |e| e.is_a? Array }
+                                                                results.each(&result_processor)
+                                                        else
+                                                                result_processor.call(results)
+                                                        end
+                                                else
+                                                        result_processor.call(results)
+                                                end
 					
 						# Advance our stat counters.
 						stream_offset += txt.length
