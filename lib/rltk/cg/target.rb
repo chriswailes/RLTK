@@ -133,19 +133,6 @@ module RLTK::CG
 		# The Proc object called by the garbage collector to free resources used by LLVM.
 		CLASS_FINALIZER = Proc.new { |id| Bindings.dispose_target_machine(ptr) if ptr = ObjectSpace._id2ref(id).ptr }
 		
-		# Convert an array of strings representing features of a target
-		# machine into a single string.
-		#
-		# @param [Array<String>] features Strings representing features of a target machine.
-		#
-		# @return [String] A single string representing all of the given features.
-		def self.build_feature_string(features)
-			strings_ptr = FFI::MemoryPointer.new(:pointer, features.length)
-			strings_ptr.write_array_of_pointer(features.map { |str| FFI::MemoryPointer.from_string(str) })
-			
-			Bindings.build_features_string(strings_ptr, features.length)
-		end
-		
 		# @return [TargetMachine] TargetMachine representation of the host machine.
 		def self.host
 			@host ||= self.new(Target.host)

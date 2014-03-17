@@ -126,26 +126,26 @@ module RLTK::CG
 		# @param [Symbol]		func		Function name.
 		# @param [Array<Object>] args		Argument types for FFI::Library.attach_function.
 		# @param [Object]		returns	Return type for FFI::Library.attach_function.
-#		def self.add_binding(func, args, returns)
-#			attach_function(get_bname(func.to_s[4..-1]), func, args, returns)
-#		end
+		def self.add_binding(func, args, returns)
+			attach_function(get_bname(func.to_s[4..-1]), func, args, returns)
+		end
 		
 		####################
 		# Missing Bindings #
 		####################
 		
-#		ARCHS.each do |arch|
-#			add_binding("LLVMInitialize#{arch}Target", [], :void)
-#			add_binding("LLVMInitialize#{arch}TargetInfo", [], :void)
-#			add_binding("LLVMInitialize#{arch}TargetMC", [], :void)
-#		end
-#		
-#		ASM_PARSERS.each do |asm|
-#			add_binding("LLVMInitialize#{asm}AsmParser", [], :void)
-#		end
-#		
-#		ASM_PRINTERS.each do |asm|
-#			add_binding("LLVMInitialize#{asm}AsmPrinter", [], :void)
-#		end
+		ARCHS.each do |arch|
+			add_binding("LLVMInitialize#{arch}Target", [], :void)
+			add_binding("LLVMInitialize#{arch}TargetInfo", [], :void)
+			add_binding("LLVMInitialize#{arch}TargetMC", [], :void)
+		end
+		
+		ASM_PARSERS.each do |asm|
+			add_binding("LLVMInitialize#{asm}AsmParser", [], :void)
+		end
+		
+		ASM_PRINTERS.each do |asm|
+			add_binding("LLVMInitialize#{asm}AsmPrinter", [], :void)
+		end
 	end
 end
