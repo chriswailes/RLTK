@@ -26,12 +26,12 @@ module RLTK::CG
 		
 		# @return [Triple] Object representing the host architecture, vendor, OS, and environment.
 		def self.host
-			@host ||= self.new(Bindings.get_host_triple)
+			@host ||= Triple.new(host_string)
 		end
-		
+	
 		# @return [String] String representation of the host architecture, vendor, OS, and environment.
 		def self.host_string
-			@host_string ||= Bindings.get_host_triple_string
+			@host_string ||= Bindings.get_default_target_triple
 		end
 		
 		####################
@@ -43,16 +43,16 @@ module RLTK::CG
 		#
 		# @param [FFI::Pointer, String] overloaded
 		def initialize(overloaded)
-			@ptr = 
+			@ptr, @str = 
 			case overloaded
-			when FFI::Pointer	then overloaded
-			when String		then Bindings.triple_create(overloaded)
+			when FFI::Pointer then [overloaded, nil]
+			when String       then [Bindings.triple_create(overloaded), overloaded]
 			end
 		end
 		
 		# @return [String] String representation of this triple.
 		def to_s
-			Bindings.get_triple_string(@ptr)
+			@str ||= Bindings.get_triple_string(@ptr)
 		end
 	end
 end

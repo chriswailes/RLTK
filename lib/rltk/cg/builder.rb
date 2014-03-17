@@ -806,18 +806,48 @@ module RLTK::CG
 		#
 		# @return [GlobalStringPtrInst] Reference to the global string pointer.
 		def gloabl_string_pointer(string, name = '')
-			GlobalStringPtrInst(Bindings.build_global_string_ptr(@ptr, string, name))
+			GlobalStringPtrInst.new(Bindings.build_global_string_ptr(@ptr, string, name))
+		end
+		
+		#######################
+		# Atomic Instructions #
+		#######################
+		
+		# Create an atomic read/modify/write instruction.
+		#
+		# @see http://llvm.org/docs/LangRef.html#atomic-memory-ordering-constraints
+		#
+		# @param [Symbol from _enum_atomic_rmw_bin_op_]  op             Operation to perform
+		# @param [OpaqueValue]                           addr           Address to modify
+		# @param [OpaqueValue]                           val            Value to test
+		# @param [Symbol from _enum_atomic_ordering_]    ordering       Memory ordering constraints
+		# @param [Boolean]                               single_thread  Synchronize with single thread or all threads
+		#
+		# @return [AtomicRMWInst]
+		def atomic_rmw(op, addr, val, ordering, single_thread)
+			AtomicRMWInst.new(Bindings.build_atomic_rmw(@ptr, op, addr, val, ordering, single_thread.to_i))
 		end
 		
 		###############################
 		# Type and Value Manipulation #
 		###############################
 		
+		# Cast a value to a given address space.
+		#
+		# @param [Value]  val   Value to cast
+		# @param [Type]   type  Target type
+		# @param [String] name  Name of the result in LLVM IR
+		#
+		# @return [AddrSpaceCastInst]
+		def addr_space_cast(val, type, name = '')
+			AddrSpaceCast.new(Bindings.addr_space_cast(@ptr, val, check_cg_type(type), name))
+		end
+		
 		# Cast a value to the given type without changing any bits.
 		#
-		# @param [Value]	val	Value to cast.
-		# @param [Type]	type	Target type.
-		# @param [String]	name	Name of the result in LLVM IR.
+		# @param [Value]   val   Value to cast
+		# @param [Type]    type  Target type
+		# @param [String]  name  Name of the result in LLVM IR
 		#
 		# @return [BitCastInst] A value of the target type.
 		def bitcast(val, type, name = '')

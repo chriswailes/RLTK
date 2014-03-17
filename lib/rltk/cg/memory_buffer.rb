@@ -26,7 +26,7 @@ module RLTK::CG
 		# Create a new memory buffer.
 		#
 		# @param [FFI::Pointer, String, nil] overloaded This parameter may be either a pointer to an existing memory
-		#   buffer, the name of a file containing LLVM bitcode, or nil.  If it is nil the memory buffer will read
+		#   buffer, the name of a file containing LLVM bitcode or IR, or nil.  If it is nil the memory buffer will read
 		#   from standard in.
 		def initialize(overloaded = nil)
 			@ptr =
@@ -45,14 +45,31 @@ module RLTK::CG
 					Bindings.create_memory_buffer_with_stdin(buf_ptr, msg_ptr)
 				end
 				
-				raise msg_ptr.get_pointer(0).get_string(0) if status != 0
-				
-				buf_ptr.get_pointer(0)
+				if status.zero?
+					buf_ptr.get_pointer(0)
+				else
+					raise msg_ptr.get_pointer(0).get_string(0)
+				end
 			end
 			
 			# Define a finalizer to free the memory used by LLVM for this
 			# memory buffer.
 			ObjectSpace.define_finalizer(self, CLASS_FINALIZER)
+		end
+		
+		# Get the size of the memory buffer.
+		#
+		# @return [Integer]  Size of memory buffer
+		def size
+			Bindings.get_buffer_size(@ptr)
+		end
+		
+		# Get a copy of the memory buffer, from the beginning, as a sequence
+		# of characters.
+		#
+		# @return [String]
+		def start
+			Bindings.get_buffer_start(@ptr)
 		end
 	end
 end

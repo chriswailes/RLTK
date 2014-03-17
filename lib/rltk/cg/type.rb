@@ -40,6 +40,7 @@ module RLTK::CG
 		def self.from_ptr(ptr)
 			case Bindings.get_type_kind(ptr)
 			when :array		then ArrayType.new(ptr)
+			when :half          then HalfType.new
 			when :double		then DoubleType.new
 			when :float		then FloatType.new
 			when :function		then FunctionType.new(ptr)
@@ -73,12 +74,19 @@ module RLTK::CG
 		
 		# @return [NativeInt] Alignment of the type.
 		def allignment
-			Int64.new(Bindings.align_of(@ptr))
+			NativeInt.new(Bindings.align_of(@ptr))
 		end
 		
 		# @return [Context] Context in which this type was created.
 		def context
 			Context.new(Bindings.get_type_context(@ptr))
+		end
+		
+		# Dump a string representation of the type to stdout.
+		#
+		# @return [void]
+		def dump
+			Bindings.dump_type(@ptr)
 		end
 		
 		# @return [Fixnum] Hashed value of the pointer representing this type.
@@ -96,6 +104,11 @@ module RLTK::CG
 		# @return [NativeInt] Size of objects of this type.
 		def size
 			Int64.new(Bindings.size_of(@ptr))
+		end
+		
+		# @return [String]  LLVM IR representation of the type
+		def to_s
+			Bindings.print_type_to_string(@ptr)
 		end
 	end
 	
@@ -186,37 +199,66 @@ module RLTK::CG
 	end
 	
 	# 1 bit integer type.  Often used to represent Boolean values.
-	class Int1Type		< SimpleIntType; end
+	class Int1Type  < SimpleIntType; end
 	# 8 bit (1 byte) integer type.
-	class Int8Type		< SimpleIntType; end
+	class Int8Type  < SimpleIntType; end
 	# 16 bit (2 byte) integer type.
-	class Int16Type	< SimpleIntType; end
+	class Int16Type < SimpleIntType; end
 	# 32 bit (4 byte) integer type.
-	class Int32Type	< SimpleIntType; end
+	class Int32Type < SimpleIntType; end
 	# 64 bit (8 byte) integer type.
-	class Int64Type	< SimpleIntType; end
+	class Int64Type < SimpleIntType; end
+	
+	# Integer the same size as a native pointer.
+	class IntPtr < SimpleIntType
+		# Create an integer that is the same size as a pointer on the target
+		# machine.  Additionally, an address space and a context may be
+		# provided.
+		#
+		# @param [TargetData]  target_data    Data on compilation target
+		# @param [Integer]     address_space  Target address space
+		# @param [Context]     context        Context in which to get the type
+		def initialize(target_data, addr_space = nil, context = nil)
+			call = 'int_type'
+			args = [target_data]
+			
+			if addr_space
+				call += '_for_as'
+				args << addr_space
+			end
+			
+			if context
+				call += '_in_context'
+				args << context
+			end
+			
+			Bindings.send(call.to_s, *args)
+		end
+	end
 	
 	# The native integer type on the current (not the target) platform.
 	NativeIntType = RLTK::CG.const_get("Int#{FFI.type_size(:int) * 8}Type")
 	
+	# A 16-bit floating point number type.
+	class HalfType     < RealType; end      
 	# A double precision floating point number type.
-	class DoubleType	< RealType; end
+	class DoubleType   < RealType; end
 	# A single precision floating point number type.
-	class FloatType	< RealType; end
+	class FloatType    < RealType; end
 	# A 128 bit (16 byte) floating point number type.
-	class FP128Type	< RealType; end
+	class FP128Type    < RealType; end
 	# A 128 bit (16 byte) floating point number type for the PPC architecture.
-	class PPCFP128Type	< RealType; end
+	class PPCFP128Type < RealType; end
 	# A 80 bit (10 byte) floating point number type for the x86 architecture.
-	class X86FP80Type	< RealType; end
+	class X86FP80Type  < RealType; end
 	
 	# A type for x86 MMX instructions.
-	class X86MMXType	< SimpleType; end
+	class X86MMXType   < SimpleType; end
 	
 	# A type used in representing void pointers and functions that return no values.
-	class VoidType		< SimpleType; end
+	class VoidType     < SimpleType; end
 	# A type used to represent labels in LLVM IR.
-	class LabelType	< SimpleType; end
+	class LabelType    < SimpleType; end
 	
 	# The common ancestor for array, pointer, and struct types.
 	#

@@ -3,6 +3,12 @@
 # Date:		2012/03/08
 # Description:	This file holds bindings to LLVM.
 
+#########
+# Notes #
+#########
+
+# 1) initialize_all_target_m_cs -> initialize_all_target_mcs
+# 2) initialize_obj_carc_opts   -> initialize_objc_arc_opts
 ############
 # Requires #
 ############
@@ -51,22 +57,6 @@ module RLTK::CG
 	
 		# Require the generated bindings files while handling errors.
 		require 'rltk/cg/generated_bindings'
-	
-		begin
-			require 'rltk/cg/generated_extended_bindings'
-		
-			# Check to make sure that we have the same target version as the ECB.
-			if target_version() != RLTK::LLVM_TARGET_VERSION
-				raise LibraryMismatch,
-					"Extended bindings expected LLVM version #{target_version()}, " +
-					"RLTK expects LLVM version #{RLTK::LLVM_TARGET_VERSION}"
-			end
-		
-			@ecb = true
-		
-		rescue LoadError
-			@ecb = false
-		end
 	
 		#############
 		# Constants #
@@ -119,11 +109,6 @@ module RLTK::CG
 		# Methods #
 		###########
 		
-		# @return [Boolean] If the Extended C  Bindings for LLVM are present.
-		def self.ecb?
-			@ecb
-		end
-		
 		# Converts a CamelCase string into an underscored string.
 		#
 		# @param [#to_s] name CamelCase string.
@@ -141,28 +126,26 @@ module RLTK::CG
 		# @param [Symbol]		func		Function name.
 		# @param [Array<Object>] args		Argument types for FFI::Library.attach_function.
 		# @param [Object]		returns	Return type for FFI::Library.attach_function.
-		def self.add_binding(func, args, returns)
-			attach_function(get_bname(func.to_s[4..-1]), func, args, returns)
-		end
+#		def self.add_binding(func, args, returns)
+#			attach_function(get_bname(func.to_s[4..-1]), func, args, returns)
+#		end
 		
 		####################
 		# Missing Bindings #
 		####################
 		
-		ARCHS.each do |arch|
-			add_binding("LLVMInitialize#{arch}Target", [], :void)
-			add_binding("LLVMInitialize#{arch}TargetInfo", [], :void)
-			add_binding("LLVMInitialize#{arch}TargetMC", [], :void)
-		end
-		
-		ASM_PARSERS.each do |asm|
-			add_binding("LLVMInitialize#{asm}AsmParser", [], :void)
-		end
-		
-		ASM_PRINTERS.each do |asm|
-			add_binding("LLVMInitialize#{asm}AsmPrinter", [], :void)
-		end
-		
-		add_binding(:LLVMDisposeMessage, [:pointer], :void)
+#		ARCHS.each do |arch|
+#			add_binding("LLVMInitialize#{arch}Target", [], :void)
+#			add_binding("LLVMInitialize#{arch}TargetInfo", [], :void)
+#			add_binding("LLVMInitialize#{arch}TargetMC", [], :void)
+#		end
+#		
+#		ASM_PARSERS.each do |asm|
+#			add_binding("LLVMInitialize#{asm}AsmParser", [], :void)
+#		end
+#		
+#		ASM_PRINTERS.each do |asm|
+#			add_binding("LLVMInitialize#{asm}AsmPrinter", [], :void)
+#		end
 	end
 end

@@ -175,6 +175,16 @@ module RLTK::CG
 		class FunctionAttrCollection < AttrCollection
 			@@add_method = :add_function_attr
 			@@del_method = :remove_function_attr
+			
+			# Set a target-dependent function attribute.
+			#
+			# @param [String]  attribute  Attribute name
+			# @param [String]  value      Attribute value
+			#
+			# @return [void]
+			def add_td_attr(attribute, value)
+				Bindings.add_target_dependent_function_attr(@value, attribute, value)
+			end
 		end
 		
 		
