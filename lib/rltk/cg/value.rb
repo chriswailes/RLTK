@@ -412,14 +412,15 @@ module RLTK::CG
 		# @param [Array<Value>, Integer]  size_or_values  Number of values or array of values.
 		# @param [Proc]                   block           Block evaluated if size is specified.
 		def initialize(element_type, size_or_values, &block)
-			vals_ptr = make_ptr_to_elements(size_or_values, &block)
-			@type    = ArrayType.new(element_type = check_cg_type(element_type, Type, 'element_type'))
-			@ptr     = Bindings.const_array(element_type, vals_ptr, vals_ptr.size / vals_ptr.type_size)
+			vals_ptr     = make_ptr_to_elements(size_or_values, &block)
+			element_type = check_cg_type(element_type, Type, 'element_type')
+			@ptr         = Bindings.const_array(element_type, vals_ptr, vals_ptr.size / vals_ptr.type_size)
 		end
 		
-		def length
-			Bindings.get_array_length(@ptr)
+		def size
+			self.type.size
 		end
+		alias :length :size
 	end
 	
 	# A sub-class of {ConstantArray} specifically for holding strings.
@@ -519,8 +520,9 @@ module RLTK::CG
 		end
 		
 		def size
-			Bindings.get_vector_size(@ptr)
+			self.type.size
 		end
+		alias :length :size
 	end
 	
 	# All number constants inherit from this class.
