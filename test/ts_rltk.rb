@@ -34,6 +34,9 @@ require 'tc_visitor'
 
 require 'util/ts_util'
 
+# The test suite for the LLVM bindings
+require 'cg/ts_cg'
+
 #begin
 #	# Check to make sure the target LLVM library is present.
 #	class Tester

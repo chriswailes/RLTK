@@ -225,7 +225,9 @@ module RLTK::CG
 		:vectorization
 	]
 	
-	class PassRegistry < BindingClass
+	class PassRegistry
+		include BindingClass
+		
 		def self.global
 			PassRegistry.allocate.tap { |pr| pr.ptr = Bindings.get_global_pass_registry }
 		end

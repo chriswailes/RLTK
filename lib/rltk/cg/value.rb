@@ -345,7 +345,7 @@ module RLTK::CG
 		#
 		# @param [FFI::Pointer] ptr
 		def initialize(ptr)
-			@ptr = type_check(ptr, FFI::Pointer, 'ptr')
+			@ptr = check_type(ptr, FFI::Pointer, 'ptr')
 		end
 	end
 	
@@ -415,6 +415,10 @@ module RLTK::CG
 			vals_ptr = make_ptr_to_elements(size_or_values, &block)
 			@type    = ArrayType.new(element_type = check_cg_type(element_type, Type, 'element_type'))
 			@ptr     = Bindings.const_array(element_type, vals_ptr, vals_ptr.size / vals_ptr.type_size)
+		end
+		
+		def length
+			Bindings.get_array_length(@ptr)
 		end
 	end
 	
@@ -513,6 +517,10 @@ module RLTK::CG
 		def shuffle(other, mask)
 			ConstantVector.new(Bindings.const_shuffle_vector(@ptr, other, mask))
 		end
+		
+		def size
+			Bindings.get_vector_size(@ptr)
+		end
 	end
 	
 	# All number constants inherit from this class.
@@ -555,9 +563,10 @@ module RLTK::CG
 		# @example Constant integer of all 1s:
 		#   Int32.new
 		#
-		# @param [FFI::Pointer, Integer, String, nil]	overloaded0	Pointer to a ConstantInteger, value, or string representing value.
-		# @param [Boolean, Integer]					overloaded1	Signed or unsigned (when overloaded0 is Integer) or base used to decode string value.
-		# @param [Integer]							size			Optional length of string to use.
+		# @param [FFI::Pointer, Integer, String, nil]  overloaded0  Pointer to a ConstantInteger, value, or string representing value.
+		# @param [Boolean, Integer]                    overloaded1  Signed or unsigned (when overloaded0 is Integer) or base used to
+		#    decode string value.
+		# @param [Integer]                             size         Optional length of string to use.
 		def initialize(overloaded0 = nil, overloaded1 = nil, size = nil)
 			@ptr =
 			case overloaded0
@@ -1041,16 +1050,18 @@ module RLTK::CG
 		end
 	end
 	
+	# A 16-bit floating point number value.
+	class Half     < ConstantReal; end
 	# A double precision floating point number value.
-	class Double	< ConstantReal; end
-	# A single precision floating point number type.
-	class Float	< ConstantReal; end
-	# A 128 bit (16 byte) floating point number type.
-	class FP128	< ConstantReal; end
-	# A 128 bit (16 byte) floating point number type for the PPC architecture.
-	class PPCFP128	< ConstantReal; end
-	# A 80 bit (10 byte) floating point number type for the x86 architecture.
-	class X86FP80	< ConstantReal; end
+	class Double   < ConstantReal; end
+	# A single precision floating point number value.
+	class Float    < ConstantReal; end
+	# A 128 bit (16 byte) floating point number value.
+	class FP128    < ConstantReal; end
+	# A 128 bit (16 byte) floating point number value for the PPC architecture.
+	class PPCFP128 < ConstantReal; end
+	# A 80 bit (10 byte) floating point number value for the x86 architecture.
+	class X86FP80  < ConstantReal; end
 	
 	# This class represents global constants, variables, and functions.
 	class GlobalValue < Constant
@@ -1253,7 +1264,5 @@ def make_ptr_to_elements(size_or_values, &block)
 		size_or_values
 	end
 	
-	returning(FFI::MemoryPointer.new(:pointer, values.size)) do |ptr|
-		ptr.write_array_of_pointer(values)
-	end
+	FFI::MemoryPointer.new(:pointer, values.size).write_array_of_pointer(values)
 end

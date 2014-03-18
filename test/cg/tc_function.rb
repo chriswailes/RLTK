@@ -31,7 +31,7 @@ class FunctionTester < Minitest::Test
 		fun2 = RLTK::CG::Function.new(fun0.ptr)
 		
 		assert_equal(fun0, fun2)
-		assert_not_equal(fun0, fun1)
+		refute_equal(fun0, fun1)
 	end
 	
 	def test_positive_index_in_range

@@ -35,7 +35,7 @@ module RLTK::CG
 		# @param [Context, nil]          context     Context in which to parse bitcode
 		#
 		# @return [Module]
-		def self.from_bitcode(overloaded, context = nil)
+		def self.read_bitcode(overloaded, context = nil)
 			buffer = overloaded.is_a?(MemoryBuffer) ? overloaded : MemoryBuffer.new(overloaded)
 			
 			mod_ptr = FFI::MemoryPointer.new(:pointer)
@@ -61,7 +61,7 @@ module RLTK::CG
 		# @param [Context]               context     Context in which to parse IR
 		#
 		# @return [Module]
-		def self.from_ir(overloaded, context = Context.global)
+		def self.read_ir(overloaded, context = Context.global)
 			buffer = overloaded.is_a?(MemoryBuffer) ? overloaded : MemoryBuffer.new(overloaded)
 			
 			mod_ptr = FFI::MemoryPointer.new(:pointer)

@@ -36,8 +36,8 @@ module RLTK::CG
 		end
 		
 		# @return [Target]  Next target in the target list
-		def self.next(target)
-			self.new(Bindings.get_next_target(target)
+		def self.next_target(target)
+			self.new(Bindings.get_next_target(target))
 		end
 		
 		####################

@@ -18,13 +18,8 @@ require 'rltk/cg/llvm'
 # Classes and Modules #
 #######################
 
-class LLVMTester < Minitest::Tester
+class LLVMTester < Minitest::Test
 	def test_init
-		assert_raise(ArgumentError)	{ RLTK::CG::LLVM.init(:foo) }
-		assert_nothing_raised		{ RLTK::CG::LLVM.init(:X86) }
-	end
-	
-	def test_version
-		assert_equal(RLTK::LLVM_TARGET_VERSION, RLTK::CG::LLVM.version)
+		assert_raises(ArgumentError) { RLTK::CG::LLVM.init(:foo) }
 	end
 end

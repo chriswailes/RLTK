@@ -77,7 +77,9 @@ class InstructionTester < Minitest::Test
 	end
 	
 	def test_array_memory_access
-		fun = @mod.functions.add('array_memory_access_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+		fun = @mod.functions.add('array_memory_access_tester', RLTK::CG::NativeIntType,
+		                         [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+		     
 			blocks.append do
 				ptr = array_alloca(RLTK::CG::NativeIntType, RLTK::CG::NativeInt.new(2))
 				
@@ -92,7 +94,9 @@ class InstructionTester < Minitest::Test
 	end
 	
 	def test_simple_memory_access
-		fun = @mod.functions.add('simple_memory_access_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+		fun = @mod.functions.add('simple_memory_access_tester', RLTK::CG::NativeIntType,
+		                         [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+		     
 			blocks.append do
 				p0 = alloca(RLTK::CG::NativeIntType)
 				p1 = alloca(RLTK::CG::NativeIntType)
@@ -220,7 +224,9 @@ class InstructionTester < Minitest::Test
 	end
 	
 	def icmp_assert(mode, operand0, operand1, signed, expected)
-		res = run_cmp(:icmp, mode, RLTK::CG::NativeInt.new(operand0, signed), RLTK::CG::NativeInt.new(operand1, signed), RLTK::CG::Int1Type).to_i(false)
+		res = run_cmp(:icmp, mode, RLTK::CG::NativeInt.new(operand0, signed),
+		              RLTK::CG::NativeInt.new(operand1, signed), RLTK::CG::Int1Type).to_i(false)
+		
 		assert_equal(expected.to_i, res)
 	end
 	
