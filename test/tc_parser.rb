@@ -263,7 +263,8 @@ class ParserTester < Minitest::Test
 		# APlusBParser #
 		################
 		
-		assert_raise(RLTK::NotInLanguage) { APlusBParser.parse(ABLexer.lex('b')) }
+		assert_raises(RLTK::NotInLanguage) { APlusBParser.parse(ABLexer.lex('b')) }
+		
 		assert_equal(1, APlusBParser.parse(ABLexer.lex('ab')))
 		assert_equal(2, APlusBParser.parse(ABLexer.lex('aab')))
 		assert_equal(3, APlusBParser.parse(ABLexer.lex('aaab')))
@@ -273,9 +274,9 @@ class ParserTester < Minitest::Test
 		# AQuestionBParser #
 		####################
 		
-		assert_raise(RLTK::NotInLanguage) { AQuestionBParser.parse(ABLexer.lex('aab')) }
+		assert_raises(RLTK::NotInLanguage) { AQuestionBParser.parse(ABLexer.lex('aab')) }
 		assert_nil(AQuestionBParser.parse(ABLexer.lex('b')))
-		assert_not_nil(AQuestionBParser.parse(ABLexer.lex('ab')))
+		refute_nil(AQuestionBParser.parse(ABLexer.lex('ab')))
 		
 		################
 		# AStarBParser #
@@ -334,7 +335,7 @@ class ParserTester < Minitest::Test
 		test_string += "third line;\n"
 		test_string += "fourth line\n"
 		
-		assert_raise(RLTK::HandledError) { ErrorLine.parse(ELLexer.lex(test_string)) }
+		assert_raises(RLTK::HandledError) { ErrorLine.parse(ELLexer.lex(test_string)) }
 		
 		begin
 			ErrorLine.parse(ELLexer.lex(test_string))
@@ -375,11 +376,11 @@ class ParserTester < Minitest::Test
 		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('(1 + 2) * 3'))
 		assert_equal(9, actual)
 		
-		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *')) }
+		assert_raises(RLTK::NotInLanguage) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *')) }
 	end
 	
 	def test_input
-		assert_raise(RLTK::BadToken) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::EBNF.lex('A B C')) }
+		assert_raises(RLTK::BadToken) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::EBNF.lex('A B C')) }
 	end
 	
 	def test_nonempty_list
@@ -387,91 +388,91 @@ class ParserTester < Minitest::Test
 		# NonEmptyListParser0 #
 		#######################
 		
-		expected	= ['a']
-		actual	= NonEmptyListParser0.parse(AlphaLexer.lex('a'))
+		expected = ['a']
+		actual   = NonEmptyListParser0.parse(AlphaLexer.lex('a'))
 		assert_equal(expected, actual)
 		
-		expected	= ['a', 'a']
-		actual	= NonEmptyListParser0.parse(AlphaLexer.lex('a, a'))
+		expected = ['a', 'a']
+		actual   = NonEmptyListParser0.parse(AlphaLexer.lex('a, a'))
 		assert_equal(expected, actual)
 		
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(''))   }
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(','))  }
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('aa')) }
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('a,')) }
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(',a')) }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(''))   }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(','))  }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('aa')) }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('a,')) }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(',a')) }
 		
 		#######################
 		# NonEmptyListParser1 #
 		#######################
 		
-		expected	= ['a']
-		actual	= NonEmptyListParser1.parse(AlphaLexer.lex('a'))
+		expected = ['a']
+		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('a'))
 		assert_equal(expected, actual)
 		
-		expected	= ['b']
-		actual	= NonEmptyListParser1.parse(AlphaLexer.lex('b'))
+		expected = ['b']
+		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('b'))
 		assert_equal(expected, actual)
 		
-		expected	= ['a', 'b', 'a', 'b']
-		actual	= NonEmptyListParser1.parse(AlphaLexer.lex('a, b, a, b'))
+		expected = ['a', 'b', 'a', 'b']
+		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('a, b, a, b'))
 		assert_equal(expected, actual)
 		
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a b')) }
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a, ')) }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a b')) }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a, ')) }
 		
 		#######################
 		# NonEmptyListParser2 #
 		#######################
 		
-		expected	= ['a']
-		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('a'))
+		expected = ['a']
+		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('a'))
 		assert_equal(expected, actual)
 		
-		expected	= ['b']
-		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('b'))
+		expected = ['b']
+		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('b'))
 		assert_equal(expected, actual)
 		
-		expected	= [['c', 'd']]
-		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('c d'))
+		expected = [['c', 'd']]
+		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('c d'))
 		assert_equal(expected, actual)
 		
-		expected	= [['c', 'd'], ['c', 'd']]
-		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('c d, c d'))
+		expected = [['c', 'd'], ['c', 'd']]
+		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('c d, c d'))
 		assert_equal(expected, actual)
 		
-		expected	= ['a', 'b', ['c', 'd']]
-		actual	= NonEmptyListParser2.parse(AlphaLexer.lex('a, b, c d'))
+		expected = ['a', 'b', ['c', 'd']]
+		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('a, b, c d'))
 		assert_equal(expected, actual)
 		
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('c')) }
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('d')) }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('c')) }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('d')) }
 		
 		#######################
 		# NonEmptyListParser3 #
 		#######################
 		
-		expected	= [['a'], ['a', 'a'], ['a', 'a', 'a']]
-		actual	= NonEmptyListParser3.parse(AlphaLexer.lex('a, aa, aaa'))
+		expected = [['a'], ['a', 'a'], ['a', 'a', 'a']]
+		actual   = NonEmptyListParser3.parse(AlphaLexer.lex('a, aa, aaa'))
 		assert_equal(expected, actual)
 		
 		#######################
 		# NonEmptyListParser4 #
 		#######################
 		
-		expected	= ['a', 'a', 'a']
-		actual	= NonEmptyListParser4.parse(AlphaLexer.lex('a a a'))
+		expected = ['a', 'a', 'a']
+		actual   = NonEmptyListParser4.parse(AlphaLexer.lex('a a a'))
 		assert_equal(expected, actual)
 		
 		#######################
 		# NonEmptyListParser5 #
 		#######################
 		
-		expected	= ['a', 'a', 'a']
-		actual	= NonEmptyListParser5.parse(AlphaLexer.lex('a b a b c a'))
+		expected = ['a', 'a', 'a']
+		actual   = NonEmptyListParser5.parse(AlphaLexer.lex('a b a b c a'))
 		assert_equal(expected, actual)
 		
-		assert_raise(RLTK::NotInLanguage) { NonEmptyListParser5.parse(AlphaLexer.lex('a b b a')) }
+		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser5.parse(AlphaLexer.lex('a b b a')) }
 	end
 	
 	def test_postfix_calc
@@ -484,7 +485,7 @@ class ParserTester < Minitest::Test
 		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *'))
 		assert_equal(9, actual)
 		
-		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3')) }
+		assert_raises(RLTK::NotInLanguage) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3')) }
 	end
 	
 	def test_prefix_calc
@@ -497,12 +498,12 @@ class ParserTester < Minitest::Test
 		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
 		assert_equal(9, actual)
 		
-		assert_raise(RLTK::NotInLanguage) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
+		assert_raises(RLTK::NotInLanguage) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
 	end
 	
 	def test_underscore_tokens
-		actual	= UnderscoreParser.parse(UnderscoreLexer.lex('abc')).join
-		expected	= 'abc'
+		actual   = UnderscoreParser.parse(UnderscoreLexer.lex('abc')).join
+		expected = 'abc'
 		
 		assert_equal(expected, actual)
 	end

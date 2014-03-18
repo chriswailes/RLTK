@@ -28,10 +28,10 @@ class AbstractClassTester < Minitest::Test
 	class Baf < Foo; end
 	
 	def test_new
-		assert_raise(RuntimeError) { Foo.new }
+		assert_raises(RuntimeError) { Foo.new }
 	
-		assert_nothing_raised { Bar.new }
-		assert_nothing_raised { Baz.new }
-		assert_nothing_raised { Baf.new }
+		Bar.new
+		Baz.new
+		Baf.new
 	end
 end
