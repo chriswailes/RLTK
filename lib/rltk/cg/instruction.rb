@@ -142,7 +142,21 @@ module RLTK::CG
 			Bindings.set_instruction_call_conv(@ptr, Bindings.enum_type(:call_conv)[conv])
 			
 			conv
-		end	
+		end
+		
+		# @return [Boolean]
+		def tail_call?
+			Bindings.is_tail_call(@ptr).to_bool
+		end
+		
+		# Sets the *tail call* property for this call instruction.
+		#
+		# @parm [Boolean]  bool  If this is a tail call or not
+		#
+		# @return [void]
+		def tail_call=(bool)
+			Bindings.set_tail_call(@ptr, bool.to_i)
+		end
 	end
 	
 	# An Instruction representing a Phi node.

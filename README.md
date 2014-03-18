@@ -819,13 +819,13 @@ The following lexer and parser classes are included as part of RLTK:
 
 ## Contributing
 
-If you are interested in contributing to RLTK you can:
+If you are interested in contributing to RLTK there are many aspects of the library that you can work on.  A detailed TODO list can be found [here](https://github.com/chriswailes/RLTK/blob/master/TODO.md).  If you are looking for smaller units of work feel free to:
 
 * Help provide unit tests.  Not all of RLTK is tested as well as it could be.  Specifically, more tests for the RLTK::CFG and RLTK::Parser classes would be appreciated.
 * Write lexers or parsers that you think others might want to use.  Possibilities include HTML, JSON/YAML, Javascript, and Ruby.
-* Write a class for dealing with regular languages.
 * Extend the RLTK::CFG class with additional functionality.
-* Let me know if you found any part of this documentation unclear or incomplete.
+
+Lastly, I love hearing back from users.  If you find any part of the documentation unclear or incomplete let me know.  It is also helpful to me to know how people are using the library, so if you are using RLTK in your project send me an email.  This lets me know what features are being used and where I should focus my development efforts.
 
 ## News
 
