@@ -9,16 +9,16 @@
 
 # 1) initialize_all_target_m_cs -> initialize_all_target_mcs
 # 2) initialize_obj_carc_opts   -> initialize_objc_arc_opts
+
 ############
 # Requires #
 ############
 
 # Gems
-require 'rubygems'
 require 'ffi'
+require 'filigree/boolean'
 
 # Ruby Language Toolkit
-require 'rltk/util/monkeys'
 require 'rltk/version'
 require 'rltk/cg'
 

@@ -8,8 +8,10 @@
 # Requires #
 ############
 
+# Gems
+require 'filigree/visitor'
+
 # Ruby Language Toolkit
-require 'rltk/visitor'
 require 'rltk/cg/builder'
 
 #######################
@@ -20,22 +22,7 @@ module RLTK::CG
 	
 	class Contractor < Builder
 		
-		include RLTK::Visitor
-		
-		#################
-		# Class Methods #
-		#################
-		
-		class << self
-			# A callback method that installs the necessary data structures
-			# in sbuclasses.  This re-bases the inheritance heirarcy to the
-			# Contractor class instead of the Visitor class.
-			#
-			# @return [void]
-			def inherited(klass)
-				klass.install_icvars(if self == RLTK::CG::Contractor then [] else @actions.clone end)
-			end
-		end
+		include Filigree::Visitor
 		
 		####################
 		# Instance Methods #
@@ -48,19 +35,18 @@ module RLTK::CG
 		# {Visitor#visit} method for more details about the basic behaviour
 		# of this method.  The special options for this method are:
 		#
-		# @param [Object]	object	The object to visit.
-		# @param [Hash]	opts		Options describing how to finalize the parser.
-		#
-		# @option opts [BasicBlock]	:at	Where to position the contractor before visiting the object.
-		# @option opts [true]		:rcb	If specified the method will also return the block where the contractor is currently positioned.
+		# @param [Object]      object  The object to visit.
+		# @param [Hash]        opts    Options describing how to finalize the parser.
+		# @param [BasicBlock]  at      Where to position the contractor before visiting the object.
+		# @param [Boolean]     rcb     If specified the method will also return the block where the contractor is currently positioned.
 		#
 		# @return [Object]
-		def visit(object, opts = {})
-			target opts[:at] if opts[:at]
+		def visit(object, at: nil, rcb: false)
+			target at if at
 			
 			result = wrapped_visit(object)
 			
-			if opts[:rcb] then [result, current_block] else result end
+			if rcb then [result, current_block] else result end
 		end
 	end
 end

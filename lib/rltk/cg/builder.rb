@@ -263,7 +263,7 @@ module RLTK::CG
 		#
 		# @return [PhiInst] The phi node.
 		def phi(type, incoming, name = '')
-			returning PhiInst.new(Bindings.build_phi(@ptr, check_cg_type(type), name)) do |phi|
+			PhiInst.new(Bindings.build_phi(@ptr, check_cg_type(type), name)).tap do |phi|
 				phi.incoming.add(incoming)
 			end
 		end
@@ -304,7 +304,7 @@ module RLTK::CG
 		#
 		# @return [SwitchInst]
 		def switch(val, default, cases)
-			returning SwitchInst.new(Bindings.build_switch(@ptr, val, default, cases.size)) do |inst|
+			SwitchInst.new(Bindings.build_switch(@ptr, val, default, cases.size)).tap do |inst|
 				cases.each { |val, block| inst.add_case(val, block) }
 			end
 		end

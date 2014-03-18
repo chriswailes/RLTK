@@ -7,10 +7,10 @@
 # context-free grammars and code generation.  This includes a class for
 # representing CFGs, lexers, parsers, and generating code using LLVM.
 module RLTK
-	autoload :AST,		'rltk/ast'
-	autoload :CFG,		'rltk/cfg'
-	autoload :CG,		'rltk/cg'
-	autoload :Lexer,	'rltk/lexer'
-	autoload :Parser,	'rltk/parser'
-	autoload :Token,	'rltk/token'
+	autoload :AST,    'rltk/ast'
+	autoload :CFG,    'rltk/cfg'
+	autoload :CG,     'rltk/cg'
+	autoload :Lexer,  'rltk/lexer'
+	autoload :Parser, 'rltk/parser'
+	autoload :Token,  'rltk/token'
 end

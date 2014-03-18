@@ -7,8 +7,8 @@
 # Requires #
 ############
 
-# Ruby Language Toolkit
-require 'rltk/util/monkeys'
+# Gems
+require 'filigree/class'
 
 #######################
 # Classes and Modules #

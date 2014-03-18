@@ -18,7 +18,7 @@ module Brainfuck
 		include RLTK
 		
 		ZERO = CG::NativeInt.new(0)
-		ONE	= CG::NativeInt.new(1)
+		ONE  = CG::NativeInt.new(1)
 		
 		def initialize
 			super
@@ -48,14 +48,14 @@ module Brainfuck
 		on Program do |prog|
 			fun = @module.funs.add('BF', CG::NativeIntType, [])
 			
-			entry	= fun.blocks.append('entry')
+			entry     = fun.blocks.append('entry')
 			init_loop = fun.blocks.append('init loop')
 			init_body = fun.blocks.append('init body')
-			body		= fun.blocks.append('body')
+			body      = fun.blocks.append('body')
 			
 			build entry do
-				@offset	= alloca CG::NativeIntType
-				@data	= array_alloca CG::NativeIntType, CG::NativeInt.new(DATA_SIZE)
+				@offset = alloca CG::NativeIntType
+				@data   = array_alloca CG::NativeIntType, CG::NativeInt.new(DATA_SIZE)
 				
 				store ZERO, @offset
 				
@@ -100,12 +100,12 @@ module Brainfuck
 			@engine.run_function(fun)
 		end
 		
-		on(PtrRight)	{ store (add (load @offset), ONE), @offset }
-		on(PtrLeft)	{ store (sub (load @offset), ONE), @offset }
-		on(Increment)	{ store (add curr_val, ONE), curr_cell     }
-		on(Decrement)	{ store (sub curr_val, ONE), curr_cell     }
-		on(Put)		{ call @putchar, curr_val                  }
-		on(Get)		{ store (call @getchar), curr_cell         }
+		on(PtrRight)  { store (add (load @offset), ONE), @offset }
+		on(PtrLeft)   { store (sub (load @offset), ONE), @offset }
+		on(Increment) { store (add curr_val, ONE), curr_cell     }
+		on(Decrement) { store (sub curr_val, ONE), curr_cell     }
+		on(Put)       { call @putchar, curr_val                  }
+		on(Get)       { store (call @getchar), curr_cell         }
 		
 		on Loop do |l|
 			fun = current_block.parent

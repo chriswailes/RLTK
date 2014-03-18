@@ -221,7 +221,7 @@ module RLTK::CG
 				blks_ptr = FFI::MemoryPointer.new(:pointer, blks.size)
 				blks_ptr.write_array_of_pointer(blks)
 			
-				returning(nil) { Bindings.add_incoming(@phi, vals_ptr, blks_ptr, vals.length) }
+				nil.tap { Bindings.add_incoming(@phi, vals_ptr, blks_ptr, vals.length) }
 			end
 			alias :<< :add
 			

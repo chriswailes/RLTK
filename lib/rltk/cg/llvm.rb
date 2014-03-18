@@ -133,12 +133,12 @@ module RLTK::CG
 		# Initialize LLVM's multithreaded infrestructure.
 		#
 		# @return [void]
-		def start_multithreaded
+		def self.start_multithreaded
 			Bindings.start_multithreaded
 		end
 		
 		# Shutdown and cleanup LLVM's multithreaded infrastructure.
-		def stop_multithreaded
+		def self.stop_multithreaded
 			Bindings.stop_multithreaded
 		end
 		

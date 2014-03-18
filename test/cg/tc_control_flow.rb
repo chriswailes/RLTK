@@ -81,7 +81,7 @@ class ControlFlowTester < Minitest::Test
 			
 			result =
 			recurse.build do
-				returning(call(fun, add(fun.params[0], RLTK::CG::NativeInt.new(1)))) { br exit }
+				call(fun, add(fun.params[0], RLTK::CG::NativeInt.new(1))).tap { br exit }
 			end
 			
 			exit.build do
@@ -172,12 +172,12 @@ class ControlFlowTester < Minitest::Test
 		
 			result0 =
 			block0.build do
-				returning(add(fun.params[0], RLTK::CG::NativeInt.new(1))) { br(exit) }
+				add(fun.params[0], RLTK::CG::NativeInt.new(1)).tap { br(exit) }
 			end
 		
 			result1 =
 			block1.build do
-				returning(sub(fun.params[0], RLTK::CG::NativeInt.new(1))) { br(exit) }
+				sub(fun.params[0], RLTK::CG::NativeInt.new(1)).tap { br(exit) }
 			end
 		
 			exit.build do

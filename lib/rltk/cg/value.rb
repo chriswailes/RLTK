@@ -7,8 +7,10 @@
 # Requires #
 ############
 
+# Gems
+require 'filigree/abstract_class'
+
 # Ruby Language Toolkit
-require 'rltk/util/abstract_class'
 require 'rltk/cg/bindings'
 require 'rltk/cg/type'
 
@@ -87,7 +89,7 @@ module RLTK::CG
 		#
 		# @return [String] *str*
 		def name=(str)
-			returning(str) { Bindings.set_value_name(@ptr, check_type(str, String)) }
+			str.tap { Bindings.set_value_name(@ptr, check_type(str, String)) }
 		end
 		
 		# @return [Boolean] If the value is null or not.
@@ -212,7 +214,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class User < Value
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# @return [OperandCollection] Proxy object for accessing a value's operands.
 		def operands
@@ -271,7 +273,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class Constant < User
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# Create a new constant from a pointer or a type.  As a library user
 		# you should never pass a pointer in here as that is only used
@@ -368,7 +370,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class ConstantAggregate < Constant
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# Extract values from a constant aggregate value.
 		#
@@ -529,7 +531,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class ConstantNumber < Constant
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# @return [Type] The corresponding Type sub-class that is used to represent the type of this value.
 		def self.type
@@ -546,7 +548,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class ConstantInteger < ConstantNumber
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# @return [Boolean] If the integer is signed or not.
 		attr_reader :signed
@@ -931,7 +933,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class ConstantReal < ConstantNumber
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# Create a constant real number using a Ruby value or a string.
 		#

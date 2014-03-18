@@ -83,7 +83,7 @@ module RLTK::CG
 		end
 		
 		# @return [Boolean]
-		def to_b
+		def to_bool
 			self.to_i(false).to_bool
 		end
 		

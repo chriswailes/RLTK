@@ -28,7 +28,7 @@ Whole Project
 -------------
 
 * Pull the patches from Github.
-* Switch to using Filigree.
+* Review examples before releasing version 3.0.0
 * Convert to Ruby 2.0 syntax.
   * Move to lazy enumerators
   * Keyword arguments

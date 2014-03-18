@@ -25,8 +25,8 @@ module Kazoo
 			super
 			
 			# IR building objects.
-			@module	= RLTK::CG::Module.new('Kazoo JIT')
-			@st		= Hash.new
+			@module = RLTK::CG::Module.new('Kazoo JIT')
+			@st     = Hash.new
 		
 			# Execution Engine
 			@engine = RLTK::CG::JITCompiler.new(@module)
@@ -37,8 +37,8 @@ module Kazoo
 	
 		def add(ast)
 			case ast
-			when Expression		then visit Function.new(Prototype.new('', []), ast)
-			when Function, Prototype	then visit ast
+			when Expression          then visit Function.new(Prototype.new('', []), ast)
+			when Function, Prototype then visit ast
 			else raise 'Attempting to add an unhandled node type to the JIT.'
 			end
 		end
@@ -143,7 +143,7 @@ module Kazoo
 			build(new_then_bb) { br merge_bb }
 			build(new_else_bb) { br merge_bb }
 			
-			returning(phi_inst) { target merge_bb }
+			phi_inst.tap { target merge_bb }
 		end
 	
 		on For do |node|
@@ -196,7 +196,7 @@ module Kazoo
 			ret(visit node.body, at: fun.blocks.append('entry'))
 		
 			# Verify the function and return it.
-			returning(fun) { fun.verify }
+			fun.tap { fun.verify }
 		end
 	
 		on Prototype do |node|
@@ -212,7 +212,7 @@ module Kazoo
 			end
 		
 			# Name each of the function paramaters.
-			returning(fun) do
+			fun.tap do
 				node.arg_names.each_with_index do |name, i|
 					(@st[name] = fun.params[i]).name = name
 				end

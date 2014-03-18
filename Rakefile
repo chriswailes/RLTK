@@ -54,7 +54,6 @@ end
 request_file('rake/testtask', 'Minitest is not installed.') do
 	Rake::TestTask.new do |t|
 		t.libs << 'test'
-#		t.loader     = :testrb
 		t.test_files = FileList['test/ts_rltk.rb']
 	end
 end

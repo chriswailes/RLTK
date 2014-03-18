@@ -10,8 +10,10 @@
 # Standard Library
 require 'singleton'
 
+# Gems
+require 'filigree/abstract_class'
+
 # Ruby Language Toolkit
-require 'rltk/util/abstract_class'
 require 'rltk/cg/bindings'
 require 'rltk/cg/context'
 	
@@ -29,7 +31,7 @@ module RLTK::CG
 	# @abstract Root of the type class hierarchy.
 	class Type
 		include BindingClass
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# Instantiate a Type object from a pointer.  This function is used
 		# internally, and as a library user you should never have to call it.
@@ -116,7 +118,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class NumberType < Type
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# @return [Value] The corresponding Value sub-class that is used to represent values of this type.
 		def self.value_class
@@ -139,7 +141,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class BasicIntType < NumberType
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# @return [Integer] Number of bits used to represent an integer type.
 		def width
@@ -178,7 +180,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class SimpleIntType < BasicIntType
-		include AbstractClass
+		include Filigree::AbstractClass
 		include Singleton
 	end
 	
@@ -186,7 +188,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class RealType < NumberType
-		include AbstractClass
+		include Filigree::AbstractClass
 		include Singleton
 	end
 	
@@ -194,7 +196,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class SimpleType < Type
-		include AbstractClass
+		include Filigree::AbstractClass
 		include Singleton
 	end
 	
@@ -264,7 +266,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class AggregateType < Type
-		include AbstractClass
+		include Filigree::AbstractClass
 	end
 	
 	# {ArrayType} and {PointerType} inherit from this class so they can share
@@ -272,7 +274,7 @@ module RLTK::CG
 	#
 	# @abstract
 	class SimpleAggregateType < AggregateType
-		include AbstractClass
+		include Filigree::AbstractClass
 		
 		# Used to initialize {ArrayType ArrayTypes} and {PointerType PointerTypes}.
 		#
@@ -418,7 +420,7 @@ module RLTK::CG
 				if name
 					@name = check_type(name, String, 'name')
 			
-					returning Bindings.struct_create_named(Context.global, @name) do |ptr|
+					Bindings.struct_create_named(Context.global, @name).tap do |ptr|
 						Bindings.struct_set_body(ptr, el_types_ptr, @element_types.length, packed.to_i) unless @element_types.empty?
 					end
 			

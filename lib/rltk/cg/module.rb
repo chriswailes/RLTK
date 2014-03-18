@@ -263,7 +263,7 @@ module RLTK::CG
 			str_ptr	= FFI::MemoryPointer.new(:pointer)
 			status	= Bindings.verify_module(@ptr, action, str_ptr)
 			
-			returning(status == 1 ? str_ptr.read_string : nil) { Bindings.dispose_message(str_ptr.read_pointer) }
+			(status == 1 ? str_ptr.read_string : nil).tap { Bindings.dispose_message(str_ptr.read_pointer) }
 		end
 		private :do_verification
 		

@@ -8,8 +8,10 @@
 # Requires #
 ############
 
+# Gems
+require 'filigree/abstract_class'
+
 # Ruby Language Toolkit
-require 'rltk/util/abstract_class'
 require 'rltk/cg/bindings'
 require 'rltk/cg/pass_manager'
 require 'rltk/cg/target'
@@ -26,7 +28,7 @@ module RLTK::CG
 	#
 	# @abstract Implemented by {Interpreter} and {JITCompiler}.
 	class ExecutionEngine
-		include AbstractClass
+		include Filigree::AbstractClass
 		include BindingClass
 		
 		# The Proc object called by the garbage collector to free resources used by LLVM.
