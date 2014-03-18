@@ -54,7 +54,7 @@ end
 request_file('rake/testtask', 'Minitest is not installed.') do
 	Rake::TestTask.new do |t|
 		t.libs << 'test'
-		t.loader     = :testrb
+#		t.loader     = :testrb
 		t.test_files = FileList['test/ts_rltk.rb']
 	end
 end
@@ -118,14 +118,6 @@ task :gen_bindings do
 	
 	# Generate the standard LLVM bindings.
 	
-	blacklist = [
-		'LLVMGetMDNodeOperand',
-		'LLVMGetMDNodeNumOperands',
-		'LLVMInitializeAllTargetInfos',
-		'LLVMInitializeAllTargets',
-		'LLVMInitializeNativeTarget'
-	]
-	
 	deprecated = [
 		# BitReader.h
 		'LLVMGetBitcodeModuleProviderInContext',
@@ -154,11 +146,18 @@ task :gen_bindings do
 		'llvm-c/Disassembler.h',
 		'llvm-c/ExecutionEngine.h',
 		'llvm-c/Initialization.h',
+		'llvm-c/IRReader.h',
+		'llvm-c/Linker.h',
+		'llvm-c/LinkTimeOptimizer.h',
 		'llvm-c/Object.h',
+		'llvm-c/Support.h',
 		'llvm-c/Target.h',
+		'llvm-c/TargetMachine.h',
 		
 		'llvm-c/Transforms/IPO.h',
-		'llvm-c/Transforms/Scalar.h'
+		'llvm-c/Transforms/PassManagerBuilder.h',
+		'llvm-c/Transforms/Scalar.h',
+		'llvm-c/Transforms/Vectorize.h'
 	]
 	
 	FFIGen.generate(
@@ -167,7 +166,7 @@ task :gen_bindings do
 		headers:     headers,
 		cflags:      `llvm-config --cflags`.split,
 		prefixes:    ['LLVM'],
-		blacklist:   blacklist + deprecated,
+		blacklist:   deprecated,
 		output:      'lib/rltk/cg/generated_bindings.rb'
 	)
 end

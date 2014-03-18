@@ -27,48 +27,53 @@ module RLTK::CG
 		# A list of passes that are available to be added to the pass
 		# manager via the {PassManager#add} method.
 		PASSES = {
-			:ADCE			=> :aggressive_dce,
-			:AlwaysInline		=> :always_inliner,
-			:ArgPromote		=> :argument_promotion,
-			:BasicAliasAnalysis	=> :basic_alias_analysis,
-			:CFGSimplify		=> :cfg_simplification,
-			:ConstMerge		=> :constant_merge,
-			:ConstProp		=> :constant_propagation,
-			:CorValProp		=> :correlated_value_propagation,
-			:DAE				=> :dead_arg_elimination,
-			:DSE				=> :dead_store_elimination,
-			:DemoteMemToReg	=> :demote_memory_to_register,
-			:EarlyCSE			=> :early_cse,
-			:FunctionAttrs		=> :function_attrs,
-			:FunctionInline	=> :function_inlining,
-			:GDCE			=> :global_dce,
-			:GlobalOpt		=> :global_optimizer,
-			:GVN				=> :gvn,
-			:Internalize		=> :internalize,
-			:IndVarSimplify	=> :ind_var_simplify,
-			:InstCombine		=> :instruction_combining,
-			:IPConstProp		=> :ip_constant_propagation,
-			:IPSCCP			=> :ipsccp,
-			:JumpThreading		=> :jump_threading,
-			:LICM			=> :licm,
-			:LoopDeletion		=> :loop_deletion,
-			:LoopIdiom		=> :loop_idiom,
-			:LoopRotate		=> :loop_rotate,
-			:LoopUnroll		=> :loop_unroll,
-			:LoopUnswitch		=> :loop_unswitch,
-			:LEI				=> :lower_expect_intrinsics,
-			:MemCopyOpt		=> :mem_cpy_opt,
-			:PromoteMemToReg	=> :promote_memory_to_register,
-			:PruneEH			=> :prune_eh,
-			:Reassociate		=> :reassociate,
-			:SCCP			=> :sccp,
-			:ScalarRepl		=> :scalar_repl_aggregates,
-			:SimplifyLibCalls	=> :simplify_lib_calls,
-			:StripDeadProtos	=> :strip_dead_prototypes,
-			:StripSymbols		=> :strip_symbols,
-			:TailCallElim		=> :tail_call_elimination,
-			:TBAA			=> :type_based_alias_analysis,
-			:Verifier			=> :verifier
+			:ADCE               => :aggressive_dce,
+			:AlwaysInline       => :always_inliner,
+			:ArgPromote         => :argument_promotion,
+			:BasicAliasAnalysis => :basic_alias_analysis,
+			:BBVectorize        => :bb_vectorize,
+			:CFGSimplify        => :cfg_simplification,
+			:ConstMerge         => :constant_merge,
+			:ConstProp          => :constant_propagation,
+			:CorValProp         => :correlated_value_propagation,
+			:DAE                => :dead_arg_elimination,
+			:DSE                => :dead_store_elimination,
+			:DemoteMemToReg     => :demote_memory_to_register,
+			:EarlyCSE           => :early_cse,
+			:FunctionAttrs      => :function_attrs,
+			:FunctionInline     => :function_inlining,
+			:GDCE               => :global_dce,
+			:GlobalOpt          => :global_optimizer,
+			:GVN                => :gvn,
+			:Internalize        => :internalize,
+			:IndVarSimplify     => :ind_var_simplify,
+			:InstCombine        => :instruction_combining,
+			:IPConstProp        => :ip_constant_propagation,
+			:IPSCCP             => :ipsccp,
+			:JumpThreading      => :jump_threading,
+			:LICM               => :licm,
+			:LoopDeletion       => :loop_deletion,
+			:LoopIdiom          => :loop_idiom,
+			:LoopReroll         => :loop_reroll,
+			:LoopRotate         => :loop_rotate,
+			:LoopUnroll         => :loop_unroll,
+			:LoopUnswitch       => :loop_unswitch,
+			:LoopVectorize      => :loop_vectorize,
+			:LEI                => :lower_expect_intrinsics,
+			:MemCopyOpt         => :mem_cpy_opt,
+			:PILC               => :partially_inline_lib_calls,
+			:PromoteMemToReg    => :promote_memory_to_register,
+			:PruneEH            => :prune_eh,
+			:Reassociate        => :reassociate,
+			:SCCP               => :sccp,
+			:ScalarRepl         => :scalar_repl_aggregates,
+			:SimplifyLibCalls   => :simplify_lib_calls,
+			:SLPVectorize       => :slp_vectorize,
+			:StripDeadProtos    => :strip_dead_prototypes,
+			:StripSymbols       => :strip_symbols,
+			:TailCallElim       => :tail_call_elimination,
+			:TBAA               => :type_based_alias_analysis,
+			:Verifier           => :verifier
 		}
 		
 		# Create a new pass manager.  You should never have to do this as
@@ -203,6 +208,45 @@ module RLTK::CG
 		# @return [void]
 		def finalize
 			Bindings.finalize_function_pass_manager(@ptr).to_bool
+		end
+	end
+	
+	PASS_GROUPS = [
+		:analysis,
+		:core,
+		:inst_combine,
+		:instrumentation,
+		:ipa,
+		:ipo,
+		:objc_arc_opts,
+		:scalar_opts,
+		:target,
+		:transform_utils,
+		:vectorization
+	]
+	
+	class PassRegistry
+		include BindingClass
+		
+		def self.global
+			PassRegistry.allocate.tap { |pr| pr.ptr = Bindings.get_global_pass_registry }
+		end
+		
+		def initialize
+			@ptr = Bindings::OpaquePassRegistry.new
+		end
+		
+		def init(pass_group = :all)
+			if pass_group == :all
+				PASS_GROUPS.each { |pg| Bindings.send("initialize_#{pg}", @ptr) }
+				
+			elsif PASS_GROUPS.include?(pass_group)
+				Bindings.send("initialize_#{pass_group}", @ptr)
+			end
+		end
+		
+		def init(pass_group)
+			
 		end
 	end
 end

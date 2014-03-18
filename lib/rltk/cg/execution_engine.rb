@@ -46,13 +46,13 @@ module RLTK::CG
 			
 			block = Proc.new { |ptr, error| Bindings.create_execution_engine_for_module(ptr, mod, error) } if block == nil
 			
-			ptr		= FFI::MemoryPointer.new(:pointer)
-			error	= FFI::MemoryPointer.new(:pointer)
-			status	= block.call(ptr, error)
+			ptr    = FFI::MemoryPointer.new(:pointer)
+			error  = FFI::MemoryPointer.new(:pointer)
+			status = block.call(ptr, error)
 			
 			if status.zero?
-				@ptr		= ptr.read_pointer
-				@module	= mod
+				@ptr    = ptr.read_pointer
+				@module = mod
 				
 				# Associate this engine with the provided module.
 				@module.engine = self
@@ -151,6 +151,48 @@ module RLTK::CG
 		def initialize(mod, opt_level = 3)
 			super(mod) do |ptr, error|
 				Bindings.create_jit_compiler_for_module(ptr, mod, opt_level, error)
+			end
+		end
+	end
+	
+	# = Fields:
+	# :opt_level ::
+	#   (Integer) 
+	# :code_model ::
+	#   (Symbol from _enum_code_model_) 
+	# :no_frame_pointer_elim ::
+	#   (Integer) 
+	# :enable_fast_i_sel ::
+	#   (Integer) 
+	# :mcjmm ::
+	#   (OpaqueMCJITMemoryManager) 
+	
+	class MCJITCompilerOptions < RLTK::CG::Bindings::MCJITCompilerOptions
+		
+		# Create an object representing MCJIT compiler options.
+		#
+		# @param
+		def initialize(opt_level = 0, code_model = :jit_default, no_frame_pointer_elim = false,
+		               enable_fast_i_sel = true, mcjmm = nil)
+		     
+			Bindings.initialize_mcjit_compiler_options(self.to_ptr, self.class.size)
+			
+			super(opt_level, code_model, no_frame_pointer_elim.to_i, enable_fast_i_sel.to_i, mcjmm)
+		end
+	end
+	
+	class MCJITCompiler < ExecutionEngine
+		
+		# Create a new MC just-in-time-compiler.
+		#
+		# @see http://llvm.org/docs/MCJITDesignAndImplementation.html
+		# @see http://blog.llvm.org/2013/07/using-mcjit-with-kaleidoscope-tutorial.html
+		#
+		# @param [Module]                mod      Module to be executed
+		# @param [MCJITCompilerOptions]  options  Options used to create the MCJIT
+		def initialize(mod, options = MCJITCompilerOptions.new)
+			super(mod) do |ptr, error|
+				Bindings.create_mcjit_compiler_for_module(ptr, mod, options, MCJITCompilerOptions.size, error)
 			end
 		end
 	end

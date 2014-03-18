@@ -27,8 +27,8 @@ class TokenTester < Minitest::Test
 		
 		assert_equal(t0, t1)
 		
-		assert_not_equal(t0, t2)
-		assert_not_equal(t0, t3)
-		assert_not_equal(t0, t4)
+		refute_equal(t0, t2)
+		refute_equal(t0, t3)
+		refute_equal(t0, t4)
 	end
 end

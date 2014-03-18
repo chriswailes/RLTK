@@ -41,8 +41,8 @@ class MonkeyTester < Minitest::Test
 		assert(check_type(1, Fixnum, nil, true))
 		assert(check_type(1, Integer))
 		
-		assert_raise(ArgumentError) { check_type(1, Integer, nil, true) }
-		assert_raise(ArgumentError) { check_type(1, Array) }
+		assert_raises(ArgumentError) { check_type(1, Integer, nil, true) }
+		assert_raises(ArgumentError) { check_type(1, Array) }
 	end
 	
 	def test_check_array_type
@@ -50,8 +50,8 @@ class MonkeyTester < Minitest::Test
 		assert(check_array_type([1, 2, 3], Fixnum, nil, true))
 		assert(check_array_type([1, 2, 3], Integer))
 		
-		assert_raise(ArgumentError) { check_array_type([1, 2, 3], Integer, nil, true) }
-		assert_raise(ArgumentError) { check_array_type([1, :hello, 'world'], Fixnum) }
+		assert_raises(ArgumentError) { check_array_type([1, 2, 3], Integer, nil, true) }
+		assert_raises(ArgumentError) { check_array_type([1, :hello, 'world'], Fixnum) }
 	end
 	
 	def test_class
@@ -62,7 +62,7 @@ class MonkeyTester < Minitest::Test
 		
 		assert(Baz.subclass_of?(Bar))
 		assert(!Baz.subclass_of?(Fixnum))
-		assert_raise(RuntimeError) { Baz.subclass_of?(1) }
+		assert_raises(RuntimeError) { Baz.subclass_of?(1) }
 	end
 	
 	def test_integer

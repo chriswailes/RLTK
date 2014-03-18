@@ -50,9 +50,9 @@ module RLTK::CG
 		#
 		# @param [Type] type Type to cast to.
 		#
-		# @return [ConstExpr]
+		# @return [ConstantExpr]
 		def bitcast(type)
-			ConstExpr.new(Bindings.const_bit_cast(@ptr, check_cg_type(type)))
+			ConstantExpr.new(Bindings.const_bit_cast(@ptr, check_cg_type(type)))
 		end
 		
 		# @return [Boolean] If this value is a constant.
@@ -95,42 +95,27 @@ module RLTK::CG
 			Bindings.is_null(@ptr).to_bool
 		end
 		
-		# Print the LLVM IR representation of this value to a file.  The file
-		# may be specified via a file name (which will be created or
-		# truncated) or an object that responds to #fileno.
-		#
-		# @LLVMECB
-		#
-		# @param [String, #fileno] io File name or object with a file descriptor to print to.
-		#
-		# @return [void]
-		def print(io = $stdout)
-			case io
-			when String
-				File.open(io, 'w') do |f|
-					Bindings.print_value(@ptr, f.fileno)
-				end
-			else
-				Bindings.print_value(@ptr, io.fileno)
-			end
+		# @return [String]  LLVM IR representation of this value
+		def print
+			Bindings.print_value_to_string(@ptr)
 		end
 		
 		# Truncate a value to a given type.
 		#
 		# @param [Type] type Type to truncate to.
 		#
-		# @return [ConstExpr]
+		# @return [ConstantExpr]
 		def trunc(type)
-			ConstExpr.new(Bindings.const_trunc(check_cg_type(type)))
+			ConstantExpr.new(Bindings.const_trunc(check_cg_type(type)))
 		end
 		
 		# Truncate or bitcast a value to the given type as is appropriate.
 		#
 		# @param [Type] type Type to cast or truncate to.
 		#
-		# @return [ConstExpr]
+		# @return [ConstantExpr]
 		def trunc_or_bitcast(type)
-			ConstExpr.new(Bindings.const_trunc_or_bit_cast(check_cg_type(type)))
+			ConstantExpr.new(Bindings.const_trunc_or_bit_cast(check_cg_type(type)))
 		end
 		
 		# @return [Type] Type of this value.
@@ -147,18 +132,18 @@ module RLTK::CG
 		#
 		# @param [Type] type Type to extend the value to.
 		#
-		# @return [ConstExpr]
+		# @return [ConstantExpr]
 		def zextend(type)
-			ConstExpr.new(Bindings.const_z_ext(check_cg_type(type)))
+			ConstantExpr.new(Bindings.const_z_ext(check_cg_type(type)))
 		end
 		
 		# Zero extend or bitcast the value to the given type as is appropriate.
 		#
 		# @param [Type] type Type to cast or extend to.
 		#
-		# @return [ConstExpr]
+		# @return [ConstantExpr]
 		def zextend_or_bitcast(type)
-			ConstExpr.new(Bindings.const_z_ext_or_bit_cast(check_cg_type(type)))
+			ConstantExpr.new(Bindings.const_z_ext_or_bit_cast(check_cg_type(type)))
 		end
 		
 		# This class is used to access a {Value Value's} attributes.
@@ -306,11 +291,20 @@ module RLTK::CG
 			end
 		end
 		
+		# Cast a constant to a given address space
+		#
+		# @param [Type]  type  Type to cast to
+		#
+		# @return [ConstantExpr]
+		def addr_space_cast(type)
+			ConstantExpr.new(Bindings.const_addr_space_cast(@ptr, check_cg_type(type)))
+		end
+		
 		# Bitcast a constant to a given type.
 		#
-		# @param [Type] type
+		# @param [Type]  type  Type to cast to
 		#
-		# @return [ConstExpr]
+		# @return [ConstantExpr]
 		def bitcast_to(type)
 			ConstantExpr.new(Bindings.const_bit_cast(@ptr, check_cg_type(type)))
 		end
@@ -351,7 +345,7 @@ module RLTK::CG
 		#
 		# @param [FFI::Pointer] ptr
 		def initialize(ptr)
-			@ptr = type_check(ptr, FFI::Pointer, 'ptr')
+			@ptr = check_type(ptr, FFI::Pointer, 'ptr')
 		end
 	end
 	
@@ -414,13 +408,17 @@ module RLTK::CG
 		#
 		# @yieldparam index [Integer] Index of the value in the array.
 		#
-		# @param [Type]				element_type	Type of values in this aggregate.
-		# @param [Array<Value>, Integer]	size_or_values	Number of values or array of values.
-		# @param [Proc]				block		Block evaluated if size is specified.
+		# @param [Type]                   element_type    Type of values in this aggregate.
+		# @param [Array<Value>, Integer]  size_or_values  Number of values or array of values.
+		# @param [Proc]                   block           Block evaluated if size is specified.
 		def initialize(element_type, size_or_values, &block)
-			vals_ptr	= make_ptr_to_elements(size_or_values, &block)
-			@type	= ArrayType.new(element_type = check_cg_type(element_type, Type, 'element_type'))
-			@ptr		= Bindings.const_array(element_type, vals_ptr, vals_ptr.size / vals_ptr.type_size)
+			vals_ptr = make_ptr_to_elements(size_or_values, &block)
+			@type    = ArrayType.new(element_type = check_cg_type(element_type, Type, 'element_type'))
+			@ptr     = Bindings.const_array(element_type, vals_ptr, vals_ptr.size / vals_ptr.type_size)
+		end
+		
+		def length
+			Bindings.get_array_length(@ptr)
 		end
 	end
 	
@@ -464,7 +462,8 @@ module RLTK::CG
 			
 			@ptr =
 			if context
-				Bindings.const_struct_in_context(check_type(context, Context, 'context'), vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
+				Bindings.const_struct_in_context(check_type(context, Context, 'context'),
+				                                 vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
 			else
 				Bindings.const_struct(vals_ptr, vals_ptr.size / vals_ptr.type_size, packed.to_i)
 			end
@@ -498,17 +497,17 @@ module RLTK::CG
 		
 		# @param [Integer] index Index of desired element.
 		#
-		# @return [ConstExpr] Extracted element.
+		# @return [ConstantExpr] Extracted element.
 		def extract_element(index)
-			ConstExpr.new(Bindings.const_extract_element(@ptr, index))
+			ConstantExpr.new(Bindings.const_extract_element(@ptr, index))
 		end
 		
 		# @param [Value]	element	Value to insert into the vector.
 		# @param [Integer]	index	Index to insert the value at.
 		#
-		# @return [ConstExpr] New vector representation with inserted value.
+		# @return [ConstantExpr] New vector representation with inserted value.
 		def insert_element(element, index)
-			ConstExpr.new(Bindings.const_insert_element(@ptr, element, index))
+			ConstantExpr.new(Bindings.const_insert_element(@ptr, element, index))
 		end
 		
 		# @param [ConstantVector] other	Other vector to shuffle with this one.
@@ -517,6 +516,10 @@ module RLTK::CG
 		# @return [ConstantVector] New vector formed by shuffling the two vectors together using the mask.
 		def shuffle(other, mask)
 			ConstantVector.new(Bindings.const_shuffle_vector(@ptr, other, mask))
+		end
+		
+		def size
+			Bindings.get_vector_size(@ptr)
 		end
 	end
 	
@@ -560,9 +563,10 @@ module RLTK::CG
 		# @example Constant integer of all 1s:
 		#   Int32.new
 		#
-		# @param [FFI::Pointer, Integer, String, nil]	overloaded0	Pointer to a ConstantInteger, value, or string representing value.
-		# @param [Boolean, Integer]					overloaded1	Signed or unsigned (when overloaded0 is Integer) or base used to decode string value.
-		# @param [Integer]							size			Optional length of string to use.
+		# @param [FFI::Pointer, Integer, String, nil]  overloaded0  Pointer to a ConstantInteger, value, or string representing value.
+		# @param [Boolean, Integer]                    overloaded1  Signed or unsigned (when overloaded0 is Integer) or base used to
+		#    decode string value.
+		# @param [Integer]                             size         Optional length of string to use.
 		def initialize(overloaded0 = nil, overloaded1 = nil, size = nil)
 			@ptr =
 			case overloaded0
@@ -1046,16 +1050,18 @@ module RLTK::CG
 		end
 	end
 	
+	# A 16-bit floating point number value.
+	class Half     < ConstantReal; end
 	# A double precision floating point number value.
-	class Double	< ConstantReal; end
-	# A single precision floating point number type.
-	class Float	< ConstantReal; end
-	# A 128 bit (16 byte) floating point number type.
-	class FP128	< ConstantReal; end
-	# A 128 bit (16 byte) floating point number type for the PPC architecture.
-	class PPCFP128	< ConstantReal; end
-	# A 80 bit (10 byte) floating point number type for the x86 architecture.
-	class X86FP80	< ConstantReal; end
+	class Double   < ConstantReal; end
+	# A single precision floating point number value.
+	class Float    < ConstantReal; end
+	# A 128 bit (16 byte) floating point number value.
+	class FP128    < ConstantReal; end
+	# A 128 bit (16 byte) floating point number value for the PPC architecture.
+	class PPCFP128 < ConstantReal; end
+	# A 80 bit (10 byte) floating point number value for the x86 architecture.
+	class X86FP80  < ConstantReal; end
 	
 	# This class represents global constants, variables, and functions.
 	class GlobalValue < Constant
@@ -1088,6 +1094,22 @@ module RLTK::CG
 		# @return [Boolean]
 		def declaration?
 			Bindings.is_declaration(@ptr).to_bool
+		end
+		
+		# Sets the externally initialized property of a global value.
+		#
+		# @param [Boolean]  bool  If the value is externally initialized
+		#
+		# @return [void]
+		def externally_initialized=(bool)
+			Bindings.set_externally_initialized(@ptr, bool.to_i)
+		end
+		
+		# Check if this global is initialized externally.
+		#
+		# @return [Boolean]
+		def externally_initialized?
+			Bindings.externally_initialized(@ptr).to_bool
 		end
 		
 		# Check if this value is a global constant.
@@ -1158,6 +1180,23 @@ module RLTK::CG
 			Bindings.set_section(@ptr, section)
 		end
 		
+		# Returns the thread local model used by a global value. 
+		#
+		# @return [Symbol from _enum_thread_local_mode_]
+		def thread_local_mode
+			Bindings.get_thread_local_mode(@ptr)
+		end 
+		
+		
+		# Set the global value's thread local mode.
+		#
+		# @param [Symbol from _enum_thread_local_mode_] mode
+		#
+		# @return [void]
+		def thread_local_mode=(mode)
+			Bindings.set_thread_local_mode(@ptr, mode)
+		end
+		
 		# Get this value's visibility.
 		#
 		# @see Bindings._enum_visibility_
@@ -1225,7 +1264,5 @@ def make_ptr_to_elements(size_or_values, &block)
 		size_or_values
 	end
 	
-	returning(FFI::MemoryPointer.new(:pointer, values.size)) do |ptr|
-		ptr.write_array_of_pointer(values)
-	end
+	FFI::MemoryPointer.new(:pointer, values.size).write_array_of_pointer(values)
 end

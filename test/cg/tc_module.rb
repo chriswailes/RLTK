@@ -53,7 +53,7 @@ class ModuleTester < Minitest::Test
 		mod2 = RLTK::CG::Module.new(mod0.ptr)
 		
 		assert_equal(mod0, mod2)
-		assert_not_equal(mod0, mod1)
+		refute_equal(mod0, mod1)
 	end
 	
 	def test_external_fun

@@ -27,7 +27,9 @@ class ValueTester < Minitest::Test
 	end
 	
 	def test_array_values
-		fun = @mod.functions.add('array_function_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+		fun = @mod.functions.add('array_function_tester', RLTK::CG::NativeIntType,
+		                         [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+		     
 			blocks.append do
 				ptr = alloca(RLTK::CG::ArrayType.new(RLTK::CG::NativeIntType, 2))
 			
@@ -46,18 +48,20 @@ class ValueTester < Minitest::Test
 		array = RLTK::CG::ConstantArray.new(RLTK::CG::NativeIntType, [RLTK::CG::NativeInt.new(0), RLTK::CG::NativeInt.new(1)])
 		
 		assert_instance_of(RLTK::CG::ConstantArray, array)
-		assert_equal(2, array.operands.size)
+		assert_equal(2, array.length)
 	end
 	
 	def test_constant_array_from_size
 		array = RLTK::CG::ConstantArray.new(RLTK::CG::NativeIntType, 2) { |i| RLTK::CG::NativeInt.new(i) }
 		
 		assert_instance_of(RLTK::CG::ConstantArray, array)
-		assert_equal(2, array.operands.size)
+		assert_equal(2, array.length)
 	end
 	
 	def test_constant_vector_elements
-		fun = @mod.functions.add('constant_vector_elements_tester', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+		fun = @mod.functions.add('constant_vector_elements_tester', RLTK::CG::NativeIntType,
+		                         [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType]) do |fun|
+			
 			blocks.append do
 				ptr = alloca(RLTK::CG::VectorType.new(RLTK::CG::NativeIntType, 2))
 				
@@ -76,14 +80,14 @@ class ValueTester < Minitest::Test
 		vector = RLTK::CG::ConstantVector.new([RLTK::CG::NativeInt.new(0), RLTK::CG::NativeInt.new(1)])
 		
 		assert_instance_of(RLTK::CG::ConstantVector, vector)
-		assert_equal(2, vector.operands.size)
+		assert_equal(2, vector.size)
 	end
 	
 	def test_constant_vector_from_size
 		vector = RLTK::CG::ConstantVector.new(2) { |i| RLTK::CG::NativeInt.new(i) }
 		
 		assert_instance_of(RLTK::CG::ConstantVector, vector)
-		assert_equal(2, vector.operands.size)
+		assert_equal(2, vector.size)
 	end
 	
 	def test_constant_vector_shuffle
@@ -142,6 +146,6 @@ class ValueTester < Minitest::Test
 		v2 = RLTK::CG::NativeInt.new(v0.ptr)
 		
 		assert_equal(v0, v2)
-		assert_not_equal(v0, v1)
+		refute_equal(v0, v1)
 	end
 end

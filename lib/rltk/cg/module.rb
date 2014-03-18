@@ -31,33 +31,49 @@ module RLTK::CG
 		
 		# Load a module from LLVM bitcode.
 		#
-		# @see MemoryBuffer#initialize
-		#
-		# @param [MemoryBuffer, FFI::Pointer, String, nil] overloaded Where to read the bitecode from.
+		# @param [MemoryBuffer, String]  overloaded  Where to read the bitecode from
+		# @param [Context, nil]          context     Context in which to parse bitcode
 		#
 		# @return [Module]
-		def self.read_bitcode(overloaded)
-			buffer = if overloaded.is_a?(MemoryBuffer) then overloaded else MemoryBuffer.new(overloaded) end
+		def self.read_bitcode(overloaded, context = nil)
+			buffer = overloaded.is_a?(MemoryBuffer) ? overloaded : MemoryBuffer.new(overloaded)
 			
 			mod_ptr = FFI::MemoryPointer.new(:pointer)
 			msg_ptr = FFI::MemoryPointer.new(:pointer)
 			
-			status = Bindings.parse_bitcode(buffer, mod_ptr, msg_ptr)
-			
-			if status != 0
-				raise msg_ptr.get_pointer(0).get_string(0)
+			status =
+			if context
+				Bindings.parse_bitcode_in_context(context, buffer, mod_ptr, msg_ptr)
 			else
+				Bindings.parse_bitcode(buffer, mod_ptr, msg_ptr)
+			end
+			
+			if status.zero?
 				Module.new(mod_ptr.get_pointer(0))
+			else
+				raise msg_ptr.get_pointer(0).get_string(0)
 			end
 		end
 		
-		# Load a Module form an LLVM IR file.
+		# Load a Module form an LLVM IR.
 		#
-		# @param [String] file_name Name of file containing LLVM IR module.
+		# @param [MemoryBuffer, String]  overloaded  Where to read the IR from
+		# @param [Context]               context     Context in which to parse IR
 		#
 		# @return [Module]
-		def self.read_ir_file(file_name, context = Context.global)
-			self.new(Bindings.load_module_from_ir_file(file_name, context))
+		def self.read_ir(overloaded, context = Context.global)
+			buffer = overloaded.is_a?(MemoryBuffer) ? overloaded : MemoryBuffer.new(overloaded)
+			
+			mod_ptr = FFI::MemoryPointer.new(:pointer)
+			msg_ptr = FFI::MemoryPointer.new(:pointer)
+			
+			status = Bindings.parse_ir_in_context(context, buffer, mod_ptr, msg_ptr)
+			
+			if status.zero?
+				Module.new(mod_ptr.get_pointer(0))
+			else
+				raise msg_ptr.get_pointer(0).get_string(0)
+			end
 		end
 		
 		# Create a new LLVM module.
@@ -77,6 +93,9 @@ module RLTK::CG
 				else
 					Bindings.module_create_with_name(overloaded)
 				end
+				
+			else
+				raise 'Argument `overloaded` must be a FFI::Pointer of String.'
 			end
 			
 			# Define a finalizer to free the memory used by LLVM for this
@@ -88,15 +107,15 @@ module RLTK::CG
 		
 		# Compile this module to an assembly or object file.
 		#
-		# @param [String]		file_name	Name of output file.
-		# @param [:asm, :object]	mode		Generate assembly or object file?
-		# @param [TargetMachine]	machine	Machine type to target.
-		# @param [0, 1, 2, 3]	opt_level	Optimization level to use during compilation.
-		# @param [Boolean]		verify	Verify the module before compilation or not.
+		# @param [String]              file_name  File to emit code to
+		# @param [:assembly, :object]  emit_type  Type of code to emit
+		# @param [TargetMachine]       machine    TargetMachine used to generate code
 		#
 		# @return [void]
-		def compile(file_name, mode = :object, machine = TargetMachine.host, opt_level = 2, verify = true)
-			Bindings.compile_module_to_file(@ptr, machine, self.pm, file_name, mode, opt_level, (!verify).to_i)
+		#
+		# @raise LLVM error message if unable to emit code for module
+		def compile(file_name, emit_type = :object, machine = TargetMachine.host)
+			machine.emite_module(self, file_name, emit_type)
 		end
 		
 		# @return [Context] Context in which this module exists.
@@ -121,29 +140,52 @@ module RLTK::CG
 		end
 		alias :fpm :function_pass_manager
 		
+		# Link another module into this one, taking ownership of it.  You may
+		# not access the other module again once linking it.
+		#
+		# @param [Module]  other  Module to be linked
+		#
+		# @raise Errors encountered during linking
+		def link(other)
+			error  = FFI::MemoryPointer.new(:pointer)
+			status = Bindings.link_modules(@ptr, other, :linker_destroy_source, error)
+			
+			if not status.zero?
+				errorp  = error.read_pointer
+				message = errorp.null? ? 'Unknown' : errorp.read_string
+		
+				error.autorelease = false
+		
+				Bindings.dispose_message(error)
+		
+				raise "Error linking modules: #{message}"
+			end
+		end
+		
 		# @return [PassManager] Pass manager for this module.
 		def pass_manager
 			@pass_manager ||= PassManager.new(self)
 		end
 		alias :pm :pass_manager
 		
-		# Print the LLVM IR representation of this module to a file.  The
-		# file may be specified via a file name (which will be created or
-		# truncated) or an object that responds to #fileno.
+		# Print the LLVM IR representation of this module to a file.
 		#
-		# @LLVMECB
-		#
-		# @param [String, #fileno] io File name or object with a file descriptor to print to.
+		# @param [String]  file_name  Name of file to print to
 		#
 		# @return [void]
-		def print(io = $stdout)
-			case io
-			when String
-				File.open(io, 'w') do |f|
-					Bindings.print_module(@ptr, f.fileno)
-				end
-			else
-				Bindings.print_module(@ptr, io.fileno)
+		def print(filename)
+			error  = FFI::MemoryPointer.new(:pointer)
+			status = Bindings.print_module_to_file(@ptr, filename, error)
+			
+			if not status.zero?
+				errorp  = error.read_pointer
+				message = errorp.null? ? 'Unknown' : errorp.read_string
+		
+				error.autorelease = false
+		
+				Bindings.dispose_message(error)
+		
+				raise "Error printing module: #{message}"
 			end
 		end
 		
@@ -172,6 +214,13 @@ module RLTK::CG
 		# @return [String]
 		def target
 			Bindings.get_target(@ptr)
+		end
+		
+		# Return a LLVM IR representation of this file as a string.
+		#
+		# @return [String]
+		def to_s
+			Bindings.print_module_to_string(@ptr)
 		end
 		
 		# Write the module as LLVM bitcode to a file.

@@ -19,6 +19,16 @@ module RLTK::CG
 	
 	# This module contains global operations on the LLVM compiler infrastructure.
 	module LLVM
+		
+		# Enable LLVM's built-in stack trace code. This intercepts the OS's
+		# crash signals and prints which component of LLVM you were in at the
+		# time if the crash.
+		#
+		# @return [void]
+		def self.enable_pretty_stack_trace
+			Bindings.enable_pretty_stack_trace
+		end
+		
 		# Initialize LLVM to generate code for a given architecture.  You may
 		# also specify :all to initialize all targets or :native to
 		# initialize the host target.
@@ -32,10 +42,10 @@ module RLTK::CG
 		# @return [void]
 		def self.init(arch)
 			if arch == :all
-				Bindings.ecb_initialize_all_targets
+				Bindings.initialize_all_targets
 			
 			elsif arch == :native
-				Bindings.ecb_initialize_native_target
+				Bindings.initialize_native_target
 			
 			elsif Bindings::ARCHS.include?(arch) or Bindings::ARCHS.map { |sym| sym.to_s.downcase.to_sym }.include?(arch)
 				arch = Bindings.get_bname(arch)
@@ -47,6 +57,14 @@ module RLTK::CG
 			else
 				raise ArgumentError, "Unsupported architecture specified: #{arch}."
 			end
+		end
+		
+		# Initialize access to all available target MC that LLVM is
+		# configured to support.
+		#
+		# @return [void]
+		def self.initialize_all_target_mcs
+			Bindings.initialize_all_target_mcs
 		end
 		
 		# Initialize a given ASM parser inside LLVM.  You may also specify
@@ -99,6 +117,29 @@ module RLTK::CG
 			else
 				raise ArgumentError, "Unsupported assembler type specified: #{asm}"
 			end
+		end
+		
+		def self.multithreaded?
+			Bindings.is_multithreaded.to_bool
+		end
+		
+		# Deallocate and destroy all ManagedStatic variables.
+		#
+		# @return [void]
+		def self.shutdown
+			Bindings.shutdown
+		end
+		
+		# Initialize LLVM's multithreaded infrestructure.
+		#
+		# @return [void]
+		def start_multithreaded
+			Bindings.start_multithreaded
+		end
+		
+		# Shutdown and cleanup LLVM's multithreaded infrastructure.
+		def stop_multithreaded
+			Bindings.stop_multithreaded
 		end
 		
 		# @return [String] String representing the version of LLVM targeted by these bindings.

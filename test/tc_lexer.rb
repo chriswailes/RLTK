@@ -22,19 +22,19 @@ require 'rltk/lexers/ebnf'
 
 class LexerTester < Minitest::Test
 	class ABLongest < RLTK::Lexer
-		rule(/a+/)	{ :APLUS }
-		rule(/b+/)	{ :BPLUS }
+		rule(/a+/)   { :APLUS }
+		rule(/b+/)   { :BPLUS }
 	
-		rule(/a+b+/)	{ :APLUSBPLUS }
+		rule(/a+b+/) { :APLUSBPLUS }
 	end
 
 	class ABFirst < RLTK::Lexer
 		match_first
 	
-		rule(/a+/)	{ :APLUS }
-		rule(/b+/)	{ :BPLUS }
+		rule(/a+/)   { :APLUS }
+		rule(/b+/)   { :BPLUS }
 	
-		rule(/a+b+/)	{ :APLUSBPLUS }
+		rule(/a+b+/) { :APLUSBPLUS }
 	end
 
 	class ENVLexer < RLTK::Lexer
@@ -53,21 +53,21 @@ class LexerTester < Minitest::Test
 	end
 
 	class FlagLexer < RLTK::Lexer
-		rule(/a/)		{ set_flag(:a); :A }
+		rule(/a/)	 { set_flag(:a); :A }
 		rule(/\s/)
 	
-		rule(/b/, :default, [:a])	{ set_flag(:b); :B }
-		rule(/c/, :default, [:a, :b])	{ :C }
+		rule(/b/, :default, [:a])     { set_flag(:b); :B }
+		rule(/c/, :default, [:a, :b]) { :C }
 	end
 
 	class StateLexer < RLTK::Lexer
-		rule(/a/)		{ :A }
+		rule(/a/)    { :A }
 		rule(/\s/)
 	
-		rule(/\(\*/)	{ push_state(:comment) }
+		rule(/\(\*/) { push_state(:comment) }
 	
-		rule(/\(\*/, :comment)	{ push_state(:comment) }
-		rule(/\*\)/, :comment)	{ pop_state }
+		rule(/\(\*/, :comment) { push_state(:comment) }
+		rule(/\*\)/, :comment) { pop_state }
 		rule(/./,    :comment)
 	end
 
@@ -76,19 +76,18 @@ class LexerTester < Minitest::Test
 	end
 	
 	def test_calc
-		expected =
-			[
-				RLTK::Token.new(:NUM, 1),
-				
-				RLTK::Token.new(:PLS),
-				RLTK::Token.new(:SUB),
-				RLTK::Token.new(:MUL),
-				RLTK::Token.new(:DIV),
-				
-				RLTK::Token.new(:LPAREN),
-				RLTK::Token.new(:RPAREN),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:NUM, 1),
+			
+			RLTK::Token.new(:PLS),
+			RLTK::Token.new(:SUB),
+			RLTK::Token.new(:MUL),
+			RLTK::Token.new(:DIV),
+			
+			RLTK::Token.new(:LPAREN),
+			RLTK::Token.new(:RPAREN),
+			RLTK::Token.new(:EOS)
+		]
 		
 		actual = RLTK::Lexers::Calculator.lex('1 + - * / ( )')
 		
@@ -96,16 +95,15 @@ class LexerTester < Minitest::Test
 	end
 	
 	def test_ebnf
-		expected =
-			[
-				RLTK::Token.new(:NONTERM, :aaa),
-				RLTK::Token.new(:TERM, :BBB),
-				
-				RLTK::Token.new(:*),
-				RLTK::Token.new(:+),
-				RLTK::Token.new(:'?'),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:NONTERM, :aaa),
+			RLTK::Token.new(:TERM, :BBB),
+			
+			RLTK::Token.new(:*),
+			RLTK::Token.new(:+),
+			RLTK::Token.new(:'?'),
+			RLTK::Token.new(:EOS)
+		]
 		
 		actual = RLTK::Lexers::EBNF.lex('aaa BBB * + ?')
 		
@@ -113,13 +111,12 @@ class LexerTester < Minitest::Test
 	end
 	
 	def test_environment
-		expected =
-			[
-				RLTK::Token.new(:A, 0),
-				RLTK::Token.new(:A, 1),
-				RLTK::Token.new(:A, 2),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:A, 0),
+			RLTK::Token.new(:A, 1),
+			RLTK::Token.new(:A, 2),
+			RLTK::Token.new(:EOS)
+		]
 		
 		actual = ENVLexer.lex('aaa')
 		
@@ -129,24 +126,22 @@ class LexerTester < Minitest::Test
 		
 		assert_equal(expected, lexer.lex('aaa'))
 		
-		expected =
-			[
-				RLTK::Token.new(:A, 3),
-				RLTK::Token.new(:A, 4),
-				RLTK::Token.new(:A, 5),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:A, 3),
+			RLTK::Token.new(:A, 4),
+			RLTK::Token.new(:A, 5),
+			RLTK::Token.new(:EOS)
+		]
 		
 		assert_equal(expected, lexer.lex('aaa'))
 	end
 	
 	def test_first_match
-		expected =
-			[
-				RLTK::Token.new(:APLUS),
-				RLTK::Token.new(:BPLUS),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:APLUS),
+			RLTK::Token.new(:BPLUS),
+			RLTK::Token.new(:EOS)
+		]
 		
 		actual = ABFirst.lex('aaabbb')
 		
@@ -155,49 +150,43 @@ class LexerTester < Minitest::Test
 	
 	def test_flags
 		
-		assert_raise(RLTK::LexingError) { FlagLexer.lex('b') }
-		assert_raise(RLTK::LexingError) { FlagLexer.lex('ac') }
+		assert_raises(RLTK::LexingError) { FlagLexer.lex('b') }
+		assert_raises(RLTK::LexingError) { FlagLexer.lex('ac') }
 		
-		expected =
-			[
-				RLTK::Token.new(:A),
-				RLTK::Token.new(:B),
-				RLTK::Token.new(:C),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:A),
+			RLTK::Token.new(:B),
+			RLTK::Token.new(:C),
+			RLTK::Token.new(:EOS)
+		]
 		
 		actual = FlagLexer.lex('abc')
 		assert_equal(expected, actual)
 		
-		expected =
-			[
-				RLTK::Token.new(:A),
-				RLTK::Token.new(:B),
-				RLTK::Token.new(:C),
-				RLTK::Token.new(:A),
-				RLTK::Token.new(:B),
-				RLTK::Token.new(:C),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:A),
+			RLTK::Token.new(:B),
+			RLTK::Token.new(:C),
+			RLTK::Token.new(:A),
+			RLTK::Token.new(:B),
+			RLTK::Token.new(:C),
+			RLTK::Token.new(:EOS)
+		]
 		
 		actual = FlagLexer.lex('abcabc')
 		assert_equal(expected, actual)
 	end
 	
 	def test_lex
-		assert_raise(RLTK::LexingError) { ABFirst.lex('aaabbbCCC') }
-		assert_raise(RLTK::LexingError) { ABLongest.lex('aaabbbCCC') }
-		
-		assert_nothing_raised(RLTK::LexingError) { ABFirst.lex('aaabbb') }
-		assert_nothing_raised(RLTK::LexingError) { ABLongest.lex('aaabbb') }
+		assert_raises(RLTK::LexingError) { ABFirst.lex('aaabbbCCC') }
+		assert_raises(RLTK::LexingError) { ABLongest.lex('aaabbbCCC') }
 	end
 	
 	def test_longest_match
-		expected =
-			[
-				RLTK::Token.new(:APLUSBPLUS),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:APLUSBPLUS),
+			RLTK::Token.new(:EOS)
+		]
 		
 		actual = ABLongest.lex('aaabbb')
 		
@@ -205,19 +194,18 @@ class LexerTester < Minitest::Test
 	end
 	
 	def test_match_data
-		expected	= [RLTK::Token.new(:FOO, ['', 'ccc']), RLTK::Token.new(:EOS)]
-		actual	= MatchDataLexer.lex('accc')
+		expected = [RLTK::Token.new(:FOO, ['', 'ccc']), RLTK::Token.new(:EOS)]
+		actual   = MatchDataLexer.lex('accc')
 		
 		assert_equal(expected, actual)
 	end
 	
 	def test_state
-		expected =
-			[
-				RLTK::Token.new(:A),
-				RLTK::Token.new(:A),
-				RLTK::Token.new(:EOS)
-			]
+		expected = [
+			RLTK::Token.new(:A),
+			RLTK::Token.new(:A),
+			RLTK::Token.new(:EOS)
+		]
 		
 		actual = StateLexer.lex('a (* bbb *) a')
 		assert_equal(expected, actual)

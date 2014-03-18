@@ -177,12 +177,11 @@ class ASTNodeTester < Minitest::Test
 	
 	def test_equal
 		assert_equal(@tree0, @tree1)
-		assert_not_equal(@tree0, @tree2)
+		refute_equal(@tree0, @tree2)
 	end
 	
 	def test_initialize
-		assert_raise(RuntimeError) { RLTK::ASTNode.new }
-		assert_nothing_raised(RuntimeError) { ANode.new }
+		assert_raises(RuntimeError) { RLTK::ASTNode.new }
 	end
 	
 	def test_map
@@ -205,7 +204,7 @@ class ASTNodeTester < Minitest::Test
 		tree1_clone = @tree1.clone
 		tree1_clone.map!(&@bc_proc)
 		
-		assert_not_equal(@tree1, tree1_clone)
+		refute_equal(@tree1, tree1_clone)
 		assert_equal(@tree3, tree1_clone)
 		
 		replace_node = BNode.new
@@ -219,7 +218,7 @@ class ASTNodeTester < Minitest::Test
 			c
 		end
 		
-		assert_not_equal(@tree6, @tree5)
+		refute_equal(@tree6, @tree5)
 		assert_equal(@tree7, @tree5)
 	end
 	

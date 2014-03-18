@@ -37,7 +37,7 @@ class CFGTester < Minitest::Test
 		
 		first = true
 		grammar.callback do |type, num, p|
-			assert_not_nil(p)
+			refute_nil(p)
 			assert_equal(type, :'?')
 			
 			if first
@@ -52,7 +52,7 @@ class CFGTester < Minitest::Test
 		
 		first = true
 		grammar.callback do |type, num, p|
-			assert_not_nil(p)
+			refute_nil(p)
 			assert_equal(type, :*)
 			
 			if first
@@ -67,7 +67,7 @@ class CFGTester < Minitest::Test
 		
 		first = true
 		grammar.callback do |type, num, p|
-			assert_not_nil(p)
+			refute_nil(p)
 			assert_equal(type, :+)
 			
 			if first
@@ -83,7 +83,7 @@ class CFGTester < Minitest::Test
 	
 	def test_first_set
 		@grammar.first_set(:s).each do |sym|
-			assert([:A, :B].include?(sym))
+			assert_includes([:A, :B], sym)
 		end
 		
 		assert_equal(@grammar.first_set(:b), [:G])
@@ -122,7 +122,7 @@ class CFGTester < Minitest::Test
 		
 		i0.advance
 		
-		assert_not_equal(i0, i1)
+		refute_equal(i0, i1)
 		assert_equal(i0.at_end?, false)
 		assert_equal(i0.next_symbol, :C)
 		
