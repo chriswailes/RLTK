@@ -121,6 +121,30 @@ class ParserTester < Minitest::Test
 		finalize
 	end
 	
+	class GreedTestParser0 < RLTK::Parser
+		production(:e, 'A? A') { |a0, a1| [a0, a1] }
+		
+		finalize explain: 'greedy0.parse_table'
+	end
+	
+	class GreedTestParser1 < RLTK::Parser
+		production(:e, 'A? A?') { |a0, a1| [a0, a1] }
+		
+		finalize explain: 'greedy1.parse_table'
+	end
+	
+	class GreedTestParser2 < RLTK::Parser
+		production(:e, 'A* A') { |a0, a1| [a0, a1] }
+		
+		finalize
+	end
+	
+	class GreedTestParser3 < RLTK::Parser
+		production(:e, 'A+ A') { |a0, a1| [a0, a1] }
+		
+		finalize
+	end
+	
 	class NonEmptyListParser0 < RLTK::Parser
 		nonempty_list('list', :A, :COMMA)
 		
@@ -294,16 +318,75 @@ class ParserTester < Minitest::Test
 		# EmptyListParser0 #
 		####################
 		
-		expected	= []
-		actual	= EmptyListParser0.parse(AlphaLexer.lex(''))
+		expected = []
+		actual   = EmptyListParser0.parse(AlphaLexer.lex(''))
 		assert_equal(expected, actual)
 		
 		####################
 		# EmptyListParser1 #
 		####################
 		
-		expected	= ['a', 'b', ['c', 'd']]
-		actual	= EmptyListParser1.parse(AlphaLexer.lex('a, b, c d'))
+		expected = ['a', 'b', ['c', 'd']]
+		actual   = EmptyListParser1.parse(AlphaLexer.lex('a, b, c d'))
+		assert_equal(expected, actual)
+	end
+	
+	def test_greed
+		
+		####################
+		# GreedTestParser0 #
+		####################
+		
+		expected = [nil, 'a']
+		actual   = GreedTestParser0.parse(AlphaLexer.lex('a'))
+		assert_equal(expected, actual)
+		
+		expected = ['a', 'a']
+		actual   = GreedTestParser0.parse(AlphaLexer.lex('a a'))
+		assert_equal(expected, actual)
+		
+		####################
+		# GreedTestParser1 #
+		####################
+		
+		expected = [nil, nil]
+		actual   = GreedTestParser1.parse(AlphaLexer.lex(''))
+		assert_equal(expected, actual)
+		
+#		expected = ['a', nil]
+#		actual   = GreedTestParser1.parse(AlphaLexer.lex('a'))
+#		assert_equal(expected, actual)
+		
+		expected = ['a', 'a']
+		actual   = GreedTestParser1.parse(AlphaLexer.lex('a a'))
+		assert_equal(expected, actual)
+		
+		####################
+		# GreedTestParser2 #
+		####################
+		
+		expected = [[], 'a']
+		actual   = GreedTestParser2.parse(AlphaLexer.lex('a'))
+		assert_equal(expected, actual)
+		
+		expected = [['a'], 'a']
+		actual   = GreedTestParser2.parse(AlphaLexer.lex('a a'))
+		assert_equal(expected, actual)
+		
+		expected = [['a', 'a'], 'a']
+		actual   = GreedTestParser2.parse(AlphaLexer.lex('a a a'))
+		assert_equal(expected, actual)
+		
+		####################
+		# GreedTestParser3 #
+		####################
+		
+		expected = [['a'], 'a']
+		actual   = GreedTestParser3.parse(AlphaLexer.lex('a a'))
+		assert_equal(expected, actual)
+		
+		expected = [['a', 'a'], 'a']
+		actual   = GreedTestParser3.parse(AlphaLexer.lex('a a a'))
 		assert_equal(expected, actual)
 	end
 	

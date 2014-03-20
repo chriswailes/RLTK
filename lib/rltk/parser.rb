@@ -80,58 +80,57 @@ module RLTK
 			#
 			# @return [void]
 			def install_icvars
-				@curr_lhs		= nil
-				@curr_prec	= nil
+				@curr_lhs  = nil
+				@curr_prec = nil
 				
-				@conflicts	= Hash.new {|h, k| h[k] = Array.new}
-				@grammar		= CFG.new
+				@conflicts = Hash.new {|h, k| h[k] = Array.new}
+				@grammar   = CFG.new
 				
-				@lh_sides		= Hash.new
-				@procs		= Array.new
-				@states		= Array.new
+				@lh_sides  = Hash.new
+				@procs     = Array.new
+				@states    = Array.new
 				
 				# Variables for dealing with precedence.
-				@prec_counts		= {:left => 0, :right => 0, :non => 0}
-				@production_precs	= Array.new
-				@token_precs		= Hash.new
+				@prec_counts      = {:left => 0, :right => 0, :non => 0}
+				@production_precs = Array.new
+				@token_precs      = Hash.new
 				
 				# Set the default argument handling policy.  Valid values
 				# are :array and :splat.
 				@default_arg_type = :splat
 				
 				@grammar.callback do |type, num, p|
-					@procs[p.id] =
-					[
+					@procs[p.id] = [
 						case type
 						when :*
 							case num
-							when :first then	ClauseProc.new { ||            [] }
-							else				ClauseProc.new { |os, o|  os << o }
+							when :first then ClauseProc.new { ||            [] }
+							else             ClauseProc.new { |os, o|  os << o }
 							end
 							
 						when :+
 							case num
-							when :first then	ClauseProc.new { |o|         [o] }
-							else				ClauseProc.new { |os, o| os << o }
+							when :first then ClauseProc.new { |o|         [o] }
+							else             ClauseProc.new { |os, o| os << o }
 							end
 							
 						when :'?'
 							case num
-							when :first then	ClauseProc.new { ||  nil }
-							else				ClauseProc.new { |o|   o }
+							when :first then ClauseProc.new { ||  nil }
+							else             ClauseProc.new { |o|   o }
 							end
 							
 						when :elp
 							case num
-							when :first then	ClauseProc.new { ||         [] }
-							else				ClauseProc.new { |prime| prime }
+							when :first then ClauseProc.new { ||         [] }
+							else             ClauseProc.new { |prime| prime }
 							end
 							
 						when :nelp
 							case num
-							when :first	then	ClauseProc.new { |el|                                         [el] }
-							when :second	then	ClauseProc.new { |*syms|                  syms.first + [syms.last] }
-							else				ClauseProc.new { |*el| if el.length == 1 then el.first else el end }
+							when :first  then ClauseProc.new { |el|                                         [el] }
+							when :second then ClauseProc.new { |*syms|                  syms.first + [syms.last] }
+							else	             ClauseProc.new { |*el| if el.length == 1 then el.first else el end }
 							end
 						end,
 						p.rhs.length
@@ -179,10 +178,10 @@ module RLTK
 				opts[:explain]	= self.get_io(opts[:explain])
 				
 				{
-					explain:		false,
-					lookahead:	true,
-					precedence:	true,
-					use:			false
+					explain:    false,
+					lookahead:  true,
+					precedence: true,
+					use:        false
 				}.update(opts)
 			end
 			private :build_finalize_opts
@@ -194,14 +193,14 @@ module RLTK
 			#
 			# @return [Hash{Symbol => Object}]
 			def build_parse_opts(opts)
-				opts[:parse_tree]	= self.get_io(opts[:parse_tree])
-				opts[:verbose]		= self.get_io(opts[:verbose])
+				opts[:parse_tree] = self.get_io(opts[:parse_tree])
+				opts[:verbose]    = self.get_io(opts[:verbose])
 				
 				{
-					accept:		:first,
-					env:			self::Environment.new,
-					parse_tree:	false,
-					verbose:		false
+					accept:     :first,
+					env:        self::Environment.new,
+					parse_tree: false,
+					verbose:    false
 				}.update(opts)
 			end
 			private :build_parse_opts
@@ -332,16 +331,16 @@ module RLTK
 				@conflicts = nil
 				
 				# Drop the grammar and the grammar'.
-				@grammar		= nil
-				@grammar_prime	= nil
+				@grammar       = nil
+				@grammar_prime = nil
 				
 				# Drop precedence and bookkeeping information.
-				@cur_lhs	= nil
-				@cur_prec	= nil
+				@cur_lhs  = nil
+				@cur_prec = nil
 				
-				@prec_counts		= nil
-				@production_precs	= nil
-				@token_precs		= nil
+				@prec_counts      = nil
+				@production_precs = nil
+				@token_precs      = nil
 				
 				# Drop the items from each of the states.
 				@states.each { |state| state.clean }
@@ -506,10 +505,10 @@ module RLTK
 			#
 			# @param [Hash] opts Options describing how to finalize the parser.
 			#
-			# @option opts [Boolean,String,IO]		:explain		To explain the parser or not.
-			# @option opts [Boolean]				:lookahead	To use lookahead info for conflict resolution.
-			# @option opts [Boolean]				:precedence	To use precedence info for conflict resolution.
-			# @option opts [String,IO]			:use			A file name or object that is used to load/save the parser.
+			# @option opts [Boolean,String,IO]  :explain     To explain the parser or not.
+			# @option opts [Boolean]            :lookahead   To use lookahead info for conflict resolution.
+			# @option opts [Boolean]            :precedence  To use precedence info for conflict resolution.
+			# @option opts [String,IO]          :use         A file name or object that is used to load/save the parser.
 			#
 			# @return [void]
 			def finalize(opts = {})
@@ -557,9 +556,7 @@ module RLTK
 				
 				# Translate the precedence of productions from tokens to
 				# (associativity, precedence) pairs.
-				@production_precs.each_with_index do |prec, id|
-					@production_precs[id] = @token_precs[prec]
-				end
+				@production_precs.map! { |prec| @token_precs[prec] }
 				
 				# Build the rest of the transition table.
 				@states.each do |state|
@@ -603,13 +600,7 @@ module RLTK
 				end
 				
 				# Build the production.id -> production.lhs map.
-				@grammar.productions(:id).to_a.inject(@lh_sides) do |h, pair|
-					id, production = pair
-					
-					h[id] = production.lhs
-					
-					h
-				end
+				@grammar.productions(:id).each { |id, production| @lh_sides[id] = production.lhs }
 				
 				# Prune the parsing table for unnecessary reduce actions.
 				self.prune(opts[:lookahead], opts[:precedence])
@@ -638,8 +629,8 @@ module RLTK
 			
 			# Converts an object into an IO object as appropriate.
 			#
-			# @param [Object] o		Object to be converted into an IO object.
-			# @param [String] mode	String representing the mode to open the IO object in.
+			# @param [Object]  o     Object to be converted into an IO object.
+			# @param [String]  mode  String representing the mode to open the IO object in.
 			#
 			# @return [IO, false] The IO object or false if a conversion wasn't possible.
 			def get_io(o, mode = 'w')
@@ -654,7 +645,7 @@ module RLTK
 				end
 			end
 			
-			# @return [CFG] The grammar that can be parsed by this Parser.
+			# @return [CFG]  The grammar that can be parsed by this Parser.
 			def grammar
 				@grammar.clone
 			end
@@ -700,9 +691,9 @@ module RLTK
 			
 			# Inform the parser core that a conflict has been detected.
 			#
-			# @param [Integer]	state_id	ID of the state where the conflict was encountered.
-			# @param [:RR, :SR]	type		Reduce/Reduce or Shift/Reduce conflict.
-			# @param [Symbol]	sym		Symbol that caused the conflict.
+			# @param [Integer]   state_id  ID of the state where the conflict was encountered.
+			# @param [:RR, :SR]  type      Reduce/Reduce or Shift/Reduce conflict.
+			# @param [Symbol]    sym       Symbol that caused the conflict.
 			#
 			# @return [void]
 			def inform_conflict(state_id, type, sym)
@@ -713,7 +704,7 @@ module RLTK
 			# are left-associative.  Subsequent calls to this method will
 			# give their arguments higher precedence.
 			#
-			# @param [Array<Symbol>] symbols Symbols that are left associative.
+			# @param [Array<Symbol>]  symbols  Symbols that are left associative.
 			#
 			# @return [void]
 			def left(*symbols)
@@ -727,7 +718,7 @@ module RLTK
 			# This method is used to specify that the symbols in *symbols*
 			# are non-associative.
 			#
-			# @param [Array<Symbol>] symbols Symbols that are non-associative.
+			# @param [Array<Symbol>]  symbols  Symbols that are non-associative.
 			#
 			# @return [void]
 			def nonassoc(*symbols)
@@ -754,15 +745,15 @@ module RLTK
 			# Additional information about the parsing options can be found in
 			# the main documentation.
 			#
-			# @param [Array<Token>]	tokens	Tokens to be parsed.
-			# @param [Hash]		opts		Options to use when parsing input.
+			# @param [Array<Token>]  tokens  Tokens to be parsed.
+			# @param [Hash]          opts    Options to use when parsing input.
 			#
-			# @option opts [:first, :all] 	:accept		Either :first or :all.
-			# @option opts [Object]			:env			The environment in which to evaluate the production action.
-			# @option opts [Boolean,String,IO]	:parse_tree	To print parse trees in the DOT language or not.
-			# @option opts [Boolean,String,IO] :verbose		To be verbose or not.
+			# @option opts [:first, :all]       :accept      Either :first or :all.
+			# @option opts [Object]             :env         The environment in which to evaluate the production action.
+			# @option opts [Boolean,String,IO]  :parse_tree  To print parse trees in the DOT language or not.
+			# @option opts [Boolean,String,IO]  :verbose     To be verbose or not.
 			#
-			# @return [Object, Array<Object>] Result or results of parsing the given tokens.
+			# @return [Object, Array<Object>]  Result or results of parsing the given tokens.
 			def parse(tokens, opts = {})
 				# Get the full options hash.
 				opts	= build_parse_opts(opts)
@@ -1045,8 +1036,8 @@ module RLTK
 			# This method uses lookahead sets and precedence information to
 			# resolve conflicts and remove unnecessary reduce actions.
 			#
-			# @param [Boolean] do_lookahead	Prune based on lookahead sets or not.
-			# @param [Boolean] do_precedence	Prune based on precedence or not.
+			# @param [Boolean]  do_lookahead   Prune based on lookahead sets or not.
+			# @param [Boolean]  do_precedence  Prune based on precedence or not.
 			#
 			# @return [void]
 			def prune(do_lookahead, do_precedence)
