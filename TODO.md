@@ -6,7 +6,6 @@ These are issues that are preventing the library from working correctly.
 Ruby Only
 ---------
 
-* Get rid of the redundant start production.
 * Give generated empty productions an associativity and precedence of (left, 0).  This will make the ?, *, and + operators greedy.  Provide an option to turn this off.  This is motivated by the 'A B? B?' example.  Make sure this works as expected with 'B? B' when parsing 'B' (meaning that B? is nil and B hold the value).
 
 Binding Wrappers
@@ -50,6 +49,7 @@ Ruby Only
 * Allow a parser to accept strings as input and then use either a provided lexer or the default lexer to lex the string.
 * Allow the first argument of the associativity methods to be an integer to be used as the value for those tokens.  An error should be raised if associativity values are given in a non-increasing order.
 * Investigate a better way of storing name and type information for values and children of ASTNodes, as well as better ways to define the accessors.
+* See if we can get rid of the `start` production.
 
 Binding Wrappers
 ----------------
@@ -61,6 +61,7 @@ Binding Wrappers
   * Lazy compilation (http://blog.llvm.org/2013/07/using-mcjit-with-kaleidoscope-tutorial.html)
   * Object caching (http://blog.llvm.org/2013/08/object-caching-with-kaleidoscope.html)
 * Support disassembly of objects
+* Re-do the construction of binding objects from pointers
 
 LLVM C Bindings
 ---------------

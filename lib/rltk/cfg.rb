@@ -70,22 +70,22 @@ module RLTK
 		#
 		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded.
 		def initialize(&callback)
-			@curr_lhs			= nil
-			@callback			= callback || Proc.new {}
-			@lexer			= Lexers::EBNF.new
-			@production_counter	= -1
-			@start_symbol		= nil
-			@wrapper_symbol	= nil
+			@curr_lhs           = nil
+			@callback           = callback || Proc.new {}
+			@lexer              = Lexers::EBNF.new
+			@production_counter = -1
+			@start_symbol       = nil
+			@wrapper_symbol     = nil
 			
-			@productions_id	= Hash.new
-			@productions_sym	= Hash.new { |h, k| h[k] = [] }
-			@production_buffer	= Array.new
+			@productions_id     = Hash.new
+			@productions_sym    = Hash.new { |h, k| h[k] = [] }
+			@production_buffer  = Array.new
 			
-			@terms	= Hash.new(false).update({:EOS => true})
-			@nonterms	= Hash.new(false)
+			@terms    = Hash.new(false).update({:EOS => true})
+			@nonterms = Hash.new(false)
 			
-			@firsts	= Hash.new
-			@follows	= Hash.new { |h,k| h[k] = Array.new }
+			@firsts   = Hash.new
+			@follows  = Hash.new { |h,k| h[k] = Array.new }
 		end
 		
 		# Adds *production* to the appropriate internal data structures.

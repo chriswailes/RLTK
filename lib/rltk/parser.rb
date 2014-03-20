@@ -261,14 +261,14 @@ module RLTK
 			# This method checks to see if the parser would be in parse state
 			# *dest* after starting in state *start* and reading *symbols*.
 			#
-			# @param [Symbol]		start	Symbol representing a CFG production.
-			# @param [Symbol]		dest		Symbol representing a CFG production.
-			# @param [Array<Symbol>]	symbols	Grammar symbols.
+			# @param [Symbol]         start    Symbol representing a CFG production.
+			# @param [Symbol]         dest     Symbol representing a CFG production.
+			# @param [Array<Symbol>]  symbols  Grammar symbols.
 			#
 			# @return [Boolean] If the destination symbol is reachable from the start symbol after reading *symbols*.
 			def check_reachability(start, dest, symbols)
-				path_exists	= true
-				cur_state		= start
+				path_exists = true
+				cur_state   = start
 				
 				symbols.each do |sym|
 					
@@ -294,10 +294,10 @@ module RLTK
 			# production can be changed by setting the *precedence* argument
 			# to some terminal symbol.
 			#
-			# @param [String, Symbol]	expression	Right-hand side of a production.
-			# @param [Symbol]			precedence	Symbol representing the precedence of this production.
-			# @param [:array, :splat]	arg_type		Method to use when passing arguments to the action.
-			# @param [Proc]			action		Action to be taken when the production is reduced.
+			# @param [String, Symbol]  expression  Right-hand side of a production.
+			# @param [Symbol]          precedence  Symbol representing the precedence of this production.
+			# @param [:array, :splat]  arg_type    Method to use when passing arguments to the action.
+			# @param [Proc]            action      Action to be taken when the production is reduced.
 			#
 			# @return [void]
 			def clause(expression, precedence = nil, arg_type = @default_arg_type, &action)
@@ -544,12 +544,12 @@ module RLTK
 				end
 				
 				# Grab all of the symbols that comprise the grammar
-				# (besidesthe start symbol).
+				# (besides the start symbol).
 				@symbols = @grammar.symbols << :ERROR
 				
 				# Add our starting state to the state list.
-				start_production	= @grammar.production(:start, @grammar.start_symbol.to_s).first
-				start_state		= State.new(@symbols, [start_production.to_item])
+				start_production = @grammar.production(:start, @grammar.start_symbol).first
+				start_state      = State.new(@symbols, [start_production.to_item])
 				
 				start_state.close(@grammar.productions)
 				
@@ -778,13 +778,13 @@ module RLTK
 				stack_id = 0
 				
 				# Error mode indicators.
-				error_mode		= false
-				reduction_guard	= false
+				error_mode      = false
+				reduction_guard = false
 				
 				# Our various list of stacks.
-				accepted		= []
-				moving_on		= []
-				processing	= [ParseStack.new(stack_id += 1)]
+				accepted   = []
+				moving_on  = []
+				processing = [ParseStack.new(stack_id += 1)]
 				
 				# Iterate over the tokens.  We don't procede to the
 				# next token until every stack is done with the
@@ -1020,8 +1020,8 @@ module RLTK
 					raise ParserConstructionException, 'Production symbols must be Strings or Symbols and be in all lowercase.'
 				end
 				
-				@grammar.curr_lhs	= symbol.to_sym
-				@curr_prec		= precedence
+				@grammar.curr_lhs = symbol.to_sym
+				@curr_prec        = precedence
 				
 				orig_dat = nil
 				if arg_type != @default_arg_type
@@ -1271,13 +1271,13 @@ module RLTK
 			def initialize(id, ostack = [], sstack = [0], nstack = [], connections = [], labels = [], positions = [])
 				@id = id
 				
-				@node_stack	= nstack
-				@output_stack	= ostack
-				@state_stack	= sstack
+				@node_stack   = nstack
+				@output_stack = ostack
+				@state_stack  = sstack
 				
-				@connections	= connections
-				@labels		= labels
-				@positions	= positions
+				@connections  = connections
+				@labels       = labels
+				@positions    = positions
 			end
 			
 			# Branch this stack, effectively creating a new copy of its
@@ -1409,12 +1409,12 @@ module RLTK
 			
 			# Instantiate a new State object.
 			#
-			# @param [Array<Token>]		tokens	Tokens that represent this state.
-			# @param [Array<CFG::Item>]	items	Items that make up this state.
+			# @param [Array<Token>]      tokens  Tokens that represent this state.
+			# @param [Array<CFG::Item>]  items   Items that make up this state.
 			def initialize(tokens, items = [])
-				@id		= nil
-				@items	= items
-				@actions	= tokens.inject(Hash.new) { |h, t| h[t] = Array.new; h }
+				@id      = nil
+				@items   = items
+				@actions = tokens.inject(Hash.new) { |h, t| h[t] = Array.new; h }
 			end
 			
 			# Compare one State to another.  Two States are equal if they
