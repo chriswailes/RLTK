@@ -97,7 +97,7 @@ request_file('yard', 'Yard is not installed.') do
 			'--title',  'The Ruby Language Toolkit',
 			'-m',       'markdown',
 			'-M',       'redcarpet',
-			'-c',       '.yardoc/cache',
+#			'-c',       '.yardoc/cache',
 			'--private'
 		]
 		

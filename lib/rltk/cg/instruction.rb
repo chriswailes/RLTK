@@ -151,7 +151,7 @@ module RLTK::CG
 		
 		# Sets the *tail call* property for this call instruction.
 		#
-		# @parm [Boolean]  bool  If this is a tail call or not
+		# @param [Boolean]  bool  If this is a tail call or not
 		#
 		# @return [void]
 		def tail_call=(bool)

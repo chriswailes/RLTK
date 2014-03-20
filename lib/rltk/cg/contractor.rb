@@ -32,11 +32,10 @@ module RLTK::CG
 		alias :wrapped_visit :visit
 		
 		# Visit an object in the context of this builder.  See the
-		# {Visitor#visit} method for more details about the basic behaviour
-		# of this method.  The special options for this method are:
+		# Filigree::Visitor's visit method for more details about the basic
+		# behaviour of this method.  The special options for this method are:
 		#
 		# @param [Object]      object  The object to visit.
-		# @param [Hash]        opts    Options describing how to finalize the parser.
 		# @param [BasicBlock]  at      Where to position the contractor before visiting the object.
 		# @param [Boolean]     rcb     If specified the method will also return the block where the contractor is currently positioned.
 		#

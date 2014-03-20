@@ -173,9 +173,9 @@ module RLTK::CG
 		# @param [String]  file_name  Name of file to print to
 		#
 		# @return [void]
-		def print(filename)
+		def print(file_name)
 			error  = FFI::MemoryPointer.new(:pointer)
-			status = Bindings.print_module_to_file(@ptr, filename, error)
+			status = Bindings.print_module_to_file(@ptr, file_name, error)
 			
 			if not status.zero?
 				errorp  = error.read_pointer

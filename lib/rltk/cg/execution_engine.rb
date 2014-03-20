@@ -157,32 +157,25 @@ module RLTK::CG
 		end
 	end
 	
-	# = Fields:
-	# :opt_level ::
-	#   (Integer) 
-	# :code_model ::
-	#   (Symbol from _enum_code_model_) 
-	# :no_frame_pointer_elim ::
-	#   (Integer) 
-	# :enable_fast_i_sel ::
-	#   (Integer) 
-	# :mcjmm ::
-	#   (OpaqueMCJITMemoryManager) 
-	
+	# Options for initializing a {MCJITCompiler}.
 	class MCJITCompilerOptions < RLTK::CG::Bindings::MCJITCompilerOptions
 		
 		# Create an object representing MCJIT compiler options.
 		#
-		# @param
+		# @param [Integer]                        opt_level              Optimization level
+		# @param [Symbol from _enum_code_model_]  code_model             JIT compilation code model
+		# @param [Boolean]                        no_frame_pointer_elim  Disable frame pointer elimination
+		# @param [Boolean]                        enable_fast_i_sel      Turn on fast instruction selection
 		def initialize(opt_level = 0, code_model = :jit_default, no_frame_pointer_elim = false,
-		               enable_fast_i_sel = true, mcjmm = nil)
+		               enable_fast_i_sel = true)
 		     
 			Bindings.initialize_mcjit_compiler_options(self.to_ptr, self.class.size)
 			
-			super(opt_level, code_model, no_frame_pointer_elim.to_i, enable_fast_i_sel.to_i, mcjmm)
+			super(opt_level, code_model, no_frame_pointer_elim.to_i, enable_fast_i_sel.to_i, nil)
 		end
 	end
 	
+	# The new LLVM JIT execution engine.
 	class MCJITCompiler < ExecutionEngine
 		
 		# Create a new MC just-in-time-compiler.

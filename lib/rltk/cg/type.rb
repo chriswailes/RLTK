@@ -217,9 +217,9 @@ module RLTK::CG
 		# machine.  Additionally, an address space and a context may be
 		# provided.
 		#
-		# @param [TargetData]  target_data    Data on compilation target
-		# @param [Integer]     address_space  Target address space
-		# @param [Context]     context        Context in which to get the type
+		# @param [TargetData]  target_data  Data on compilation target
+		# @param [Integer]     addr_space   Target address space
+		# @param [Context]     context      Context in which to get the type
 		def initialize(target_data, addr_space = nil, context = nil)
 			call = 'int_type'
 			args = [target_data]

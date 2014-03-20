@@ -468,7 +468,7 @@ A small amount of the functionality of the RLTK::CG module requires the [LLVM Ex
 
 * **Shared Library Loading** - Load shared libraries into the process so that their exported symbols are visible to LLVM via the {RLTK::CG::Support.load\_library} method.
 * **ASM Printer and Parser Initialization** - Available through the {RLTK::CG::LLVM.init\_asm\_parser} and {RLTK::CG::LLVM.init\_asm\_printer} methods.
-* **LLVM IR Loading** - LLVM IR files can be loaded into RLTK via the {RLTK::CG::Module.read\_ir\_file} method.
+* **LLVM IR Loading** - LLVM IR files can be loaded into RLTK via the {RLTK::CG::Module.read\_ir} method.
 * **Value Printing** - Print any value's LLVM IR to a given file descriptor using {RLTK::CG::Value#print}.
 * **Targets, Target Data, and Target Machines** - Manipulate LLVM structures that contain data about the target environment.
 * **Object File Generation** - LLVM Modules can be compiled to object files via the {RLTK::CG::Module#compile} method.
@@ -663,7 +663,7 @@ For an example of where this is useful, see the Kazoo tutorial.
 
 ### The Contractor
 
-An alternative to using the {RLTK::CG::Builder} class is to use the {RLTK::CG::Contractor} class, which is a subclass of the Builder and includes the {RLTK::Visitor} module. (Get it? It's a visiting builder!)  By subclassing the Contractor you can define blocks of code for handling various types of AST nodes and leave the selection of the correct code up to the {RLTK::CG::Contractor#visit} method.  In addition, the `:at` and `:rcb` options to the *visit* method make it much easier to manage the positioning of the Builder.
+An alternative to using the {RLTK::CG::Builder} class is to use the {RLTK::CG::Contractor} class, which is a subclass of the Builder and includes the Filigree::Visitor module. (Get it? It's a visiting builder!)  By subclassing the Contractor you can define blocks of code for handling various types of AST nodes and leave the selection of the correct code up to the {RLTK::CG::Contractor#visit} method.  In addition, the `:at` and `:rcb` options to the *visit* method make it much easier to manage the positioning of the Builder.
 
 Here we can see how easy it is to define a block that builds the instructions for binary operations:
 
