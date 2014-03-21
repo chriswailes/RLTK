@@ -593,7 +593,7 @@ module RLTK
 							if item.lhs == :start
 								state.on(:EOS, Accept.new)
 							else
-								state.add_reduction(item.id)
+								state.add_reduction(item.id, @grammar)
 							end
 						end
 					end
@@ -1392,16 +1392,16 @@ module RLTK
 			# @return [Integer] State's ID.
 			attr_accessor :id
 			
-			# @return [Array<CFG::Item>] Item objects that comprise this state.
+			# @return  [Array<CFG::Item>]  Item objects that comprise this state
 			attr_reader :items
 			
-			# @return [Array<Action>] Action objects that represent the actions that should be taken when various inputs are observed.
+			# @return [Hash{Symbol => Array<Action>}]  Maps lookahead symbols to actions
 			attr_reader :actions
 			
 			# Instantiate a new State object.
 			#
-			# @param [Array<Token>]      tokens  Tokens that represent this state.
-			# @param [Array<CFG::Item>]  items   Items that make up this state.
+			# @param [Array<Symbol>]     tokens  Tokens that represent this state
+			# @param [Array<CFG::Item>]  items   Items that make up this state
 			def initialize(tokens, items = [])
 				@id      = nil
 				@items   = items
@@ -1412,7 +1412,7 @@ module RLTK
 			# have the same items or, if the items have been cleaned, if
 			# the States have the same ID.
 			#
-			# @param [State] other Another State to compare to.
+			# @param [State]  other  Another State to compare to
 			#
 			# @return [Boolean]
 			def ==(other)
@@ -1421,11 +1421,12 @@ module RLTK
 			
 			# Add a Reduce action to the state.
 			#
-			# @param [Integer] production_id ID of production to add to this state.
+			# @param [Integer]  production_id  ID of production to add to this state
+			# @param [CFG]      grammar        Grammar of the parser
 			#
 			# @return [void]
-			def add_reduction(production_id)
-				action = Reduce.new(production_id)
+			def add_reduction(production_id, grammar)
+				action = Reduce.new(production_id, grammar.productions(:id)[production_id])
 				
 				# Reduce actions are not allowed for the ERROR terminal.
 				@actions.each { |k, v| if CFG::is_terminal?(k) and k != :ERROR then v << action end }
@@ -1566,9 +1567,18 @@ module RLTK
 		# The Reduce class indicates to the parser that it should reduce the
 		# input stack by the rule specified by Reduce.id.
 		class Reduce < Action
+			
+			# @param [Integer]     id          ID of this action
+			# @param [Production]  production  Production to reduce by
+			def initialize(id, production)
+				super(id)
+				
+				@production = production
+			end
+			
 			# @return [String] String representation of this action.
 			def to_s
-				"Reduce by Production #{self.id}"
+				"Reduce by Production #{self.id} : #{@production}"
 			end
 		end
 		

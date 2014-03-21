@@ -7,6 +7,7 @@ Ruby Only
 ---------
 
 * Give generated empty productions an associativity and precedence of (left, 0).  This will make the ?, *, and + operators greedy.  Provide an option to turn this off.  This is motivated by the 'B? B' example (B? should be nil and B should hold the value).
+* Change internally generated production names so that they can't conflict with user-defined names.
 
 Binding Wrappers
 ----------------

@@ -585,7 +585,7 @@ module RLTK
 			#
 			# @return [String]
 			def to_s(padding = 0)
-				"#{format("%-#{padding}s", @lhs)} -> #{@rhs.map { |s| s.to_s }.join(' ')}"
+				"#{format("%-#{padding}s", @lhs)} -> #{@rhs.empty? ? 'ɛ' : @rhs.map { |s| s.to_s }.join(' ')}"
 			end
 		end
 		
