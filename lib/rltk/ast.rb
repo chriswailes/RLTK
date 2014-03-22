@@ -9,6 +9,7 @@
 
 # Gems
 require 'filigree/class'
+require 'filigree/match'
 
 #######################
 # Classes and Modules #
@@ -36,6 +37,9 @@ module RLTK
 	
 	# This class is a good start for all your abstract syntax tree node needs.
 	class ASTNode
+		
+		extend Filigree::Destructurable
+		
 		# @return [ASTNode] Reference to the parent node.
 		attr_accessor :parent
 		
@@ -217,14 +221,14 @@ module RLTK
 		# nodes are of the same class and all of their values and children
 		# are equal.
 		#
-		# @param [ASTNode] other The ASTNode to compare to.
+		# @param [ASTNode]  other  The ASTNode to compare to
 		#
 		# @return [Boolean]
 		def ==(other)
 			self.class == other.class and self.values == other.values and self.children == other.children
 		end
 		
-		# @return [Object] Note with the name *key*.
+		# @return [Object]  Note with the name *key*
 		def [](key)
 			@notes[key]
 		end
@@ -232,6 +236,11 @@ module RLTK
 		# Sets the note named *key* to *value*.
 		def []=(key, value)
 			@notes[key] = value
+		end
+		
+		# This method allows ASTNodes to be destructured for pattern matching.
+		def call(_)
+			[*self.values, *self.children]
 		end
 		
 		# @param [Class] as The type that should be returned by the method.  Must be either Array or hash.
@@ -310,8 +319,9 @@ module RLTK
 		# to serialize an AST.  You can use Marshal.load to reconstruct a
 		# serialized AST.
 		#
-		# @param [nil, IO, String]	dest		Where the serialized version of the AST will end up.  If nil, this method will return the AST as a string.
-		# @param [Fixnum]			limit	Recursion depth.  If -1 is specified there is no limit on the recursion depth.
+		# @param [nil, IO, String] dest   Where the serialized version of the AST will end up.  If nil,
+		#   this method will return the AST as a string.
+		# @param [Fixnum]          limit  Recursion depth.  If -1 is specified there is no limit on the recursion depth.
 		#
 		# @return [void, String] String if *dest* is nil, void otherwise.
 		def dump(dest = nil, limit = -1)
