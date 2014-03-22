@@ -10,31 +10,13 @@
 # Gems
 require 'filigree/class'
 require 'filigree/match'
+require 'filigree/types'
 
 #######################
 # Classes and Modules #
 #######################
 
 module RLTK
-	# A TypeMismatch is raised when an object being set as a child or value of
-	# an ASTNode is of the wrong type.
-	class TypeMismatch < StandardError
-		
-		# Instantiates a new TypeMismatch object.
-		#
-		# @param [Class] expected	Expected type.
-		# @param [Klass] actual		Actual type of object.
-		def initialize(expected, actual)
-			@expected	= expected
-			@actual	= actual
-		end
-		
-		# @return [String] String representation of the error.
-		def to_s
-			"Type Mismatch: Expected #{@expected} but received #{@actual}."
-		end
-	end
-	
 	# This class is a good start for all your abstract syntax tree node needs.
 	class ASTNode
 		
@@ -106,7 +88,7 @@ module RLTK
 				define_accessor(name, type, true)
 			end
 			
-			# @return [Array<Symbol>] Array of the names of this node class's children.
+			# @return [Array<Symbol>]  Array of the names of this node class's children
 			def child_names
 				@child_names
 			end
@@ -114,9 +96,9 @@ module RLTK
 			# This method defines a type checking accessor named *name*
 			# with type *type*.
 			#
-			# @param [String, Symbol]	name			Name of accessor.
-			# @param [Class]			type			Class used for type checking.
-			# @param [Boolean]			set_parent	Set the parent variable or not.
+			# @param [String, Symbol]  name        Name of accessor
+			# @param [Class]           type        Class used for type checking
+			# @param [Boolean]         set_parent  Set the parent variable or not
 			#
 			# @return [void]
 			def define_accessor(name, type, set_parent = false)
@@ -129,48 +111,26 @@ module RLTK
 				if type.is_a?(Class)
 					if set_parent
 						define_method((name.to_s + '=').to_sym) do |value|
-							if value.is_a?(type) or value == nil
-								self.instance_variable_set(ivar_name, value)
-							
-								value.parent = self if value
-							else
-								raise TypeMismatch.new(type, value.class)
-							end
+							self.instance_variable_set(ivar_name, check_type(value, type, nil, true))
+							value.parent = self if value
 						end
 						
 					else
 						define_method((name.to_s + '=').to_sym) do |value|
-							if value.is_a?(type) or value == nil
-								self.instance_variable_set(ivar_name, value)
-								
-							else
-								raise TypeMismatch.new(type, value.class)
-							end
+							self.instance_variable_set(ivar_name, check_type(value, type, nil, true))
 						end
 					end
 					
 				else
-					type = type.first
-					
 					if set_parent
 						define_method((name.to_s + '=').to_sym) do |value|
-							if value.inject(true) { |m, o| m and o.is_a?(type) }
-								self.instance_variable_set(ivar_name, value)
-							
-								value.each { |c| c.parent = self }
-							else
-								raise TypeMismatch.new(type, value.class)
-							end
+							self.instance_variable_set(ivar_name, check_array_type(value, type.first, nil, true))
+							value.each { |c| c.parent = self }
 						end
 						
 					else
 						define_method((name.to_s + '=').to_sym) do |value|
-							if value.inject(true) { |m, o| m and o.is_a?(type) }
-								self.instance_variable_set(ivar_name, value)
-								
-							else
-								raise TypeMismatch.new(type, value.class)
-							end
+							self.instance_variable_set(ivar_name, check_array_type(value, type.first, nil, true))
 						end
 					end
 				end
@@ -182,8 +142,8 @@ module RLTK
 			# methods that include type checking.  The type of this
 			# value must NOT be a subclass of the ASTNode class.
 			#
-			# @param [String, Symbol]	name Name of value.
-			# @param [Class]			type Type of value.  Must NOT be a subclass of ASTNode.
+			# @param [String, Symbol]  name  Name of value
+			# @param [Class]           type  Type of value; Must NOT be a subclass of ASTNode
 			#
 			# @return [void]
 			def value(name, type)
@@ -207,7 +167,7 @@ module RLTK
 				define_accessor(name, type)
 			end
 			
-			# @return [Array<Symbol>] Array of the names of this node class's values.
+			# @return [Array<Symbol>]  Array of the names of this node class's values
 			def value_names
 				@value_names
 			end
@@ -239,8 +199,12 @@ module RLTK
 		end
 		
 		# This method allows ASTNodes to be destructured for pattern matching.
-		def call(_)
-			[*self.values, *self.children]
+		def call(arity)
+			if arity == self.values.length
+				self.values
+			else
+				[*self.values, *self.children]
+			end
 		end
 		
 		# @param [Class] as The type that should be returned by the method.  Must be either Array or hash.
@@ -451,7 +415,7 @@ module RLTK
 		
 		# Set the notes for this node from a given hash.
 		#
-		# @param [Hash] new_notes The new notes for this node.
+		# @param [Hash]  new_notes  The new notes for this node.
 		#
 		# @return [void]
 		def notes=(new_notes)
@@ -463,7 +427,7 @@ module RLTK
 			if @parent then @parent.root else self end
 		end
 		
-		# @param [Class] as The type that should be returned by the method.  Must be either Array or hash.
+		# @param [Class]  as  The type that should be returned by the method.  Must be either Array or hash.
 		#
 		# @return [Array<Object>, Hash{Symbol => Object}] Array or Hash of this node's values.
 		def values(as = Array)
@@ -482,7 +446,7 @@ module RLTK
 		# a hash is provided as an argument the key is used as the name of
 		# the value an object should be assigned to.
 		#
-		# @param [Array<Object>, Hash{Symbol => Object}] values The values to be assigned to this node.
+		# @param [Array<Object>, Hash{Symbol => Object}]  values  The values to be assigned to this node.
 		def values=(values)
 			case values
 			when Array
