@@ -99,9 +99,9 @@ class LexerTester < Minitest::Test
 			RLTK::Token.new(:NONTERM, :aaa),
 			RLTK::Token.new(:TERM, :BBB),
 			
-			RLTK::Token.new(:*),
-			RLTK::Token.new(:+),
-			RLTK::Token.new(:'?'),
+			RLTK::Token.new(:STAR),
+			RLTK::Token.new(:PLUS),
+			RLTK::Token.new(:QUESTION),
 			RLTK::Token.new(:EOS)
 		]
 		

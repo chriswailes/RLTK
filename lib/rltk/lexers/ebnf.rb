@@ -24,12 +24,12 @@ module RLTK
 			# Default State #
 			#################
 			
-			rule(/\*/)	{ :*   }
-			rule(/\+/)	{ :+   }
-			rule(/\?/)	{ :'?' }
+			rule(/\*/) { :STAR     }
+			rule(/\+/) { :PLUS     }
+			rule(/\?/) { :QUESTION }
 			
-			rule(/[a-z0-9_]+/)	{ |t| [:NONTERM, t.to_sym] }
-			rule(/[A-Z0-9_]+/)	{ |t| [:TERM,    t.to_sym] }
+			rule(/[a-z0-9_']+/) { |t| [:NONTERM, t.to_sym] }
+			rule(/[A-Z0-9_']+/) { |t| [:TERM,    t.to_sym] }
 			
 			rule(/\s/)
 		end

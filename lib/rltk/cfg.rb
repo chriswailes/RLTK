@@ -121,9 +121,9 @@ module RLTK
 		def clause(expression)
 			raise GrammarError, 'CFG#clause called outside of CFG#production block.' if not @curr_lhs
 			
-			lhs		= @curr_lhs.to_sym
-			rhs		= Array.new
-			tokens	= @lexer.lex(expression.to_s)
+			lhs    = @curr_lhs.to_sym
+			rhs    = Array.new
+			tokens = @lexer.lex(expression.to_s)
 			
 			# Set this as the start symbol if there isn't one already
 			# defined.
@@ -131,8 +131,8 @@ module RLTK
 			
 			# Remove EBNF tokens and replace them with new productions.
 			tokens.each_index do |i|
-				ttype0	= tokens[i].type
-				tvalue0	= tokens[i].value
+				ttype0  = tokens[i].type
+				tvalue0 = tokens[i].value
 				
 				if ttype0 == :TERM or ttype0 == :NONTERM
 					
@@ -140,15 +140,15 @@ module RLTK
 					(ttype0 == :TERM ? @terms : @nonterms)[tvalue0] = true
 					
 					if i + 1 < tokens.length
-						ttype1	= tokens[i + 1].type
-						tvalue1	= tokens[i + 1].value
+						ttype1  = tokens[i + 1].type
+						tvalue1 = tokens[i + 1].value
 						
 						rhs <<
 						case ttype1
-						when :'?'	then self.get_question(tvalue0)
-						when :*	then self.get_star(tvalue0)
-						when :+	then self.get_plus(tvalue0)
-						else			tvalue0
+						when :QUESTION then self.get_question(tvalue0)
+						when :STAR     then self.get_star(tvalue0)
+						when :PLUS     then self.get_plus(tvalue0)
+						else                tvalue0
 						end
 					else
 						rhs << tvalue0
@@ -174,9 +174,9 @@ module RLTK
 		# a single parser symbol (as a String or Symbol), or a String
 		# containing multiple symbols.
 		#
-		# @param [Symbol]						symbol		The name of the production to add.
-		# @param [String, Symbol, Array<String>]	list_elements	Expression(s) that may appear in the list.
-		# @param [Symbol, String]				separator		The list separator symbol or symbols.
+		# @param [Symbol]                         symbol         The name of the production to add.
+		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list.
+		# @param [Symbol, String]                 separator      The list separator symbol or symbols.
 		#
 		# @return [void]
 		def empty_list_production(symbol, list_elements, separator = '')
@@ -202,9 +202,9 @@ module RLTK
 		# uses the {CFG#first_set} helper function to find the first set of
 		# individual symbols.
 		#
-		# @param [Symbol, Array<Symbol>] sentence Sentence to find the *first set* for.
+		# @param [Symbol, Array<Symbol>]  sentence  Sentence to find the *first set* for.
 		#
-		# @return [Array<Symbol>] The *first set* for the given sentence.
+		# @return [Array<Symbol>]  The *first set* for the given sentence.
 		def first_set(sentence)
 			if sentence.is_a?(Symbol)
 				first_set_prime(sentence)
@@ -226,8 +226,8 @@ module RLTK
 		# This function is responsible for calculating the *first* set of
 		# individual symbols.
 		#
-		# @param [Symbol]		sym0			The symbol to find the *first set* of.
-		# @param [Array<Symbol>]	seen_lh_sides	Previously seen LHS symbols.
+		# @param [Symbol]         sym0           The symbol to find the *first set* of.
+		# @param [Array<Symbol>]  seen_lh_sides  Previously seen LHS symbols.
 		#
 		# @return [Array<Symbol>]
 		def first_set_prime(sym0, seen_lh_sides = [])
@@ -281,8 +281,8 @@ module RLTK
 		# used to avoid infinite recursion when mutually recursive rules are
 		# encountered.
 		#
-		# @param [Symbol]		sym0			The symbol to find the *follow set* for.
-		# @param [Array<Symbol>]	seen_lh_sides	Previously seen LHS symbols.
+		# @param [Symbol]         sym0           The symbol to find the *follow set* for.
+		# @param [Array<Symbol>]  seen_lh_sides  Previously seen LHS symbols.
 		#
 		# @return [Array<Symbol>]
 		def follow_set(sym0, seen_lh_sides = [])
@@ -323,11 +323,11 @@ module RLTK
 		
 		# Builds productions used to eliminate the + EBNF operator.
 		#
-		# @param [Symbol] symbol Symbol to expand.
+		# @param [Symbol]  symbol  Symbol to expand.
 		#
 		# @return [Symbol]
 		def get_plus(symbol)
-			new_symbol = (symbol.to_s.downcase + '_plus').to_sym
+			new_symbol = (symbol.to_s.downcase + '_plus\'').to_sym
 			
 			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -351,11 +351,11 @@ module RLTK
 		
 		# Builds productions used to eliminate the ? EBNF operator.
 		#
-		# @param [Symbol] symbol Symbol to expand.
+		# @param [Symbol]  symbol  Symbol to expand.
 		#
 		# @return [Symbol]
 		def get_question(symbol)
-			new_symbol = (symbol.to_s.downcase + '_question').to_sym
+			new_symbol = (symbol.to_s.downcase + '_question\'').to_sym
 			
 			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -379,11 +379,11 @@ module RLTK
 		
 		# Builds productions used to eliminate the * EBNF operator.
 		#
-		# @param [Symbol] symbol Symbol to expand.
+		# @param [Symbol]  symbol  Symbol to expand.
 		#
 		# @return [Symbol]
 		def get_star(symbol)
-			new_symbol = (symbol.to_s.downcase + '_star').to_sym
+			new_symbol = (symbol.to_s.downcase + '_star\'').to_sym
 			
 			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -405,7 +405,7 @@ module RLTK
 			return new_symbol
 		end
 		
-		# @return [Integer] ID for the next production to be defined.
+		# @return [Integer]  ID for the next production to be defined.
 		def next_id
 			@production_counter += 1
 		end
@@ -416,9 +416,9 @@ module RLTK
 		# a single parser symbol (as a String or Symbol), or a String
 		# containing multiple symbols.
 		#
-		# @param [Symbol]						symbol		The name of the production to add.
-		# @param [String, Symbol, Array<String>]	list_elements	Expression(s) that may appear in the list.
-		# @param [Symbol, String]				separator		The list separator symbol or symbols.
+		# @param [Symbol]                         symbol         The name of the production to add.
+		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list.
+		# @param [Symbol, String]                 separator      The list separator symbol or symbols.
 		#
 		# @return [void]
 		def nonempty_list_production(symbol, list_elements, separator = '')
@@ -470,9 +470,9 @@ module RLTK
 		# production.  If *expression* is nil then *block* is evaluated, and
 		# expected to make one or more calls to {CFG#clause}.
 		#
-		# @param [Symbol]			symbol		The right-hand side of a production.
-		# @param [String, Symbol]	expression	The left-hand side of a production.
-		# @param [Proc]			block		Optional block for defining production clauses.
+		# @param [Symbol]          symbol      The right-hand side of a production.
+		# @param [String, Symbol]  expression  The left-hand side of a production.
+		# @param [Proc]            block       Optional block for defining production clauses.
 		#
 		# @return [Array<Production>]
 		def production(symbol, expression = nil, &block)
@@ -494,7 +494,7 @@ module RLTK
 		# an array of productions is returned in the order of their
 		# definition.
 		#
-		# @param [:sym, :id] by The way in which productions should be returned.
+		# @param [:sym, :id]  by  The way in which productions should be returned.
 		#
 		# @return [Array<Production>, Hash{Symbol => Production}]
 		def productions(by = :sym)
@@ -509,7 +509,7 @@ module RLTK
 		
 		# Sets the start symbol for this grammar.
 		#
-		# @param [Symbol] symbol The new start symbol.
+		# @param [Symbol]  symbol  The new start symbol.
 		#
 		# @return [Symbol]
 		def start(symbol)
@@ -520,12 +520,12 @@ module RLTK
 			@start_symbol = symbol
 		end
 		
-		# @return [Array<Symbol>] All symbols used in the grammar's definition.
+		# @return [Array<Symbol>]  All symbols used in the grammar's definition.
 		def symbols
 			self.terms + self.nonterms
 		end
 		
-		# @return [Array<Symbol>] All terminal symbols used in the grammar's definition.
+		# @return [Array<Symbol>]  All terminal symbols used in the grammar's definition.
 		def terms
 			@terms.keys
 		end
@@ -533,21 +533,21 @@ module RLTK
 		# Oddly enough, the Production class represents a production in a
 		# context-free grammar.
 		class Production
-			# @return [Integer] ID of this production.
+			# @return [Integer]  ID of this production.
 			attr_reader :id
 			
-			# @return [Symbol] Left-hand side of this production.
+			# @return [Symbol]  Left-hand side of this production.
 			attr_reader :lhs
 			
-			# @return [Array<Symbol>] Right-hand side of this production.
+			# @return [Array<Symbol>]  Right-hand side of this production.
 			attr_reader :rhs
 			
 			# Instantiates a new Production object with the specified ID,
 			# and left- and right-hand sides.
 			#
-			# @param [Integer]		id	ID number of this production.
-			# @param [Symbol]		lhs	Left-hand side of the production.
-			# @param [Array<Symbol>]	rhs	Right-hand side of the production.
+			# @param [Integer]        id   ID number of this production.
+			# @param [Symbol]         lhs  Left-hand side of the production.
+			# @param [Array<Symbol>]  rhs  Right-hand side of the production.
 			def initialize(id, lhs, rhs)
 				@id	= id
 				@lhs	= lhs
@@ -557,31 +557,31 @@ module RLTK
 			# Comparese on production to another.  Returns true only if the
 			# left- and right- hand sides match.
 			#
-			# @param [Production] other Another production to compare to.
+			# @param [Production]  other  Another production to compare to.
 			#
 			# @return [Boolean]
 			def ==(other)
 				self.lhs == other.lhs and self.rhs == other.rhs
 			end
 			
-			# @return [Production] A new copy of this production.
+			# @return [Production]  A new copy of this production.
 			def copy
 				Production.new(@id, @lhs, @rhs.clone)
 			end
 			
-			# @return [Symbol] The last terminal in the right-hand side of the production.
+			# @return [Symbol]  The last terminal in the right-hand side of the production.
 			def last_terminal
 				@rhs.inject(nil) { |m, sym| if CFG::is_terminal?(sym) then sym else m end }
 			end
 			
-			# @return [Item] An Item based on this production.
+			# @return [Item]  An Item based on this production.
 			def to_item
 				Item.new(0, @id, @lhs, @rhs)
 			end
 			
 			# Returns a string representation of this production.
 			#
-			# @param [Integer] padding The ammount of padding spaces to add to the beginning of the string.
+			# @param [Integer]  padding  The ammount of padding spaces to add to the beginning of the string.
 			#
 			# @return [String]
 			def to_s(padding = 0)
@@ -610,7 +610,7 @@ module RLTK
 			
 			# Compares two items.
 			#
-			# @param [Item] other Another item to compare to.
+			# @param [Item]  other  Another item to compare to.
 			#
 			# @return [Boolean]
 			def ==(other)
@@ -641,7 +641,7 @@ module RLTK
 			
 			# Returns the symbol located after the dot.
 			#
-			# @return [Symbol] Symbol located after the dot (at the index indicated by the {#dot} attribute).
+			# @return [Symbol]  Symbol located after the dot (at the index indicated by the {#dot} attribute).
 			def next_symbol
 				@rhs[@dot]
 			end

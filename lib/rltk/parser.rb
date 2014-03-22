@@ -671,7 +671,7 @@ module RLTK
 							next unless CFG::is_nonterminal?(item.next_symbol) and not @grammar_prime.productions.keys.include?(lhs)
 							
 							@grammar.productions[item.next_symbol].each do |production|
-								rhs = ""
+								rhs = ''
 								
 								cstate = state
 								
@@ -1069,17 +1069,21 @@ module RLTK
 								end
 							end
 							
-							# Translate the G' follow symbols into G lookahead
-							# symbols.
+							# Translate the G' follow symbols into G
+							# lookahead symbols.
 							lookahead = lookahead.map { |sym| sym.to_s.split('_', 2).last.to_sym }.uniq
 							
 							# Here we remove the unnecessary reductions.
 							# If there are error productions we need to
 							# scale back the amount of pruning done.
-							(terms - lookahead).each do |sym|
-								if not (terms.include?(:ERROR) and not state0.conflict_on?(sym))
-									state0.actions[sym].delete(reduction)
+							pruning_candidates = terms - lookahead
+							
+							if terms.include?(:ERROR)
+								pruning_candidates.each do |sym|
+									state0.actions[sym].delete(reduction) if state0.conflict_on?(sym)
 								end
+							else
+								pruning_candidates.each { |sym| state0.actions[sym].delete(reduction) }
 							end
 						end
 					end
