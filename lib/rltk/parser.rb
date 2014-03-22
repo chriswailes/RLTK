@@ -593,7 +593,7 @@ module RLTK
 							if item.lhs == :start
 								state.on(:EOS, Accept.new)
 							else
-								state.add_reduction(item.id, @grammar)
+								state.add_reduction(@grammar.productions(:id)[item.id])
 							end
 						end
 					end
@@ -1421,12 +1421,11 @@ module RLTK
 			
 			# Add a Reduce action to the state.
 			#
-			# @param [Integer]  production_id  ID of production to add to this state
-			# @param [CFG]      grammar        Grammar of the parser
+			# @param [Production]  productiond  Production used to perform the reduction
 			#
 			# @return [void]
-			def add_reduction(production_id, grammar)
-				action = Reduce.new(production_id, grammar.productions(:id)[production_id])
+			def add_reduction(production)
+				action = Reduce.new(production)
 				
 				# Reduce actions are not allowed for the ERROR terminal.
 				@actions.each { |k, v| if CFG::is_terminal?(k) and k != :ERROR then v << action end }
@@ -1568,10 +1567,9 @@ module RLTK
 		# input stack by the rule specified by Reduce.id.
 		class Reduce < Action
 			
-			# @param [Integer]     id          ID of this action
 			# @param [Production]  production  Production to reduce by
-			def initialize(id, production)
-				super(id)
+			def initialize(production)
+				super(production.id)
 				
 				@production = production
 			end

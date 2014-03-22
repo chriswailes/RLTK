@@ -599,8 +599,8 @@ module RLTK
 			# arguments (*args*) should be as specified by
 			# {Production#initialize}.
 			#
-			# @param [Integer] dot Location of the dot in this Item.
-			# @param [Array<Object>] args (see {Production#initialize})
+			# @param [Integer]        dot   Location of the dot in this Item.
+			# @param [Array<Object>]  args  (see {Production#initialize})
 			def initialize(dot, *args)
 				super(*args)
 				
@@ -634,7 +634,7 @@ module RLTK
 				@dot == @rhs.length
 			end
 			
-			# @return [Item] A new copy of this item.
+			# @return [Item]  A new copy of this item.
 			def copy
 				Item.new(@dot, @id, @lhs, @rhs.clone)
 			end
@@ -648,7 +648,7 @@ module RLTK
 			
 			# Returns a string representation of this item.
 			#
-			# @param [Integer] padding The ammount of padding spaces to add to the beginning of the string.
+			# @param [Integer]  padding  The ammount of padding spaces to add to the beginning of the string.
 			#
 			# @return [String]
 			def to_s(padding = 0)
