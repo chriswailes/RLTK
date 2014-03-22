@@ -547,7 +547,8 @@ module RLTK
 				@symbols = @grammar.symbols << :ERROR
 				
 				# Add our starting state to the state list.
-				start_production = @grammar.production(:start, @grammar.start_symbol).first
+				@start_symbol    = (@grammar.start_symbol.to_s + '\'').to_sym
+				start_production = @grammar.production(@start_symbol, @grammar.start_symbol).first
 				start_state      = State.new(@symbols, [start_production.to_item])
 				
 				start_state.close(@grammar.productions)
@@ -590,7 +591,7 @@ module RLTK
 					# Find the Accept and Reduce actions for this state.
 					state.each do |item|
 						if item.at_end?
-							if item.lhs == :start
+							if item.lhs == @start_symbol
 								state.on(:EOS, Accept.new)
 							else
 								state.add_reduction(@grammar.productions(:id)[item.id])
@@ -1123,8 +1124,8 @@ module RLTK
 									#  * The token is left associative and the current action is a Reduce
 									#  * The token is right associative and the current action is a Shift
 									if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
-										max_prec			= prec
-										selected_action	= a
+										max_prec        = prec
+										selected_action = a
 										
 									elsif prec == max_prec and assoc == :nonassoc
 										raise ParserConstructionException, 'Non-associative token found during conflict resolution.'
@@ -1252,13 +1253,13 @@ module RLTK
 			
 			# Instantiate a new ParserStack object.
 			#
-			# @param [Integer]				id			ID for this parse stack.  Used by GLR algorithm.
-			# @param [Array<Object>]			ostack		Output stack.  Holds results of {Reduce} and {Shift} actions.
-			# @param [Array<Integer>]		sstack		State stack.  Holds states that have been shifted due to {Shift} actions.
-			# @param [Array<Integer>]		nstack		Node stack.  Holds dot language IDs for nodes in the parse tree.
-			# @param [Array<Array<Integer>>]	connections	Integer pairs representing edges in the parse tree.
-			# @param [Array<Symbol>]			labels		Labels for nodes in the parse tree.
-			# @param [Array<StreamPosition>]	positions		Position data for symbols that have been shifted.
+			# @param [Integer]                id           ID for this parse stack.  Used by GLR algorithm.
+			# @param [Array<Object>]          ostack       Output stack.  Holds results of {Reduce} and {Shift} actions.
+			# @param [Array<Integer>]         sstack       State stack.  Holds states that have been shifted due to {Shift} actions.
+			# @param [Array<Integer>]         nstack       Node stack.  Holds dot language IDs for nodes in the parse tree.
+			# @param [Array<Array<Integer>>]  connections  Integer pairs representing edges in the parse tree.
+			# @param [Array<Symbol>]          labels       Labels for nodes in the parse tree.
+			# @param [Array<StreamPosition>]  positions    Position data for symbols that have been shifted.
 			def initialize(id, ostack = [], sstack = [0], nstack = [], connections = [], labels = [], positions = [])
 				@id = id
 				

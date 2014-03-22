@@ -7,7 +7,6 @@ Ruby Only
 ---------
 
 * Give generated empty productions an associativity and precedence of (left, 0).  This will make the ?, *, and + operators greedy.  Provide an option to turn this off.  This is motivated by the 'B? B' example (B? should be nil and B should hold the value).
-* Change internally generated production names so that they can't conflict with user-defined names.
 
 Binding Wrappers
 ----------------
@@ -50,8 +49,7 @@ Ruby Only
 * Allow a parser to accept strings as input and then use either a provided lexer or the default lexer to lex the string.
 * Allow the first argument of the associativity methods to be an integer to be used as the value for those tokens.  An error should be raised if associativity values are given in a non-increasing order.
 * Investigate a better way of storing name and type information for values and children of ASTNodes, as well as better ways to define the accessors.
-* See if we can get rid of the `start` production.
-* Allow action definitions for clauses to be deferred in parser definitions.
+* Allow action definitions for clauses to be deferred in parser definitions (conflicts with default action TODO item).
 * Better reporting of shift/reduce and reduce/reduce conflicts in the parser.
 
 Binding Wrappers
