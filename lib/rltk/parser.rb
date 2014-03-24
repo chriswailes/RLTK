@@ -547,7 +547,8 @@ module RLTK
 				@symbols = @grammar.symbols << :ERROR
 				
 				# Add our starting state to the state list.
-				start_production = @grammar.production(:start, @grammar.start_symbol).first
+				@start_symbol    = (@grammar.start_symbol.to_s + '\'').to_sym
+				start_production = @grammar.production(@start_symbol, @grammar.start_symbol).first
 				start_state      = State.new(@symbols, [start_production.to_item])
 				
 				start_state.close(@grammar.productions)
@@ -590,10 +591,10 @@ module RLTK
 					# Find the Accept and Reduce actions for this state.
 					state.each do |item|
 						if item.at_end?
-							if item.lhs == :start
+							if item.lhs == @start_symbol
 								state.on(:EOS, Accept.new)
 							else
-								state.add_reduction(item.id, @grammar)
+								state.add_reduction(@grammar.productions(:id)[item.id])
 							end
 						end
 					end
@@ -670,7 +671,7 @@ module RLTK
 							next unless CFG::is_nonterminal?(item.next_symbol) and not @grammar_prime.productions.keys.include?(lhs)
 							
 							@grammar.productions[item.next_symbol].each do |production|
-								rhs = ""
+								rhs = ''
 								
 								cstate = state
 								
@@ -1068,17 +1069,21 @@ module RLTK
 								end
 							end
 							
-							# Translate the G' follow symbols into G lookahead
-							# symbols.
+							# Translate the G' follow symbols into G
+							# lookahead symbols.
 							lookahead = lookahead.map { |sym| sym.to_s.split('_', 2).last.to_sym }.uniq
 							
 							# Here we remove the unnecessary reductions.
 							# If there are error productions we need to
 							# scale back the amount of pruning done.
-							(terms - lookahead).each do |sym|
-								if not (terms.include?(:ERROR) and not state0.conflict_on?(sym))
-									state0.actions[sym].delete(reduction)
+							pruning_candidates = terms - lookahead
+							
+							if terms.include?(:ERROR)
+								pruning_candidates.each do |sym|
+									state0.actions[sym].delete(reduction) if state0.conflict_on?(sym)
 								end
+							else
+								pruning_candidates.each { |sym| state0.actions[sym].delete(reduction) }
 							end
 						end
 					end
@@ -1123,8 +1128,8 @@ module RLTK
 									#  * The token is left associative and the current action is a Reduce
 									#  * The token is right associative and the current action is a Shift
 									if prec > max_prec or (prec == max_prec and tassoc == (a.is_a?(Shift) ? :right : :left))
-										max_prec			= prec
-										selected_action	= a
+										max_prec        = prec
+										selected_action = a
 										
 									elsif prec == max_prec and assoc == :nonassoc
 										raise ParserConstructionException, 'Non-associative token found during conflict resolution.'
@@ -1252,13 +1257,13 @@ module RLTK
 			
 			# Instantiate a new ParserStack object.
 			#
-			# @param [Integer]				id			ID for this parse stack.  Used by GLR algorithm.
-			# @param [Array<Object>]			ostack		Output stack.  Holds results of {Reduce} and {Shift} actions.
-			# @param [Array<Integer>]		sstack		State stack.  Holds states that have been shifted due to {Shift} actions.
-			# @param [Array<Integer>]		nstack		Node stack.  Holds dot language IDs for nodes in the parse tree.
-			# @param [Array<Array<Integer>>]	connections	Integer pairs representing edges in the parse tree.
-			# @param [Array<Symbol>]			labels		Labels for nodes in the parse tree.
-			# @param [Array<StreamPosition>]	positions		Position data for symbols that have been shifted.
+			# @param [Integer]                id           ID for this parse stack.  Used by GLR algorithm.
+			# @param [Array<Object>]          ostack       Output stack.  Holds results of {Reduce} and {Shift} actions.
+			# @param [Array<Integer>]         sstack       State stack.  Holds states that have been shifted due to {Shift} actions.
+			# @param [Array<Integer>]         nstack       Node stack.  Holds dot language IDs for nodes in the parse tree.
+			# @param [Array<Array<Integer>>]  connections  Integer pairs representing edges in the parse tree.
+			# @param [Array<Symbol>]          labels       Labels for nodes in the parse tree.
+			# @param [Array<StreamPosition>]  positions    Position data for symbols that have been shifted.
 			def initialize(id, ostack = [], sstack = [0], nstack = [], connections = [], labels = [], positions = [])
 				@id = id
 				
@@ -1421,12 +1426,11 @@ module RLTK
 			
 			# Add a Reduce action to the state.
 			#
-			# @param [Integer]  production_id  ID of production to add to this state
-			# @param [CFG]      grammar        Grammar of the parser
+			# @param [Production]  productiond  Production used to perform the reduction
 			#
 			# @return [void]
-			def add_reduction(production_id, grammar)
-				action = Reduce.new(production_id, grammar.productions(:id)[production_id])
+			def add_reduction(production)
+				action = Reduce.new(production)
 				
 				# Reduce actions are not allowed for the ERROR terminal.
 				@actions.each { |k, v| if CFG::is_terminal?(k) and k != :ERROR then v << action end }
@@ -1568,10 +1572,9 @@ module RLTK
 		# input stack by the rule specified by Reduce.id.
 		class Reduce < Action
 			
-			# @param [Integer]     id          ID of this action
 			# @param [Production]  production  Production to reduce by
-			def initialize(id, production)
-				super(id)
+			def initialize(production)
+				super(production.id)
 				
 				@production = production
 			end

@@ -124,13 +124,13 @@ class ParserTester < Minitest::Test
 	class GreedTestParser0 < RLTK::Parser
 		production(:e, 'A? A') { |a0, a1| [a0, a1] }
 		
-		finalize explain: 'greedy0.parse_table'
+		finalize
 	end
 	
 	class GreedTestParser1 < RLTK::Parser
 		production(:e, 'A? A?') { |a0, a1| [a0, a1] }
 		
-		finalize explain: 'greedy1.parse_table'
+		finalize
 	end
 	
 	class GreedTestParser2 < RLTK::Parser
