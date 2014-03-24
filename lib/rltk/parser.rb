@@ -654,7 +654,7 @@ module RLTK
 			# calculate the LALR(1) lookahead sets.  Information about this
 			# grammar and its use can be found in the following paper:
 			# 
-			# Simple Computation of LALR(1) Lookahed Sets
+			# Simple Computation of LALR(1) Lookahead Sets
 			# Manuel E. Bermudez and George Logothetis
 			# Information Processing Letters 31 - 1989
 			#
