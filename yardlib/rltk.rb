@@ -8,7 +8,6 @@
 class RLTKTagFactory < YARD::Tags::DefaultFactory
 	def parse_tag(name, text)
 		case name
-		when :LLVMECB	then ecb_tag()
 		when :LLVMInst then inst_tag(text)
 		when :LLVMPass then pass_tag(text)
 		else super
@@ -16,10 +15,6 @@ class RLTKTagFactory < YARD::Tags::DefaultFactory
 	end
 	
 	private
-	
-	def ecb_tag
-		YARD::Tags::Tag.new('note', 'This method requires the [LLVM Extended C Bindings](https://github.com/chriswailes/llvm-ecb).')
-	end
 	
 	def inst_tag(text)
 		url		= "http://llvm.org/docs/LangRef.html#i_#{text}"
@@ -36,7 +31,6 @@ class RLTKTagFactory < YARD::Tags::DefaultFactory
 	end
 end
 
-YARD::Tags::Library.define_tag 'ExtendedBindings',	:LLVMECB
-YARD::Tags::Library.define_tag 'Instruction',		:LLVMInst
-YARD::Tags::Library.define_tag 'Pass',				:LLVMPass
+YARD::Tags::Library.define_tag 'Instruction', :LLVMInst
+YARD::Tags::Library.define_tag 'Pass',        :LLVMPass
 YARD::Tags::Library.default_factory = RLTKTagFactory
