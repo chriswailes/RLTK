@@ -16,12 +16,12 @@ Gem::Specification.new do |s|
 		'context-free grammars, lexers, parsers, and abstract syntax trees.'
 	
 	s.files = [
-			'LICENSE',
-			'AUTHORS',
-			'README.md',
-			'Rakefile',
-			] +
-			Dir.glob('lib/**/*.rb')
+		'LICENSE',
+		'AUTHORS',
+		'README.md',
+		'Rakefile',
+	] +
+	Dir.glob('lib/**/*.rb')
 			
 	s.test_files = Dir['test/**/**.rb']
 	
