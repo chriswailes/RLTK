@@ -223,7 +223,7 @@ module RLTK
 				end
 				
 				# Check the actions in each state.
-				@states.each do |state|
+				each_state do |state|
 					state.actions.each do |sym, actions|
 						if CFG::is_terminal?(sym)
 							# Here we check actions for terminals.
@@ -343,7 +343,7 @@ module RLTK
 				@token_precs      = nil
 				
 				# Drop the items from each of the states.
-				@states.each { |state| state.clean }
+				each_state { |state| state.clean }
 			end
 			
 			# Set the default argument type for the actions associated with
@@ -449,7 +449,7 @@ module RLTK
 					io.puts('###############')
 					io.puts
 					
-					@states.each do |state|
+					each_state do |state|
 						io.puts("State #{state.id}:")
 						io.puts
 						
@@ -560,7 +560,7 @@ module RLTK
 				@production_precs.map! { |prec| @token_precs[prec] }
 				
 				# Build the rest of the transition table.
-				@states.each do |state|
+				each_state do |state|
 					#Transition states.
 					tstates = Hash.new { |h,k| h[k] = State.new(@symbols) }
 					
@@ -646,6 +646,19 @@ module RLTK
 				end
 			end
 			
+			# Iterate over the parser's states.
+			#
+			# @yieldparam [State]  state  One of the parser automaton's state objects
+			#
+			# @return [void]
+			def each_state
+				current_state = 0
+				while current_state < @states.count
+					yield @states.at(current_state)
+					current_state += 1
+				end
+			end
+			
 			# @return [CFG]  The grammar that can be parsed by this Parser.
 			def grammar
 				@grammar.clone
@@ -664,7 +677,7 @@ module RLTK
 				if not @grammar_prime
 					@grammar_prime = CFG.new
 					
-					@states.each do |state|
+					each_state do |state|
 						state.each do |item|
 							lhs = "#{state.id}_#{item.next_symbol}".to_sym
 							
@@ -1047,7 +1060,7 @@ module RLTK
 				# If both options are false there is no pruning to do.
 				return if not (do_lookahead or do_precedence)
 				
-				@states.each do |state0|
+				each_state do |state0|
 					
 					#####################
 					# Lookahead Pruning #
@@ -1063,7 +1076,7 @@ module RLTK
 							lookahead = Array.new
 							
 							# Build the lookahead set.
-							@states.each do |state1|
+							each_state do |state1|
 								if self.check_reachability(state1, state0, production.rhs)
 									lookahead |= self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym)
 								end
@@ -1498,7 +1511,11 @@ module RLTK
 			#
 			# @return [void]
 			def each
-				@items.each {|item| yield item}
+				current_item = 0
+				while current_item < @items.count
+					yield @items.at(current_item)
+					current_item += 1
+				end
 			end
 			
 			# Specify an Action to perform when the input token is *symbol*.
