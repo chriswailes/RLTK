@@ -29,9 +29,19 @@ module RLTK
 	# for a given token stream.  In other words, the input string is not in the
 	# defined language.
 	class NotInLanguage < StandardError
+		
+		# @param [Array<Token>]  seen       Tokens that have been successfully parsed
+		# @param [Token]         current    Token that caused to parser to stop
+		# @param [Array<Token>]  remaining  Tokens that have yet to be seen
+		def initialize(seen, current, remaining)
+			@seen      = seen
+			@current   = current
+			@remaining = remaining
+		end
+		
 		# @return [String] String representation of the error.
 		def to_s
-			'String not in language.'
+			"String not in language.  Token info:\n\tSeen: #{@seen}\n\tCurrent: #{@current}\n\tRemaining: #{@remaining}"
 		end
 	end
 	
@@ -794,7 +804,7 @@ module RLTK
 				# Iterate over the tokens.  We don't procede to the
 				# next token until every stack is done with the
 				# current one.
-				tokens.each do |token|
+				tokens.each_with_index do |token, index|
 					# Check to make sure this token was seen in the
 					# grammar definition.
 					raise BadToken if not @symbols.include?(token.type)
@@ -969,14 +979,14 @@ module RLTK
 					
 					v.puts("\n\n") if v
 					
-					processing	= moving_on
-					moving_on		= []
+					processing = moving_on
+					moving_on  = []
 					
 					# If we don't have any active stacks at this point the
 					# string isn't in the language.
 					if opts[:accept] == :first and processing.length == 0
 						v.close if v and v != $stdout
-						raise NotInLanguage
+						raise NotInLanguage.new(tokens[0...index], tokens[index], tokens[index.next..-1])
 					end
 					
 					reduction_guard = false
