@@ -9,3 +9,5 @@ examples/kazoo/**/*.so
 .yardoc/*
 
 *.gem
+
+Gemfile.lock
