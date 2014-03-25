@@ -34,7 +34,7 @@ Here are some reasons to use RLTK to build your lexers, parsers, and abstract sy
 
 * **Parse Tree Graphs** - RLTK parsers can print parse trees (in the DOT language) of accepted strings.
 
-* **Comprehensive LLVM Bindings** - RLTK provides bindings to all of the C LLVM bindings as well as some functionality that isn't present in the C LLVM bindings.
+* **LLVM Bindings** - RLTK provides wrappers for most of the C LLVM bindings.
 
 * **The Contractor** - LLVM's method of building instructions is a bit cumbersome, and is very imperative in style.  RLTK provides the Contractor class to make things easier.
 
@@ -152,6 +152,45 @@ end
 ### Match Data
 
 Because it isn't RLTK's job to tell you how to write lexers and parsers, the MatchData object from a pattern match is available inside the Lexer::Environment object via the `match` accessor.
+
+## Context-Free Grammars
+
+The {RLTK::CFG} class provides an abstraction for context-free grammars.  For the purpose of this class terminal symbols appear in **ALL CAPS**, and non-terminal symbols appear in **all lowercase**.  Once a grammar is defined the {RLTK::CFG#first_set} and {RLTK::CFG#follow_set} methods can be used to find *first* and *follow* sets.
+
+### Defining Grammars
+
+A grammar is defined by first instantiating the {RLTK::CFG} class.  The {RLTK::CFG#production} and {RLTK::CFG#clause} methods may then be used to define the productions of the grammar.  The `production` method can take a Symbol denoting the left-hand side of the production and a string describing the right-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the `clause` method, each call producing a new production with the same left-hand side but different right-hand sides.  {RLTK::CFG#clause} may not be called outside of {RLTK::CFG#production}.  Bellow we see a grammar definition that uses both methods:
+
+```Ruby
+grammar = RLTK::CFG.new
+
+grammar.production(:s) do
+  clause('A G D')
+  clause('A a C')
+  clause('B a D')
+  clause('B G C')
+end
+
+grammar.production(:a, 'b')
+grammar.production(:b, 'G')
+```
+
+### Extended Backus–Naur Form
+
+The RLTK::CFG class understands grammars written in the extended Backus–Naur form.  This allows you to use the \*, \+, and ? operators in your grammar definitions.  When each of these operators are encountered additional productions are generated.  For example, if the right-hand side of a production contained `NUM*` a production of the form `num_star -> | NUM num_star` is added to the grammar.  As such, your grammar should not contain productions with similar left-hand sides (e.g. foo_star, bar_question, or baz_plus).
+
+As these additional productions are added internally to the grammar a callback functionality is provided to let you know when such an event occurs.  The callback proc object can either be specified when the CFG object is created, or by using the {RLTK::CFG#callback} method.  The callback will receive three arguments: the production generated, the operator that triggered the generation, and a symbol (:first or :second) specifying which clause of the production this callback is for.
+
+### Helper Functions
+
+Once a grammar has been defined you can use the following functions to obtain information about it:
+
+* {RLTK::CFG#first_set} - Returns the *first set* for the provided symbol or sentence.
+* {RLTK::CFG#follow_set} - Returns the *follow set* for the provided symbol.
+* {RLTK::CFG#nonterms} - Returns a list of the non-terminal symbols used in the grammar's definition.
+* {RLTK::CFG#productions} - Provides either a hash or array of the grammar's productions.
+* {RLTK::CFG#symbols} - Returns a list of all symbols used in the grammar's definition.
+* {RLTK::CFG#terms} - Returns a list of the terminal symbols used in the grammar's definition.
 
 ## Parsers
 
@@ -464,15 +503,6 @@ You can also map one tree to another tree using the {RLTK::ASTNode#map} and {RLT
 
 RLTK supports the generation of native code and LLVM IR, as well as JIT compilation and execution, through the {RLTK::CG} module.  This module is built on top of bindings to [LLVM](http://llvm.org) and provides much, though not all, of the functionality of the LLVM libraries.
 
-A small amount of the functionality of the RLTK::CG module requires the [LLVM Extended C Bindings](https://github.com/chriswailes/llvm-ecb) library.  If this library is missing the rest of the module should behave properly, but this functionality will be missing.  The features that require this library are:
-
-* **Shared Library Loading** - Load shared libraries into the process so that their exported symbols are visible to LLVM via the {RLTK::CG::Support.load\_library} method.
-* **ASM Printer and Parser Initialization** - Available through the {RLTK::CG::LLVM.init\_asm\_parser} and {RLTK::CG::LLVM.init\_asm\_printer} methods.
-* **LLVM IR Loading** - LLVM IR files can be loaded into RLTK via the {RLTK::CG::Module.read\_ir} method.
-* **Value Printing** - Print any value's LLVM IR to a given file descriptor using {RLTK::CG::Value#print}.
-* **Targets, Target Data, and Target Machines** - Manipulate LLVM structures that contain data about the target environment.
-* **Object File Generation** - LLVM Modules can be compiled to object files via the {RLTK::CG::Module#compile} method.
-
 ### Acknowledgments and Discussion
 
 Before we get started with the details, I would like to thank [Jeremy Voorhis](https://github.com/jvoorhis/).  The bindings present in RLTK are really a fork of the great work that he did on [ruby-llvm](https://github.com/jvoorhis/ruby-llvm).
@@ -710,7 +740,7 @@ on If do |node|
 end
 ```
 
-More extensive examples of how to use the Contractor class can be found in the Kazoo tutorial cchapters.
+More extensive examples of how to use the Contractor class can be found in the Kazoo tutorial chapters.
 
 ### Execution Engines
 
@@ -734,45 +764,6 @@ jit.run(fun, 1, 2)
 ```
 
 The result will be a {RLTK::CG::GenericValue} object, and you will want to use its {RLTK::CG::GenericValue#to\_i #to\_i} and {RLTK::CG::GenericValue#to\_f #to\_f} methods to get the Ruby value result.
-
-## Context-Free Grammars
-
-The {RLTK::CFG} class provides an abstraction for context-free grammars.  For the purpose of this class terminal symbols appear in **ALL CAPS**, and non-terminal symbols appear in **all lowercase**.  Once a grammar is defined the {RLTK::CFG#first_set} and {RLTK::CFG#follow_set} methods can be used to find *first* and *follow* sets.
-
-### Defining Grammars
-
-A grammar is defined by first instantiating the {RLTK::CFG} class.  The {RLTK::CFG#production} and {RLTK::CFG#clause} methods may then be used to define the productions of the grammar.  The `production` method can take a Symbol denoting the left-hand side of the production and a string describing the right-hand side of the production, or the left-hand side symbol and a block.  In the first usage a single production is created.  In the second usage the block may contain repeated calls to the `clause` method, each call producing a new production with the same left-hand side but different right-hand sides.  {RLTK::CFG#clause} may not be called outside of {RLTK::CFG#production}.  Bellow we see a grammar definition that uses both methods:
-
-```Ruby
-grammar = RLTK::CFG.new
-
-grammar.production(:s) do
-  clause('A G D')
-  clause('A a C')
-  clause('B a D')
-  clause('B G C')
-end
-
-grammar.production(:a, 'b')
-grammar.production(:b, 'G')
-```
-
-### Extended Backus–Naur Form
-
-The RLTK::CFG class understands grammars written in the extended Backus–Naur form.  This allows you to use the \*, \+, and ? operators in your grammar definitions.  When each of these operators are encountered additional productions are generated.  For example, if the right-hand side of a production contained 'NUM*' a production of the form 'num_star -> | NUM num_star' is added to the grammar.  As such, your grammar should not contain productions with similar left-hand sides (e.g. foo_star, bar_question, or baz_plus).
-
-As these additional productions are added internally to the grammar a callback functionality is provided to let you know when such an event occurs.  The callback proc object can either be specified when the CFG object is created, or by using the {RLTK::CFG#callback} method.  The callback will receive three arguments: the production generated, the operator that triggered the generation, and a symbol (:first or :second) specifying which clause of the production this callback is for.
-
-### Helper Functions
-
-Once a grammar has been defined you can use the following functions to obtain information about it:
-
-* {RLTK::CFG#first_set} - Returns the *first set* for the provided symbol or sentence.
-* {RLTK::CFG#follow_set} - Returns the *follow set* for the provided symbol.
-* {RLTK::CFG#nonterms} - Returns a list of the non-terminal symbols used in the grammar's definition.
-* {RLTK::CFG#productions} - Provides either a hash or array of the grammar's productions.
-* {RLTK::CFG#symbols} - Returns a list of all symbols used in the grammar's definition.
-* {RLTK::CFG#terms} - Returns a list of the terminal symbols used in the grammar's definition.
 
 ## Tutorial
 
