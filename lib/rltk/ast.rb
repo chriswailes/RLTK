@@ -22,10 +22,10 @@ module RLTK
 		
 		extend Filigree::Destructurable
 		
-		# @return [ASTNode] Reference to the parent node.
+		# @return [ASTNode]  Reference to the parent node.
 		attr_accessor :parent
 		
-		# @return [Hash] The notes hash for this node.
+		# @return [Hash]  The notes hash for this node.
 		attr_reader :notes
 		
 		#################
@@ -40,10 +40,14 @@ module RLTK
 			def install_icvars
 				if self.superclass == ASTNode
 					@child_names = Array.new
+					@child_types = Array.new
 					@value_names = Array.new
+					@value_types = Array.new
 				else
 					@child_names = self.superclass.child_names.clone
+					@child_types = self.superclass.child_types.clone
 					@value_names = self.superclass.value_names.clone
+					@value_types = self.superclass.value_types.clone
 				end
 			end
 			protected :install_icvars
@@ -51,7 +55,7 @@ module RLTK
 			# Called when the Lexer class is sub-classed, it installes
 			# necessary instance class variables.
 			#
-			# @param [Class] klass The class is inheriting from this class.
+			# @param [Class]  klass  The class is inheriting from this class.
 			#
 			# @return [void]
 			def inherited(klass)
@@ -63,8 +67,8 @@ module RLTK
 			# methods that include type checking.  The type of this
 			# child must be a subclass of the ASTNode class.
 			#
-			# @param [String, Symbol]	name Name of child node.
-			# @param [Class]			type Type of child node.  Must be a subclass of ASTNode.
+			# @param [String, Symbol]  name  Name of child node.
+			# @param [Class]           type  Type of child node.  Must be a subclass of ASTNode.
 			#
 			# @return [void]
 			def child(name, type)
@@ -85,12 +89,18 @@ module RLTK
 				end
 				
 				@child_names << name
+				@child_types << type
 				define_accessor(name, type, true)
 			end
 			
 			# @return [Array<Symbol>]  Array of the names of this node class's children
 			def child_names
 				@child_names
+			end
+			
+			# @return [Array]  Array of types of this node class's children
+			def child_types
+				@child_types
 			end
 			
 			# This method defines a type checking accessor named *name*
@@ -164,12 +174,18 @@ module RLTK
 				end
 				
 				@value_names << name
+				@value_types << type
 				define_accessor(name, type)
 			end
 			
 			# @return [Array<Symbol>]  Array of the names of this node class's values
 			def value_names
 				@value_names
+			end
+			
+			# @return [Array<Symbol>]  Array of the types of this node class's values
+			def value_types
+				@value_types
 			end
 		end
 		
@@ -261,8 +277,8 @@ module RLTK
 		# Removes the note *key* from this node.  If the *recursive* argument
 		# is true it will also remove the note from the node's children.
 		#
-		# @param [Object]	key		The key of the note to remove.
-		# @param [Boolean]	recursive	Do a recursive removal or not.
+		# @param [Object]   key        The key of the note to remove
+		# @param [Boolean]  recursive	 Do a recursive removal or not
 		def delete_note(key, recursive = true)
 			if recursive
 				self.children.each do |child|
@@ -283,17 +299,17 @@ module RLTK
 		# to serialize an AST.  You can use Marshal.load to reconstruct a
 		# serialized AST.
 		#
-		# @param [nil, IO, String] dest   Where the serialized version of the AST will end up.  If nil,
-		#   this method will return the AST as a string.
-		# @param [Fixnum]          limit  Recursion depth.  If -1 is specified there is no limit on the recursion depth.
+		# @param [nil, IO, String]  dest   Where the serialized version of the AST will end up.  If nil,
+		#                                  this method will return the AST as a string.
+		# @param [Fixnum]           limit  Recursion depth.  If -1 is specified there is no limit on the recursion depth.
 		#
-		# @return [void, String] String if *dest* is nil, void otherwise.
+		# @return [void, String]  String if *dest* is nil, void otherwise.
 		def dump(dest = nil, limit = -1)
 			case dest
-			when nil		then Marshal.dump(self, limit)
-			when String	then File.open(dest, 'w') { |f| Marshal.dump(self, f, limit) }
-			when IO		then Marshal.dump(self, dest, limit)
-			else	raise TypeError, "AST#dump expects nil, a String, or an IO object for the dest parameter."
+			when nil    then Marshal.dump(self, limit)
+			when String then File.open(dest, 'w') { |f| Marshal.dump(self, f, limit) }
+			when IO     then Marshal.dump(self, dest, limit)
+			else	            raise TypeError, "AST#dump expects nil, a String, or an IO object for the dest parameter."
 			end
 		end
 		
@@ -304,7 +320,7 @@ module RLTK
 		# * Post-order (:post)
 		# * Level-order (:level)
 		#
-		# @param [:pre, :post, :level] order The order in which to iterate over the tree.
+		# @param [:pre, :post, :level]  order  The order in which to iterate over the tree
 		#
 		# @return [void]
 		def each(order = :pre, &block)
@@ -344,24 +360,29 @@ module RLTK
 		# the order they were declared).
 		#
 		# If a node has 2 values and 2 children and is passed only a single
-		# value the remaining values and children are assumed to be nil.
+		# value the remaining values and children are assumed to be nil or
+		# empty arrays, depending on the declared type of the value or
+		# child.
 		#
-		# @param [Array<Object>] objects The values and children of this node.
+		# @param [Array<Object>]  objects  Values and children of this node
 		def initialize(*objects)
 			if self.class == RLTK::ASTNode
 				raise 'Attempting to instantiate the RLTK::ASTNode class.'
 			else
-				@notes	= Hash.new()
-				@parent	= nil
+				@notes  = Hash.new()
+				@parent = nil
 				
-				# Pad out the objects array with nil values.
-				max_args = self.class.value_names.length + self.class.child_names.length
-				objects.fill(nil, objects.length...max_args)
+				# Pad out the objects array with nil values and empty
+				# arrays.
+				all_types       = self.class.value_types + self.class.child_types
+				remaining_types = all_types[objects.length..-1]
+				
+				objects += remaining_types.map { |type| type.is_a?(Array) ? [] : nil }
 				
 				pivot = self.class.value_names.length
 				
-				self.values	= objects[0...pivot]
-				self.children	= objects[pivot..-1]
+				self.values   = objects[0...pivot]
+				self.children = objects[pivot..-1]
 			end
 		end
 		
@@ -372,16 +393,16 @@ module RLTK
 		#
 		# @note This does not modify the current tree.
 		#
-		# @return [Object] The result of calling the given block on the root node.
+		# @return [Object]  Result of calling the given block on the root node
 		def map(&block)
 			new_values = self.values.map { |v| v.clone }
 			
 			new_children =
 			self.children.map do |c0|
 				case c0
-				when Array	then c0.map { |c1| c1.map(&block) }
-				when ASTNode	then c0.map(&block)
-				when NilClass	then nil
+				when Array    then c0.map { |c1| c1.map(&block) }
+				when ASTNode  then c0.map(&block)
+				when NilClass then nil
 				end
 			end
 			
@@ -399,14 +420,14 @@ module RLTK
 		#	calling the provided block on the root node is used as the
 		#	return value.
 		#
-		# @return [Object] The result of calling the given block on the root node.
+		# @return [Object]  Result of calling the given block on the root node
 		def map!(&block)
 			self.children =
 			self.children.map do |c0|
 				case c0
-				when Array	then c0.map { |c1| c1.map!(&block) }
-				when ASTNode	then c0.map!(&block)
-				when NilClass	then nil
+				when Array    then c0.map { |c1| c1.map!(&block) }
+				when ASTNode  then c0.map!(&block)
+				when NilClass then nil
 				end
 			end
 			

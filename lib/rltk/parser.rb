@@ -1439,7 +1439,7 @@ module RLTK
 			
 			# Add a Reduce action to the state.
 			#
-			# @param [Production]  productiond  Production used to perform the reduction
+			# @param [Production]  production  Production used to perform the reduction
 			#
 			# @return [void]
 			def add_reduction(production)
