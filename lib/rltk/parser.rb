@@ -30,8 +30,17 @@ module RLTK
 	# defined language.
 	class NotInLanguage < StandardError
 		
+		# @return [Array<Token>]  List of tokens that have been successfully parsed
+		attr_reader :seen
+		
+		# @return [Token]  Token that caused the parser to stop
+		attr_reader :current
+		
+		# @return [Array<Token>]  List of tokens that have yet to be seen
+		attr_reader :remaining
+		
 		# @param [Array<Token>]  seen       Tokens that have been successfully parsed
-		# @param [Token]         current    Token that caused to parser to stop
+		# @param [Token]         current    Token that caused the parser to stop
 		# @param [Array<Token>]  remaining  Tokens that have yet to be seen
 		def initialize(seen, current, remaining)
 			@seen      = seen
