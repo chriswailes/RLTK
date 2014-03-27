@@ -327,7 +327,7 @@ module RLTK
 		#
 		# @return [Symbol]
 		def get_plus(symbol)
-			new_symbol = (symbol.to_s.downcase + '_plus\'').to_sym
+			new_symbol = symbol.to_s.downcase + '_plus'
 			
 			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -355,7 +355,7 @@ module RLTK
 		#
 		# @return [Symbol]
 		def get_question(symbol)
-			new_symbol = (symbol.to_s.downcase + '_question\'').to_sym
+			new_symbol = symbol.to_s.downcase + '_question'
 			
 			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
@@ -383,7 +383,7 @@ module RLTK
 		#
 		# @return [Symbol]
 		def get_star(symbol)
-			new_symbol = (symbol.to_s.downcase + '_star\'').to_sym
+			new_symbol = symbol.to_s.downcase + '_star'
 			
 			if not @productions_sym.has_key?(new_symbol)
 				# Add the items for the following productions:
