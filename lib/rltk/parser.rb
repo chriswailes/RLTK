@@ -129,8 +129,8 @@ module RLTK
 							
 						when :+
 							case num
-							when :first then ClauseProc.new { |o|         [o] }
-							else             ClauseProc.new { |os, o| os << o }
+							when :first then ClauseProc.new { |o|          [o] }
+							else             ClauseProc.new { |o, os| [o] + os }
 							end
 							
 						when :'?'

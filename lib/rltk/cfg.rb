@@ -339,7 +339,7 @@ module RLTK
 				@callback.call(:+, :first, production)
 				
 				# 2nd production
-				production = self.add_production(Production.new(self.next_id, new_symbol, [new_symbol, symbol]))
+				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol, new_symbol]))
 				@callback.call(:+, :second, production)
 				
 				# Add the new symbol to the list of nonterminals.
