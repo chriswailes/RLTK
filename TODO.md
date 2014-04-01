@@ -41,6 +41,14 @@ Whole Project
 Ruby Only
 ---------
 
+* Double check parse table production method against LALR/LR table production
+  * Check lookahead pruning method to see if generating LALR(1) or LR(1) parser
+  * If we are generating LR(1) parser, correct documentation
+  * If we are generating LALR(1) parser, switch to LR(1) parser generation
+* Re-name the CFG/Parser list producers to separated\_list and nonempty\_separated\_list
+* Re-name the CFG/Parser +, *, ? operator productions to nonempty\_list, list, and optional
+* Re-read the Menhir manual to look for features missing from RLTK.
+* Add production helper functions for +, *, and ? operators
 * Add a function to print out in ASTs dot language.
 * Add a default action for parser clauses that returns the value of a production with a single RHS symbol or an array of values of a production with multiple RHS symbols (get rid of the need to do `clause('foo') { |o| o }`).
 * Allow the right-hand side of a production to be a symbol (call to_s on it).

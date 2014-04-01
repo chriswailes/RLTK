@@ -194,6 +194,7 @@ module RLTK
 			production, _ = self.production(symbol, prime.to_s)
 			@callback.call(:elp, :second, production)
 			
+			# Add remaining productions via nonempty_list helper.
 			self.nonempty_list(prime, list_elements, separator)
 		end
 		alias :empty_list :empty_list_production
@@ -424,7 +425,7 @@ module RLTK
 		def nonempty_list_production(symbol, list_elements, separator = '')
 			# Add the items for the following productions:
 			#
-			# symbol: symbol_elements | symbol separator symbol_elements
+			# symbol: symbol_elements | symbol_elements separator symbol
 			#
 			# symbol_elements: #{list_elements.join('|')}
 			
@@ -449,7 +450,7 @@ module RLTK
 			@callback.call(:nelp, :first, production)
 			
 			# 2nd Production
-			production, _ = self.production(symbol, "#{symbol} #{separator} #{symbol_elements}")
+			production, _ = self.production(symbol, "#{symbol_elements} #{separator} #{symbol}")
 			@callback.call(:nelp, :second, production)
 			
 			# 3rd Productions

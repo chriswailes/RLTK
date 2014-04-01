@@ -148,7 +148,7 @@ module RLTK
 						when :nelp
 							case num
 							when :first  then ClauseProc.new { |el|                                         [el] }
-							when :second then ClauseProc.new { |*syms|                  syms.first + [syms.last] }
+							when :second then ClauseProc.new { |*syms|                  [syms.first] + syms.last }
 							else	             ClauseProc.new { |*el| if el.length == 1 then el.first else el end }
 							end
 						end,
