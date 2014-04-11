@@ -43,6 +43,7 @@ Ruby Only
 
 * Change ASTNode so that initialize takes a block and yields the node to it
 * Change ASTNode to preserve subtype relationship on initialize
+* Convert all internally-generated productions to left-recursion
 * Double check parse table production method against LALR/LR table production
   * Check lookahead pruning method to see if generating LALR(1) or LR(1) parser
   * If we are generating LR(1) parser, correct documentation
