@@ -8,6 +8,7 @@
 ############
 
 # Gems
+require 'filigree/abstract_class'
 require 'filigree/class'
 require 'filigree/match'
 require 'filigree/types'
@@ -20,6 +21,7 @@ module RLTK
 	# This class is a good start for all your abstract syntax tree node needs.
 	class ASTNode
 		
+		extend Filigree::AbstractClass
 		extend Filigree::Destructurable
 		
 		# @return [ASTNode]  Reference to the parent node.
@@ -364,26 +366,27 @@ module RLTK
 		# empty arrays, depending on the declared type of the value or
 		# child.
 		#
+		# If a block is passed to initialize the block will be executed in
+		# the conext of the new object.
+		#
 		# @param [Array<Object>]  objects  Values and children of this node
-		def initialize(*objects)
-			if self.class == RLTK::ASTNode
-				raise 'Attempting to instantiate the RLTK::ASTNode class.'
-			else
-				@notes  = Hash.new()
-				@parent = nil
-				
-				# Pad out the objects array with nil values and empty
-				# arrays.
-				all_types       = self.class.value_types + self.class.child_types
-				remaining_types = all_types[objects.length..-1]
-				
-				objects += remaining_types.map { |type| type.is_a?(Array) ? [] : nil }
-				
-				pivot = self.class.value_names.length
-				
-				self.values   = objects[0...pivot]
-				self.children = objects[pivot..-1]
-			end
+		def initialize(*objects, &block)
+			@notes  = Hash.new()
+			@parent = nil
+			
+			# Pad out the objects array with nil values and empty
+			# arrays.
+			all_types       = self.class.value_types + self.class.child_types
+			remaining_types = all_types[objects.length..-1]
+			
+			objects += remaining_types.map { |type| type.is_a?(Array) ? [] : nil }
+			
+			pivot = self.class.value_names.length
+			
+			self.values   = objects[0...pivot]
+			self.children = objects[pivot..-1]
+			
+			self.instance_exec(&block) if not block.nil?
 		end
 		
 		# Create a new tree by using the provided Proc object to map the

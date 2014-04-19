@@ -181,7 +181,10 @@ class ASTNodeTester < Minitest::Test
 	end
 	
 	def test_initialize
-		assert_raises(RuntimeError) { RLTK::ASTNode.new }
+		assert_raises(AbstractClassError) { RLTK::ASTNode.new }
+		
+		node = ENode.new { self.str = 'hello world' }
+		assert_equal('hello world', node.str)
 	end
 	
 	def test_map

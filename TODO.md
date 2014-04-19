@@ -27,7 +27,6 @@ These are items that would provide additional features to RLTK users.
 Whole Project
 -------------
 
-* Pull the patches from Github.
 * Review examples before releasing version 3.0.0
 * Convert to Ruby 2.0 syntax.
   * Move to lazy enumerators
@@ -41,7 +40,6 @@ Whole Project
 Ruby Only
 ---------
 
-* Change ASTNode so that initialize takes a block and yields the node to it
 * Change ASTNode to preserve subtype relationship on initialize
 * Convert all internally-generated productions to left-recursion
 * Double check parse table production method against LALR/LR table production
@@ -54,17 +52,15 @@ Ruby Only
 * Add production helper functions for +, *, and ? operators
 * Change all generated productions to left-recursive
 * Allow ASTNode values to be subclasses of ASTNode (for reference nodes)
-* Allow subclasses to re-define children/values iff the new class is a subclass of the old type
+* Emit a warning when re-defining a value or child element of an AST node
 * Add a function to print out in ASTs dot language.
 * Add a default action for parser clauses that returns the value of a production with a single RHS symbol or an array of values of a production with multiple RHS symbols (get rid of the need to do `clause('foo') { |o| o }`).
-* Allow the right-hand side of a production to be a symbol (call to_s on it).
 * Add support for parentheses in CFGs.
 * Add the ability to print out CFG in a textual form.
 * Add a way of setting a default lexer class for a parser.
 * Allow a parser to accept strings as input and then use either a provided lexer or the default lexer to lex the string.
 * Allow the first argument of the associativity methods to be an integer to be used as the value for those tokens.  An error should be raised if associativity values are given in a non-increasing order.
 * Investigate a better way of storing name and type information for values and children of ASTNodes, as well as better ways to define the accessors.
-* Allow action definitions for clauses to be deferred in parser definitions (conflicts with default action TODO item).
 * Better reporting of shift/reduce and reduce/reduce conflicts in the parser.
 
 Binding Wrappers
