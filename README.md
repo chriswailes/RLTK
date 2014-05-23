@@ -304,7 +304,7 @@ To assign precedence to terminal symbols you can use the {RLTK::Parser.left}, {R
 Let's look at the infix calculator example now:
 
 ```Ruby
-class InfixCalc < Parser
+class InfixCalc < RLTK::Parser
 
   left  :PLS, :SUB
   right :MUL, :DIV
