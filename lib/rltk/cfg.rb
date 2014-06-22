@@ -150,9 +150,9 @@ module RLTK
 						
 						rhs <<
 						case ttype1
-						when :QUESTION then self.get_question(tvalue0)
-						when :STAR     then self.get_star(tvalue0)
-						when :PLUS     then self.get_plus(tvalue0)
+						when :QUESTION then self.get_optional(tvalue0)
+						when :STAR     then self.get_list(tvalue0)
+						when :PLUS     then self.get_nonempty_list(tvalue0)
 						else                tvalue0
 						end
 					else
@@ -332,12 +332,14 @@ module RLTK
 			end
 		end
 		
-		# Builds productions used to eliminate the + EBNF operator.
+		# Builds productions used to eliminate the EBNF non-empty list
+		# operator (+).
 		#
-		# @param [Symbol]  symbol  Symbol to expand.
+		# @param [Symbol]  symbol  Symbol to expand
 		#
-		# @return [Symbol]
-		def get_plus(symbol)
+		# @return [Symbol]  New non-terminal symbol representing the
+		#                   non-empty list
+		def get_nonempty_list(symbol)
 			new_symbol = symbol.to_s.downcase + '_plus'
 			
 			if not @productions_sym.has_key?(new_symbol)
@@ -360,12 +362,13 @@ module RLTK
 			return new_symbol
 		end
 		
-		# Builds productions used to eliminate the ? EBNF operator.
+		# Builds productions used to eliminate the EBNF optional operator (?).
 		#
 		# @param [Symbol]  symbol  Symbol to expand.
 		#
-		# @return [Symbol]
-		def get_question(symbol)
+		# @return [Symbol]  New non-terminal symbol representing the
+		#                   optional symbol.
+		def get_optional(symbol)
 			new_symbol = symbol.to_s.downcase + '_question'
 			
 			if not @productions_sym.has_key?(new_symbol)
@@ -388,12 +391,12 @@ module RLTK
 			return new_symbol
 		end
 		
-		# Builds productions used to eliminate the * EBNF operator.
+		# Builds productions used to eliminate the EBNF list operator (*).
 		#
-		# @param [Symbol]  symbol  Symbol to expand.
+		# @param [Symbol]  symbol  Symbol to expand
 		#
-		# @return [Symbol]
-		def get_star(symbol)
+		# @return [Symbol]  New non-terminal symbol representing the list
+		def get_list(symbol)
 			new_symbol = symbol.to_s.downcase + '_star'
 			
 			if not @productions_sym.has_key?(new_symbol)

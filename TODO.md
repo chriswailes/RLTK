@@ -41,16 +41,18 @@ Ruby Only
 ---------
 
 * Convert all internally-generated productions to left-recursion
+* Re-name the CFG/Parser list producers to separated\_list and nonempty\_separated\_list
+* Add production helper functions for +, *, and ? operators
+* Merge EBNF list and seperated list functions
+
+* Allow ASTNode values to be subclasses of ASTNode (for reference nodes)
+* Emit a warning when re-defining a value or child element of an AST node
+
 * Double check parse table production method against LALR/LR table production
   * Check lookahead pruning method to see if generating LALR(1) or LR(1) parser
   * If we are generating LR(1) parser, correct documentation
   * If we are generating LALR(1) parser, switch to LR(1) parser generation
-* Re-name the CFG/Parser list producers to separated\_list and nonempty\_separated\_list
-* Re-name the CFG/Parser +, *, ? operator productions to nonempty\_list, list, and optional
 * Re-read the Menhir manual to look for features missing from RLTK.
-* Add production helper functions for +, *, and ? operators
-* Allow ASTNode values to be subclasses of ASTNode (for reference nodes)
-* Emit a warning when re-defining a value or child element of an AST node
 * Add a function to print out in ASTs dot language.
 * Add a default action for parser clauses that returns the value of a production with a single RHS symbol or an array of values of a production with multiple RHS symbols (get rid of the need to do `clause('foo') { |o| o }`).
 * Add support for parentheses in CFGs.
@@ -68,7 +70,7 @@ Binding Wrappers
 * Find home for unwrapped C binding functions
 * Figure out what an AssemblyAnnotationWriter is and what it is used for.
 * Add additional support for MCJIT.  This may require adding new bindings to LLVM 3.5. (http://llvm.org/docs/MCJITDesignAndImplementation.html)
-  * Lazy compilation (http://blog.llvm.org/2013/07/using-mcjit-with-kaleidoscope-tutorial.html)
+  * Lazy compilation (http://blog.llvm.org/2013/07/using-mcjit-with-kaleidoscope-tutorial.html, http://blog.llvm.org/2013/07/kaleidoscope-performance-with-mcjit.html)
   * Object caching (http://blog.llvm.org/2013/08/object-caching-with-kaleidoscope.html)
 * Support disassembly of objects
 * Re-do the construction of binding objects from pointers
