@@ -40,11 +40,6 @@ Whole Project
 Ruby Only
 ---------
 
-* Convert all internally-generated productions to left-recursion
-* Re-name the CFG/Parser list producers to separated\_list and nonempty\_separated\_list
-* Add production helper functions for +, *, and ? operators
-* Merge EBNF list and seperated list functions
-
 * Allow ASTNode values to be subclasses of ASTNode (for reference nodes)
 * Emit a warning when re-defining a value or child element of an AST node
 

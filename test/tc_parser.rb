@@ -108,7 +108,7 @@ class ParserTester < Minitest::Test
 	end
 	
 	class EmptyListParser0 < RLTK::Parser
-		empty_list('list', :A, :COMMA)
+		list('list', :A, :COMMA)
 		
 		finalize
 	end
@@ -116,7 +116,7 @@ class ParserTester < Minitest::Test
 	class EmptyListParser1 < RLTK::Parser
 		dat :array
 		
-		empty_list('list', ['A', 'B', 'C D'], :COMMA)
+		list('list', ['A', 'B', 'C D'], :COMMA)
 		
 		finalize
 	end
@@ -154,7 +154,7 @@ class ParserTester < Minitest::Test
 	class NonEmptyListParser1 < RLTK::Parser
 		nonempty_list('list', [:A, :B], :COMMA)
 		
-		finalize
+		finalize explain: 'nelp1.tbl'
 	end
 	
 	class NonEmptyListParser2 < RLTK::Parser

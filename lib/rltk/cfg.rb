@@ -102,6 +102,127 @@ module RLTK
 			production
 		end
 		
+		# Builds a production representing a (possibly empty) list of tokens.
+		# These tokens may optionally be separated by a provided token.  This
+		# function is used to eliminate the EBNF * operator.
+		#
+		# @param [Symbol]                         name           The name of the production to add
+		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list
+		# @param [Symbol, String]                 separator      The list separator symbol or symbols
+		#
+		# @return [void]
+		def build_list_production(name, list_elements, separator = '')
+			# Add the items for the following productions:
+			#
+			# name: | name_prime
+			
+			name_prime = "#{name}_prime".to_sym
+			
+			# 1st Production
+			production, _ = self.production(name, '')
+			@callback.call(:elp, :empty, production)
+			
+			# 2nd Production
+			production, _ = self.production(name, name_prime)
+			@callback.call(:elp, :nonempty, production)
+			
+			# Add remaining productions via nonempty_list helper.
+			self.nonempty_list(name_prime, list_elements, separator)
+			
+			name
+		end
+		alias :list :build_list_production
+		
+		# Builds a production representing a non-empty list of tokens.  These
+		# tokens may optionally be separated by a provided token.  This
+		# function is used to eliminate the EBNF + operator.
+		#
+		# @param [Symbol]                                 name           The name of the production to add
+		# @param [String, Symbol, Array<String, Symbol>]  list_elements  Expression(s) that may appear in the list
+		# @param [Symbol, String]                         separator      The list separator symbol or symbols
+		#
+		# @return [void]
+		def build_nonempty_list_production(name, list_elements, separator = '')
+			# Add the items for the following productions:
+			#
+			# If there is only one list element:
+			#
+			#   name: list_element | name separator list_element
+			#
+			# else
+			#
+			#   name: name_list_elements | name separator name_list_elements
+			#
+			#   name_list_elements: #{list_elements.join('|')}
+			
+			build_elements_productions = false
+			
+			list_element_string =
+			if list_elements.is_a?(Array)
+				if list_elements.empty?
+					raise ArgumentError, 'Parameter list_elements must not be empty.'
+					
+				elsif list_elements.length == 1
+					list_elements.first
+					
+				else
+					build_elements_productions = true
+					"#{name}_list_elements"
+				end
+			else
+				list_elements
+			end
+			
+			list_element_selected_string = list_element_string.to_s.split.map { |s| ".#{s}" }.join(' ')
+			
+			# Single Element Production
+			production, _ = self.production(name, list_element_string)
+			@callback.call(:nelp, :single, production)
+			
+			# Multiple Element Production
+			production, selections = self.production(name, ".#{name} #{separator} #{list_element_selected_string}")
+			@callback.call(:nelp, :multiple, production, selections)
+			
+			if build_elements_productions
+				# List Element Productions
+				list_elements.each do |element|
+					production, _ = self.production(list_element_string, element)
+					@callback.call(:nelp, :elements, production)
+				end
+			end
+			
+			name
+		end
+		alias :nonempty_list :build_nonempty_list_production
+		
+		# Build a production for an optional symbol.  This is used to
+		# eliminate the EBNF ? operator.
+		#
+		# @param [Symbol]  name        The name for the new production
+		# @param [Symbol]  opt_symbol  Symbol to expand
+		#
+		# @return [Symbol]  The value of the name argument
+		def build_optional_production(name, opt_symbol)
+			if not @productions_sym.has_key?(name)
+				# Add the items for the following productions:
+				#
+				# name: | opt_symbol
+				
+				# Empty production.
+				production = self.add_production(Production.new(self.next_id, name, []))
+				@callback.call(:optional, :empty, production)
+				
+				# Nonempty production
+				production = self.add_production(Production.new(self.next_id, name, [opt_symbol]))
+				@callback.call(:optional, :nonempty, production)
+				
+				# Add the new symbol to the list of nonterminals.
+				@nonterms << name
+			end
+			
+			name
+		end
+		
 		# Sets the EBNF callback to *callback*.
 		#
 		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded and list productions are added.
@@ -134,7 +255,7 @@ module RLTK
 			@start_symbol ||= lhs
 			
 			# Remove EBNF tokens and replace them with new productions.
-			symbol_index = 0
+			symbol_count = 0
 			tokens.each_index do |i|
 				ttype0  = tokens[i].type
 				tvalue0 = tokens[i].value
@@ -150,19 +271,19 @@ module RLTK
 						
 						rhs <<
 						case ttype1
-						when :QUESTION then self.get_optional(tvalue0)
-						when :STAR     then self.get_list(tvalue0)
-						when :PLUS     then self.get_nonempty_list(tvalue0)
+						when :QUESTION then self.build_optional_production("#{tvalue0.downcase}_optional".to_sym, tvalue0)
+						when :STAR     then self.build_list_production("#{tvalue0.downcase}_list".to_sym, tvalue0)
+						when :PLUS     then self.build_nonempty_list_production("#{tvalue0.downcase}_nonempty_list".to_sym, tvalue0)
 						else                tvalue0
 						end
 					else
 						rhs << tvalue0
 					end
 					
-					symbol_index += 1
+					symbol_count += 1
 					
 				elsif ttype0 == :DOT
-					selections << (symbol_index - selections.length)
+					selections << symbol_count
 				end
 			end
 			
@@ -177,37 +298,6 @@ module RLTK
 			
 			return [production, selections]
 		end
-		
-		# This method adds the necessary productions for empty lists to the
-		# grammar.  These productions are named `symbol`, `symbol + '_prime'`
-		# and `symbol + '_elements'`.  The separator may be an empty string,
-		# a single parser symbol (as a String or Symbol), or a String
-		# containing multiple symbols.
-		#
-		# @param [Symbol]                         symbol         The name of the production to add.
-		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list.
-		# @param [Symbol, String]                 separator      The list separator symbol or symbols.
-		#
-		# @return [void]
-		def empty_list_production(symbol, list_elements, separator = '')
-			# Add the items for the following productions:
-			#
-			# symbol: | symbol_prime
-			
-			prime = symbol.to_s + '_prime'
-			
-			# 1st Production
-			production, _ = self.production(symbol, '')
-			@callback.call(:elp, :first, production)
-			
-			# 2nd Production
-			production, _ = self.production(symbol, prime.to_s)
-			@callback.call(:elp, :second, production)
-			
-			# Add remaining productions via nonempty_list helper.
-			self.nonempty_list(prime, list_elements, separator)
-		end
-		alias :empty_list :empty_list_production
 		
 		# This function calculates the *first* set of a series of tokens.  It
 		# uses the {CFG#first_set} helper function to find the first set of
@@ -332,147 +422,10 @@ module RLTK
 			end
 		end
 		
-		# Builds productions used to eliminate the EBNF non-empty list
-		# operator (+).
-		#
-		# @param [Symbol]  symbol  Symbol to expand
-		#
-		# @return [Symbol]  New non-terminal symbol representing the
-		#                   non-empty list
-		def get_nonempty_list(symbol)
-			new_symbol = symbol.to_s.downcase + '_plus'
-			
-			if not @productions_sym.has_key?(new_symbol)
-				# Add the items for the following productions:
-				#
-				# token_plus: token | token token_plus
-				
-				# 1st production
-				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(:+, :first, production)
-				
-				# 2nd production
-				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol, new_symbol]))
-				@callback.call(:+, :second, production)
-				
-				# Add the new symbol to the list of nonterminals.
-				@nonterms << new_symbol
-			end
-			
-			return new_symbol
-		end
-		
-		# Builds productions used to eliminate the EBNF optional operator (?).
-		#
-		# @param [Symbol]  symbol  Symbol to expand.
-		#
-		# @return [Symbol]  New non-terminal symbol representing the
-		#                   optional symbol.
-		def get_optional(symbol)
-			new_symbol = symbol.to_s.downcase + '_question'
-			
-			if not @productions_sym.has_key?(new_symbol)
-				# Add the items for the following productions:
-				#
-				# nonterm_question: | nonterm
-				
-				# 1st (empty) production.
-				production = self.add_production(Production.new(self.next_id, new_symbol, []))
-				@callback.call(:'?', :first, production)
-				
-				# 2nd production
-				production = self.add_production(Production.new(self.next_id, new_symbol, [symbol]))
-				@callback.call(:'?', :second, production)
-				
-				# Add the new symbol to the list of nonterminals.
-				@nonterms << new_symbol
-			end
-			
-			return new_symbol
-		end
-		
-		# Builds productions used to eliminate the EBNF list operator (*).
-		#
-		# @param [Symbol]  symbol  Symbol to expand
-		#
-		# @return [Symbol]  New non-terminal symbol representing the list
-		def get_list(symbol)
-			new_symbol = symbol.to_s.downcase + '_star'
-			
-			if not @productions_sym.has_key?(new_symbol)
-				# Add the items for the following productions:
-				#
-				# token_star: | token token_star
-				
-				# 1st (empty) production
-				production = self.add_production(Production.new(self.next_id, new_symbol, []))
-				@callback.call(:*, :first, production)
-				
-				# 2nd production
-				production = self.add_production(Production.new(self.next_id, new_symbol, [new_symbol, symbol]))
-				@callback.call(:*, :second, production)
-				
-				# Add the new symbol to the list of nonterminals.
-				@nonterms << new_symbol
-			end
-			
-			return new_symbol
-		end
-		
 		# @return [Integer]  ID for the next production to be defined.
 		def next_id
 			@production_counter += 1
 		end
-		
-		# This method adds the necessary productions for non-empty lists to
-		# the grammar.  These productions are named `symbol` and
-		# `symbol + '_elements'`.  The separator may be an empty string,
-		# a single parser symbol (as a String or Symbol), or a String
-		# containing multiple symbols.
-		#
-		# @param [Symbol]                         symbol         The name of the production to add.
-		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list.
-		# @param [Symbol, String]                 separator      The list separator symbol or symbols.
-		#
-		# @return [void]
-		def nonempty_list_production(symbol, list_elements, separator = '')
-			# Add the items for the following productions:
-			#
-			# symbol: symbol_elements | symbol_elements separator symbol
-			#
-			# symbol_elements: #{list_elements.join('|')}
-			
-			if list_elements.is_a?(String) or list_elements.is_a?(Symbol)
-				list_elements = [list_elements.to_s]
-				
-			elsif list_elements.is_a?(Array)
-				if list_elements.empty?
-					raise ArgumentError, 'Parameter list_elements must not be empty.'
-				else
-					list_elements.map! { |el| el.to_s }
-				end
-				
-			else
-				raise ArgumentError, 'Parameter list_elements must be a String, Symbol, or array of Strings and Symbols.'
-			end
-			
-			symbol_elements = symbol.to_s + '_elements'
-			
-			# 1st Production
-			production, _ = self.production(symbol, symbol_elements)
-			@callback.call(:nelp, :first, production)
-			
-			# 2nd Production
-			production, _ = self.production(symbol, "#{symbol_elements} #{separator} #{symbol}")
-			@callback.call(:nelp, :second, production)
-			
-			# 3rd Productions
-			list_elements.each do |el|
-				production, _ = self.production(symbol_elements, el)
-				@callback.call(:nelp, :third, production)
-			end
-		end
-		alias :nonempty_list :nonempty_list_production
 		
 		# @return [Set<Symbol>] All terminal symbols used in the grammar's definition.
 		def nonterms
@@ -484,14 +437,16 @@ module RLTK
 		# production.  If *expression* is nil then *block* is evaluated, and
 		# expected to make one or more calls to {CFG#clause}.
 		#
-		# @param [Symbol]          symbol      The right-hand side of a production
-		# @param [String, Symbol]  expression  The left-hand side of a production
+		# @param [Symbol]          symbol      The left-hand side of a production
+		# @param [String, Symbol]  expression  The right-hand side of a production
 		# @param [Proc]            block       Optional block for defining production clauses
 		#
 		# @return [Production, Array<Production>]  A single production if called with an expression;
 		#   an array of productions otherwise
 		def production(symbol, expression = nil, &block)
 			@production_buffer = Array.new
+			
+			prev_lhs  = @curr_lhs
 			@curr_lhs = symbol
 			
 			ret_val =
@@ -503,7 +458,7 @@ module RLTK
 				@production_buffer.clone
 			end
 			
-			@curr_lhs = nil
+			@curr_lhs = prev_lhs
 			return ret_val
 		end
 		

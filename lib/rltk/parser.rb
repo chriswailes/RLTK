@@ -118,38 +118,34 @@ module RLTK
 				# are :array and :splat.
 				@default_arg_type = :splat
 				
-				@grammar.callback do |type, num, p|
+				@grammar.callback do |type, which, p, sels = []|
 					@procs[p.id] = [
 						case type
-						when :*
-							case num
-							when :first then ProdProc.new { ||            [] }
-							else             ProdProc.new { |os, o|  os << o }
-							end
-							
-						when :+
-							case num
-							when :first then ProdProc.new { |o|          [o] }
-							else             ProdProc.new { |o, os| [o] + os }
-							end
-							
-						when :'?'
-							case num
-							when :first then ProdProc.new { ||  nil }
+						when :optional
+							case which
+							when :empty then ProdProc.new { ||  nil }
 							else             ProdProc.new { |o|   o }
 							end
 							
 						when :elp
-							case num
-							when :first then ProdProc.new { ||         [] }
+							case which
+							when :empty then ProdProc.new { ||         [] }
 							else             ProdProc.new { |prime| prime }
 							end
 							
 						when :nelp
-							case num
-							when :first  then ProdProc.new { |el|                                         [el] }
-							when :second then ProdProc.new { |*syms|                  [syms.first] + syms.last }
-							else	          ProdProc.new { |*el| if el.length == 1 then el.first else el end }
+							case which
+							when :single
+								ProdProc.new { |el| [el] }
+								
+							when :multiple
+								ProdProc.new(:splat, sels) do |*syms|
+									el = syms[1..-1]
+									syms.first << (el.length == 1 ? el.first : el)
+								end
+								
+							else
+								ProdProc.new { |*el|   el.length == 1 ? el.first : el }
 							end
 						end,
 						p.rhs.length
@@ -383,10 +379,10 @@ module RLTK
 			# Adds productions and actions for parsing empty lists.
 			#
 			# @see CFG#empty_list_production
-			def empty_list_production(symbol, list_elements, separator = '')
-				@grammar.empty_list(symbol, list_elements, separator)
+			def build_list_production(symbol, list_elements, separator = '')
+				@grammar.build_list_production(symbol, list_elements, separator)
 			end
-			alias :empty_list :empty_list_production 
+			alias :list :build_list_production 
 			
 			# This function will print a description of the parser to the
 			# provided IO object.
@@ -449,7 +445,7 @@ module RLTK
 					io.puts('#####################')
 					io.puts
 					
-					io.puts("\tStart symbol: #{@grammar.start_symbol}")
+					io.puts("\tStart symbol: #{@grammar.start_symbol}'")
 					io.puts
 					
 					io.puts("\tTotal number of states: #{@states.length}")
@@ -767,10 +763,10 @@ module RLTK
 			# Adds productions and actions for parsing nonempty lists.
 			#
 			# @see CFG#nonempty_list_production
-			def nonempty_list_production(symbol, list_elements, separator = '')
-				@grammar.nonempty_list(symbol, list_elements, separator)
+			def build_nonempty_list_production(symbol, list_elements, separator = '')
+				@grammar.build_nonempty_list_production(symbol, list_elements, separator)
 			end
-			alias :nonempty_list :nonempty_list_production 
+			alias :nonempty_list :build_nonempty_list_production 
 			
 			# This function is where actual parsing takes place.  The
 			# _tokens_ argument must be an array of Token objects, the last
