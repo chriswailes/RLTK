@@ -40,7 +40,6 @@ Whole Project
 Ruby Only
 ---------
 
-* Convert @terms and @nonterms in CFG to sets
 * Convert all internally-generated productions to left-recursion
 * Double check parse table production method against LALR/LR table production
   * Check lookahead pruning method to see if generating LALR(1) or LR(1) parser

@@ -10,6 +10,9 @@
 # Requires #
 ############
 
+# Standard Library
+require 'set'
+
 # Ruby Language Toolkit
 require 'rltk/lexers/ebnf'
 
@@ -81,8 +84,8 @@ module RLTK
 			@productions_sym    = Hash.new { |h, k| h[k] = [] }
 			@production_buffer  = Array.new
 			
-			@terms    = Hash.new(false).update({:EOS => true})
-			@nonterms = Hash.new(false)
+			@terms    = Set.new([:EOS])
+			@nonterms = Set.new
 			
 			@firsts   = Hash.new
 			@follows  = Hash.new { |h,k| h[k] = Array.new }
@@ -139,7 +142,7 @@ module RLTK
 				if ttype0 == :TERM or ttype0 == :NONTERM
 					
 					# Add this symbol to the correct collection.
-					(ttype0 == :TERM ? @terms : @nonterms)[tvalue0] = true
+					(ttype0 == :TERM ? @terms : @nonterms) << tvalue0
 					
 					if i + 1 < tokens.length
 						ttype1  = tokens[i + 1].type
@@ -167,7 +170,7 @@ module RLTK
 			@production_buffer << [(production = Production.new(self.next_id, lhs, rhs)), selections]
 			
 			# Make sure the production symbol is collected.
-			@nonterms[lhs] = true
+			@nonterms << lhs
 			
 			# Add the new production to our collections.
 			self.add_production(production)
@@ -298,7 +301,7 @@ module RLTK
 			# Use the memoized set if possible.
 			return @follows[sym0] if @follows.has_key?(sym0)
 			
-			if @nonterms[sym0]
+			if @nonterms.member? sym0
 				set0 = []
 				
 				# Add EOS to the start symbol's follow set.
@@ -351,7 +354,7 @@ module RLTK
 				@callback.call(:+, :second, production)
 				
 				# Add the new symbol to the list of nonterminals.
-				@nonterms[new_symbol] = true
+				@nonterms << new_symbol
 			end
 			
 			return new_symbol
@@ -379,7 +382,7 @@ module RLTK
 				@callback.call(:'?', :second, production)
 				
 				# Add the new symbol to the list of nonterminals.
-				@nonterms[new_symbol] = true
+				@nonterms << new_symbol
 			end
 			
 			return new_symbol
@@ -407,7 +410,7 @@ module RLTK
 				@callback.call(:*, :second, production)
 				
 				# Add the new symbol to the list of nonterminals.
-				@nonterms[new_symbol] = true
+				@nonterms << new_symbol
 			end
 			
 			return new_symbol
@@ -468,9 +471,9 @@ module RLTK
 		end
 		alias :nonempty_list :nonempty_list_production
 		
-		# @return [Array<Symbol>] All terminal symbols used in the grammar's definition.
+		# @return [Set<Symbol>] All terminal symbols used in the grammar's definition.
 		def nonterms
-			@nonterms.keys
+			@nonterms.clone
 		end
 		
 		# Builds a new production with the left-hand side value of *symbol*.
@@ -537,9 +540,9 @@ module RLTK
 			self.terms + self.nonterms
 		end
 		
-		# @return [Array<Symbol>]  All terminal symbols used in the grammar's definition.
+		# @return [Set<Symbol>]  All terminal symbols used in the grammar's definition.
 		def terms
-			@terms.keys
+			@terms.clone
 		end
 		
 		# Oddly enough, the Production class represents a production in a
