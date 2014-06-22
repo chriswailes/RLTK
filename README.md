@@ -227,7 +227,7 @@ The default starting symbol of the grammar is the left-hand side of the first pr
 
 ### Shortcuts
 
-RLTK provides several shortcuts for common grammar constructs.  Right now these shortcuts include the {RLTK::Parser.empty_list} and {RLTK::Parser.nonempty_list} methods.  An empty list is a list that may contain 0, 1, or more elements, with an optional token or tokens seperating each element.  A non-empty list contains **at least** 1 element.  An empty list with only a single list element and an empty separator is equivelent to the Kleene star.  Simillarly, a nonempty list with only a single list element and an empty separator is equivelent to the Kleene plus.
+RLTK provides several shortcuts for common grammar constructs.  Right now these shortcuts include the {RLTK::Parser.list} and {RLTK::Parser.nonempty_list} methods.  A list may contain 0, 1, or more elements, with an optional token or tokens seperating each element.  A non-empty list contains **at least** 1 element.  An empty list with only a single list element and an empty separator is equivelent to the Kleene star.  Simillarly, a list with only a single list element and an empty separator is equivelent to the Kleene plus.
 
 This example shows how these shortcuts may be used to define a list of integers separated by a `:COMMA` token:
 
@@ -329,6 +329,31 @@ The standard order of mathematical operations tells us that the correct way to g
 Now, let us consider the expression `3 - 2 - 1`.  Here, the correct way to parse the expression is `(3 - 2) - 2`.  To ensure that this case is selected over `3 - (2 - 1)` we can make the `SUB` token left associative.  This will cause the symbols `NUM SUB NUM` to be reduced before the second `SUB` symbol is shifted onto the parse stack.
 
 Not that, to resolve a shift/reduce or reduce/reduce conflict, precedence and associativty information must be present for all actions involved in the conflict.  As such, it isn't enough to simply make the `MUL` and `DIV` tokens right associative; we must also make the `PLS` and `SUB` tokens left associative.
+
+### Token Selectors
+
+In many cases productions contain tokens who's value is unimportant.  In such situations passing `nil` to the production's action is not useful.  To prevent this happening you may use *token selectors*.  By placing a period (`.`) in front of a token you can indicate to the parser that the following token is important and you wish for its value to be passed to the action.  In the following example selectors are used to only pass the sub-expressions' values to the action:
+
+```Ruby
+class InfixCalc < RLTK::Parser
+
+  left  :PLS, :SUB
+  right :MUL, :DIV
+
+  production(:e) do
+    clause('NUM') { |n| n }
+
+    clause('LPAREN .e RPAREN') { |e| e }
+
+    clause('.e PLS .e') { |e0, e1| e0 + e1 }
+    clause('.e SUB .e') { |e0, e1| e0 - e1 }
+    clause('.e MUL .e') { |e0, e1| e0 * e1 }
+    clause('.e DIV .e') { |e0, e1| e0 / e1 }
+  end
+
+  finalize
+end
+```
 
 ### Argument Passing for Actions
 
