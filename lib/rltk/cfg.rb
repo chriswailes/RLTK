@@ -117,19 +117,21 @@ module RLTK
 		#
 		# @param [String, Symbol] expression The right-hand side of a CFG production.
 		#
-		# @return [Production]
+		# @return [Array(Production, Array<Integer>)]
 		def clause(expression)
 			raise GrammarError, 'CFG#clause called outside of CFG#production block.' if not @curr_lhs
 			
-			lhs    = @curr_lhs.to_sym
-			rhs    = Array.new
-			tokens = @lexer.lex(expression.to_s)
+			lhs        = @curr_lhs.to_sym
+			rhs        = Array.new
+			tokens     = @lexer.lex(expression.to_s)
+			selections = Array.new
 			
 			# Set this as the start symbol if there isn't one already
 			# defined.
 			@start_symbol ||= lhs
 			
 			# Remove EBNF tokens and replace them with new productions.
+			symbol_index = 0
 			tokens.each_index do |i|
 				ttype0  = tokens[i].type
 				tvalue0 = tokens[i].value
@@ -153,11 +155,16 @@ module RLTK
 					else
 						rhs << tvalue0
 					end
+					
+					symbol_index += 1
+					
+				elsif ttype0 == :DOT
+					selections << (symbol_index - selections.length)
 				end
 			end
 			
 			# Make the production.
-			@production_buffer << (production = Production.new(self.next_id, lhs, rhs))
+			@production_buffer << [(production = Production.new(self.next_id, lhs, rhs)), selections]
 			
 			# Make sure the production symbol is collected.
 			@nonterms[lhs] = true
@@ -165,7 +172,7 @@ module RLTK
 			# Add the new production to our collections.
 			self.add_production(production)
 			
-			return production
+			return [production, selections]
 		end
 		
 		# This method adds the necessary productions for empty lists to the
@@ -471,23 +478,27 @@ module RLTK
 		# production.  If *expression* is nil then *block* is evaluated, and
 		# expected to make one or more calls to {CFG#clause}.
 		#
-		# @param [Symbol]          symbol      The right-hand side of a production.
-		# @param [String, Symbol]  expression  The left-hand side of a production.
-		# @param [Proc]            block       Optional block for defining production clauses.
+		# @param [Symbol]          symbol      The right-hand side of a production
+		# @param [String, Symbol]  expression  The left-hand side of a production
+		# @param [Proc]            block       Optional block for defining production clauses
 		#
-		# @return [Array<Production>]
+		# @return [Production, Array<Production>]  A single production if called with an expression;
+		#   an array of productions otherwise
 		def production(symbol, expression = nil, &block)
 			@production_buffer = Array.new
 			@curr_lhs = symbol
 			
+			ret_val =
 			if expression
 				self.clause(expression)
 			else
 				self.instance_exec(&block)
+				
+				@production_buffer.clone
 			end
 			
 			@curr_lhs = nil
-			return @production_buffer.clone
+			return ret_val
 		end
 		
 		# If *by* is :sym, returns a hash of the grammar's productions, using

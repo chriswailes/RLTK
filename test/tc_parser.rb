@@ -259,6 +259,12 @@ class ParserTester < Minitest::Test
 		finalize
 	end
 	
+	class SelectionParser < RLTK::Parser
+		production(:s, 'A+ .B+') { |bs| bs.inject &:+ }
+		
+		finalize
+	end
+	
 	def test_ambiguous_grammar
 		actual = AmbiguousParser.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'), {:accept => :all})
 		assert_equal([7, 9], actual.sort)
@@ -582,6 +588,13 @@ class ParserTester < Minitest::Test
 		assert_equal(9, actual)
 		
 		assert_raises(RLTK::NotInLanguage) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
+	end
+	
+	def test_selection_parser
+		actual   = SelectionParser.parse(ABLexer.lex('aaabbb'))
+		expected = 6
+		
+		assert_equal(expected, actual)
 	end
 	
 	def test_underscore_tokens

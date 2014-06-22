@@ -123,33 +123,33 @@ module RLTK
 						case type
 						when :*
 							case num
-							when :first then ClauseProc.new { ||            [] }
-							else             ClauseProc.new { |os, o|  os << o }
+							when :first then ProdProc.new { ||            [] }
+							else             ProdProc.new { |os, o|  os << o }
 							end
 							
 						when :+
 							case num
-							when :first then ClauseProc.new { |o|          [o] }
-							else             ClauseProc.new { |o, os| [o] + os }
+							when :first then ProdProc.new { |o|          [o] }
+							else             ProdProc.new { |o, os| [o] + os }
 							end
 							
 						when :'?'
 							case num
-							when :first then ClauseProc.new { ||  nil }
-							else             ClauseProc.new { |o|   o }
+							when :first then ProdProc.new { ||  nil }
+							else             ProdProc.new { |o|   o }
 							end
 							
 						when :elp
 							case num
-							when :first then ClauseProc.new { ||         [] }
-							else             ClauseProc.new { |prime| prime }
+							when :first then ProdProc.new { ||         [] }
+							else             ProdProc.new { |prime| prime }
 							end
 							
 						when :nelp
 							case num
-							when :first  then ClauseProc.new { |el|                                         [el] }
-							when :second then ClauseProc.new { |*syms|                  [syms.first] + syms.last }
-							else	             ClauseProc.new { |*el| if el.length == 1 then el.first else el end }
+							when :first  then ProdProc.new { |el|                                         [el] }
+							when :second then ProdProc.new { |*syms|                  [syms.first] + syms.last }
+							else	          ProdProc.new { |*el| if el.length == 1 then el.first else el end }
 							end
 						end,
 						p.rhs.length
@@ -323,17 +323,19 @@ module RLTK
 				# clause.
 				precedence ||= @curr_prec
 				
-				production = @grammar.clause(expression)
+				production, selections = @grammar.clause(expression)
 				
 				# Check to make sure the action's arity matches the number
 				# of symbols on the right-hand side.
-				if arg_type == :splat and action.arity != production.rhs.length
-					raise ParserConstructionException, 'Incorrect number of arguments to action.  Action arity must match the number of ' +
-						'terminals and non-terminals in the clause.'
+				expected_arity = (selections.empty? ? production.rhs.length : selections.length)
+				if arg_type == :splat and action.arity != expected_arity
+					raise ParserConstructionException,
+					      "Incorrect number of action parameters.  Expected #{expected_arity} but got #{action.arity}." +
+						  ' Action arity must match the number of terminals and non-terminals in the clause.'
 				end
 				
 				# Add the action to our proc list.
-				@procs[production.id] = [ClauseProc.new(arg_type, &action), production.rhs.length]
+				@procs[production.id] = [ProdProc.new(arg_type, selections, &action), production.rhs.length]
 				
 				# If no precedence is specified use the precedence of the
 				# last terminal in the production.
@@ -566,9 +568,9 @@ module RLTK
 				@symbols = @grammar.symbols << :ERROR
 				
 				# Add our starting state to the state list.
-				@start_symbol    = (@grammar.start_symbol.to_s + '\'').to_sym
-				start_production = @grammar.production(@start_symbol, @grammar.start_symbol).first
-				start_state      = State.new(@symbols, [start_production.to_item])
+				@start_symbol       = (@grammar.start_symbol.to_s + '\'').to_sym
+				start_production, _ = @grammar.production(@start_symbol, @grammar.start_symbol).first
+				start_state         = State.new(@symbols, [start_production.to_item])
 				
 				start_state.close(@grammar.productions)
 				
@@ -931,6 +933,10 @@ module RLTK
 								args, positions = stack.pop(pop_size)
 								opts[:env].set_positions(positions)
 								
+								if not production_proc.selections.empty?
+									args = args.values_at(*production_proc.selections)
+								end
+								
 								result =
 								if production_proc.arg_type == :array
 									opts[:env].instance_exec(args, &production_proc)
@@ -1061,8 +1067,8 @@ module RLTK
 				
 				@default_arg_type = orig_dat if not orig_dat.nil?
 				
-				@grammar.curr_lhs	= nil
-				@curr_prec		= nil
+				@grammar.curr_lhs = nil
+				@curr_prec        = nil
 			end
 			alias :p :production
 			
@@ -1564,13 +1570,17 @@ module RLTK
 		
 		# A subclass of Proc that indicates how it should be passed arguments
 		# by the parser.
-		class ClauseProc < Proc
-			# @return [:array, :splat] Method that should be used to pass arguments to this proc.
+		class ProdProc < Proc
+			# @return [:array, :splat]  Method that should be used to pass arguments to this proc.
 			attr_reader :arg_type
 			
-			def initialize(arg_type = :splat)
+			# @return [Array<Integer>]  Mask for selection of tokens to pass to action.  Empty mask means pass all.
+			attr_reader :selections
+			
+			def initialize(arg_type = :splat, selections = [])
 				super()
-				@arg_type = arg_type
+				@arg_type   = arg_type
+				@selections = selections
 			end
 		end
 		

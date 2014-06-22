@@ -27,6 +27,7 @@ module RLTK
 			rule(/\*/) { :STAR     }
 			rule(/\+/) { :PLUS     }
 			rule(/\?/) { :QUESTION }
+			rule(/\./) { :DOT      }
 			
 			rule(/[a-z0-9_']+/) { |t| [:NONTERM, t.to_sym] }
 			rule(/[A-Z0-9_']+/) { |t| [:TERM,    t.to_sym] }

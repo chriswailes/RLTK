@@ -6,7 +6,7 @@ These are issues that are preventing the library from working correctly.
 Ruby Only
 ---------
 
-* Give generated empty productions an associativity and precedence of (left, 0).  This will make the ?, *, and + operators greedy.  Provide an option to turn this off.  This is motivated by the 'B? B' example (B? should be nil and B should hold the value).
+* Find a way to deal with the 'B? B' example (B? should be nil and B should hold the value).
 * Don't overwrite explain file when loading from cache.
 
 Binding Wrappers
@@ -40,7 +40,7 @@ Whole Project
 Ruby Only
 ---------
 
-* Change ASTNode to preserve subtype relationship on initialize
+* Convert @terms and @nonterms in CFG to sets
 * Convert all internally-generated productions to left-recursion
 * Double check parse table production method against LALR/LR table production
   * Check lookahead pruning method to see if generating LALR(1) or LR(1) parser
@@ -50,7 +50,6 @@ Ruby Only
 * Re-name the CFG/Parser +, *, ? operator productions to nonempty\_list, list, and optional
 * Re-read the Menhir manual to look for features missing from RLTK.
 * Add production helper functions for +, *, and ? operators
-* Change all generated productions to left-recursive
 * Allow ASTNode values to be subclasses of ASTNode (for reference nodes)
 * Emit a warning when re-defining a value or child element of an AST node
 * Add a function to print out in ASTs dot language.
