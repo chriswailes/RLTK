@@ -485,7 +485,7 @@ class BinOp < Expression
 end
 ```
 
-The assignment functions that are generated for the children and values perform type checking to make sure that the AST is well-formed.  The type of a child must be a subclass of the {RLTK::ASTNode} class, whereas the type of a value must **NOT** be a subclass of the {RLTK::ASTNode} class.  While child and value objects are stored as instance variables it is unsafe to assign to these variables directly, and it is strongly recommended to always use the accessor functions.
+The assignment functions that are generated for the children and values perform type checking to make sure that the AST is well-formed.  The type of a child must be a subclass of the {RLTK::ASTNode} class, whereas the type of a value can be any Ruby class.  While child and value objects are stored as instance variables it is unsafe to assign to these variables directly, and it is strongly recommended to always use the accessor functions.
 
 When instantiating a subclass of {RLTK::ASTNode} the arguments to the constructor should be the node's values (in order of definition) followed by the node's children (in order of definition).  If a constructor is given fewer arguments then the number of values and children the remaining arguments are assumed to be `nil`.  Example:
 

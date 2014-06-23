@@ -36,6 +36,19 @@ module RLTK
 		
 		class << self
 			
+			# Check to make sure a name isn't re-defining a value or child.
+			#
+			# @raise [ArgumentError]  Raised if the name is already used for an existing value or child
+			def check_odr(name)
+				if @child_names.include? name
+					raise ArgumentError, "Class #{self} or one of its superclasses already defines a child named #{name}"
+				end
+				
+				if @value_names.include?(name)
+					raise ArgumentError, "Class #{self} or one of its superclasses already defines a value named #{name}"
+				end
+			end
+			
 			# Installs instance class varialbes into a class.
 			#
 			# @return [void]
@@ -74,6 +87,8 @@ module RLTK
 			#
 			# @return [void]
 			def child(name, type)
+				check_odr(name)
+				
 				if type.is_a?(Array) and type.length == 1
 					t = type.first
 				
@@ -151,14 +166,15 @@ module RLTK
 			
 			# Defined a value for this AST class and its subclasses.
 			# The name of the value will be used to define accessor
-			# methods that include type checking.  The type of this
-			# value must NOT be a subclass of the ASTNode class.
+			# methods that include type checking.
 			#
 			# @param [String, Symbol]  name  Name of value
-			# @param [Class]           type  Type of value; Must NOT be a subclass of ASTNode
+			# @param [Class]           type  Type of value
 			#
 			# @return [void]
 			def value(name, type)
+				check_odr(name)
+				
 				if type.is_a?(Array) and type.length == 1
 					t = type.first
 				
@@ -167,12 +183,6 @@ module RLTK
 					
 				else
 					raise 'Child and Value types must be a class name or an array with a single class name element.'
-				end
-				
-				# Check to make sure that type is NOT a subclass of
-				# ASTNode.
-				if t.subclass_of?(ASTNode)
-					raise "A value's type specification must NOT be a subclass of ASTNode."
 				end
 				
 				@value_names << name

@@ -40,9 +40,6 @@ Whole Project
 Ruby Only
 ---------
 
-* Allow ASTNode values to be subclasses of ASTNode (for reference nodes)
-* Emit a warning when re-defining a value or child element of an AST node
-
 * Double check parse table production method against LALR/LR table production
   * Check lookahead pruning method to see if generating LALR(1) or LR(1) parser
   * If we are generating LR(1) parser, correct documentation

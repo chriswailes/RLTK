@@ -116,20 +116,6 @@ class ASTNodeTester < Minitest::Test
 		assert_equal(@tree5, new_tree)
 	end
 	
-	def test_value
-		node = VNode.new
-		
-		assert_equal(node.values, [nil, nil])
-		
-		node.values = (expected_values = [42, 1984])
-		
-		assert_equal(node.values, expected_values)
-		
-		node.values = (expected_values = {:a => 1984, :b => 42})
-		
-		assert_equal(node.values(Hash), expected_values)
-	end
-	
 	def test_dump
 		tree0_string = @tree0.dump
 		
@@ -236,8 +222,34 @@ class ASTNodeTester < Minitest::Test
 		assert_nil(node[:a])
 	end
 	
+	def test_one_definition_rule
+		asserter = self
+		
+		Class.new(ANode) do
+			asserter.assert_raises(ArgumentError) { child :left, ANode }
+		end
+		
+		Class.new(ENode) do
+			asserter.assert_raises(ArgumentError) { value :str, String }
+		end
+	end
+	
 	def test_root
 		assert_same(@tree0, @tree0.root)
 		assert_same(@tree0, @leaf0.root)
+	end
+	
+	def test_value
+		node = VNode.new
+		
+		assert_equal(node.values, [nil, nil])
+		
+		node.values = (expected_values = [42, 1984])
+		
+		assert_equal(node.values, expected_values)
+		
+		node.values = (expected_values = {:a => 1984, :b => 42})
+		
+		assert_equal(node.values(Hash), expected_values)
 	end
 end
