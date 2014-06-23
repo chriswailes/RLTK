@@ -58,7 +58,7 @@ module Kazoo
 			clause('IF e THEN e ELSE e') { |_, e0, _, e1, _, e2| If.new(e0, e1, e2) }
 		end
 	
-		empty_list(:args, :e, :COMMA)
+		list(:args, :e, :COMMA)
 	
 		production(:ex, 'EXTERN p_body')	{ |_, p| p }
 		production(:p, 'DEF p_body')		{ |_, p| p }
@@ -66,7 +66,7 @@ module Kazoo
 	
 		production(:p_body, 'IDENT LPAREN arg_defs RPAREN') { |name, _, arg_names, _| Prototype.new(name, arg_names) }
 	
-		empty_list(:arg_defs, :IDENT, :COMMA)
+		list(:arg_defs, :IDENT, :COMMA)
 	
 		finalize use: 'kparser.tbl'
 	end

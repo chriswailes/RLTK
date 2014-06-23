@@ -27,7 +27,6 @@ These are items that would provide additional features to RLTK users.
 Whole Project
 -------------
 
-* Review examples before releasing version 3.0.0
 * Convert to Ruby 2.0 syntax.
   * Move to lazy enumerators
   * Keyword arguments

@@ -39,7 +39,7 @@ module Kazoo
 			clause('IDENT LPAREN args RPAREN') { |i, _, args, _| Call.new(i, args) }
 		end
 		
-		empty_list(:args, :e, :COMMA)
+		list(:args, :e, :COMMA)
 		
 		production(:ex, 'EXTERN p_body')	{ |_, p| p }
 		production(:p, 'DEF p_body')		{ |_, p| p }
@@ -47,7 +47,7 @@ module Kazoo
 		
 		production(:p_body, 'IDENT LPAREN arg_defs RPAREN') { |name, _, arg_names, _| Prototype.new(name, arg_names) }
 		
-		empty_list(:arg_defs, :IDENT, :COMMA)
+		list(:arg_defs, :IDENT, :COMMA)
 		
 		finalize use: 'kparser.tbl'
 	end
