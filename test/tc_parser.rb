@@ -107,6 +107,12 @@ class ParserTester < Minitest::Test
 		finalize
 	end
 	
+	class EBNFSelectorParser < RLTK::Parser
+		dat :array
+		
+		production(:s, '.A .B* .A') { |a| a}
+	end
+	
 	class EmptyListParser0 < RLTK::Parser
 		list('list', :A, :COMMA)
 		
@@ -203,12 +209,12 @@ class ParserTester < Minitest::Test
 	end
 
 	class ELLexer < RLTK::Lexer
-		rule(/\n/)	{ :NEWLINE }
-		rule(/;/)		{ :SEMI    }
+		rule(/\n/) { :NEWLINE }
+		rule(/;/)  { :SEMI    }
 	
 		rule(/\s/)
 	
-		rule(/[A-Za-z]+/)	{ |t| [:WORD, t] }
+		rule(/[A-Za-z]+/) { |t| [:WORD, t] }
 	end
 
 	class ErrorLine < RLTK::Parser
@@ -393,6 +399,12 @@ class ParserTester < Minitest::Test
 		
 		expected = [['a', 'a'], 'a']
 		actual   = GreedTestParser3.parse(AlphaLexer.lex('a a a'))
+		assert_equal(expected, actual)
+	end
+	
+	def test_ebnf_selector_interplay
+		expected = ['a', ['b', 'b', 'b'], 'a']
+		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('abbba'))
 		assert_equal(expected, actual)
 	end
 	
