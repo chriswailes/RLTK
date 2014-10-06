@@ -110,7 +110,12 @@ class ParserTester < Minitest::Test
 	class EBNFSelectorParser < RLTK::Parser
 		dat :array
 		
-		production(:s, '.A .B* .A') { |a| a}
+		production(:s) do
+			clause('.A .B* .A') { |a| a }
+			clause('.B C* .B')  { |a| a }
+		end
+		
+		finalize
 	end
 	
 	class EmptyListParser0 < RLTK::Parser
@@ -405,6 +410,18 @@ class ParserTester < Minitest::Test
 	def test_ebnf_selector_interplay
 		expected = ['a', ['b', 'b', 'b'], 'a']
 		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('abbba'))
+		assert_equal(expected, actual)
+		
+		expected = ['a', [], 'a']
+		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('aa'))
+		assert_equal(expected, actual)
+		
+		expected = ['b', 'b']
+		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('bb'))
+		assert_equal(expected, actual)
+		
+		expected = ['b', 'b']
+		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('bcccccb'))
 		assert_equal(expected, actual)
 	end
 	
