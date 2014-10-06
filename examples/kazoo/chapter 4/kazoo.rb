@@ -18,29 +18,29 @@ jit = Kazoo::Contractor.new
 loop do
 	print('Kazoo > ')
 	line = ''
-	
+
 	begin
 		line += ' ' if not line.empty?
 		line += $stdin.gets.chomp
 	end while line[-1,1] != ';'
-	
+
 	if line == 'quit;' or line == 'exit;'
 		jit.module.verify
 		jit.module.dump
-		
+
 		break
 	end
-	
+
 	begin
 		ast = Kazoo::Parser.parse(Kazoo::Lexer.lex(line))
 		ir  = jit.add(ast)
-		
+
 		ir.dump
-	
+
 	rescue Exception => e
 		puts e.message
 		puts
-	
+
 	rescue RLTK::LexingError, RLTK::NotInLanguage
 		puts 'Line was not in language.'
 	end

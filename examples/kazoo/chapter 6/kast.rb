@@ -31,19 +31,19 @@ module Kazoo
 
 	class Call < Expression
 		value :name, String
-	
+
 		child :args, [Expression]
 	end
-	
+
 	class If < Expression
 		child :cond, Expression
 		child :then, Expression
 		child :else, Expression
 	end
-	
+
 	class For < Expression
 		value :var, String
-		
+
 		child :init, Expression
 		child :cond, Expression
 		child :step, Expression

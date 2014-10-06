@@ -24,9 +24,9 @@ class TokenTester < Minitest::Test
 		t2 = RLTK::Token.new(:FOO, 1)
 		t3 = RLTK::Token.new(:BAR, 0)
 		t4 = RLTK::Token.new(:BAR, 1)
-		
+
 		assert_equal(t0, t1)
-		
+
 		refute_equal(t0, t2)
 		refute_equal(t0, t3)
 		refute_equal(t0, t4)

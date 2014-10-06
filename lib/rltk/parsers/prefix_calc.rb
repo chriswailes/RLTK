@@ -16,18 +16,18 @@ require 'rltk/parser'
 
 module RLTK
 	module Parsers
-		
+
 		# A parser for a simple prefix calculator.
 		class PrefixCalc < Parser
 			production(:e) do
 				clause('NUM') { |n| n }
-				
+
 				clause('PLS e e') { |_, e0, e1| e0 + e1 }
 				clause('SUB e e') { |_, e0, e1| e0 - e1 }
 				clause('MUL e e') { |_, e0, e1| e0 * e1 }
 				clause('DIV e e') { |_, e0, e1| e0 / e1 }
 			end
-			
+
 			finalize
 		end
 	end

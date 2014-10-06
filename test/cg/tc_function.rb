@@ -20,20 +20,20 @@ class FunctionTester < Minitest::Test
 	def setup
 		@mod = RLTK::CG::Module.new('Testing Module')
 		@fun = @mod.functions.add('testing_function', RLTK::CG::NativeIntType, [RLTK::CG::NativeIntType, RLTK::CG::NativeIntType])
-		
+
 		@fun.params[0].name = 'foo'
 		@fun.params[1].name = 'bar'
 	end
-	
+
 	def test_equality
 		fun0 = @mod.functions.add('fun0', RLTK::CG::NativeIntType, [])
 		fun1 = @mod.functions.add('fun0', RLTK::CG::FloatType, [])
 		fun2 = RLTK::CG::Function.new(fun0.ptr)
-		
+
 		assert_equal(fun0, fun2)
 		refute_equal(fun0, fun1)
 	end
-	
+
 	def test_positive_index_in_range
 		assert_equal('foo', @fun.params[0].name)
 		assert_equal('bar', @fun.params[1].name)

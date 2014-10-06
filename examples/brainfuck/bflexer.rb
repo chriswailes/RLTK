@@ -15,7 +15,7 @@ module Brainfuck
 		r(/,/)	{ :GET      }
 		r(/\[/)	{ :LBRACKET }
 		r(/\]/)	{ :RBRACKET }
-		
+
 		r /[^\[\]\-+,.<>]/
 	end
 end

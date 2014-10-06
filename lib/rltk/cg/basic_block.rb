@@ -23,7 +23,7 @@ module RLTK::CG
 	# BasicBlock.new or using the {Function::BasicBlockCollection#append}
 	# method.
 	class BasicBlock < Value
-		
+
 		# Create a new BasicBlock object.  The way the block is created is
 		# determined by the *overloaded* parameter.  If it is a Function
 		# object then the new block is appended to the end of the function.
@@ -41,19 +41,19 @@ module RLTK::CG
 		# @param [Proc]		block		Block to be invoked by {#build}.
 		def initialize(overloaded, name = '', builder = nil, context = nil, *block_args, &block)
 			check_type(context, Context, 'context') if context
-			
+
 			@ptr =
 			case overloaded
 			when FFI::Pointer
 				overloaded
-				
+
 			when Function
 				if context
 					Bindings.append_basic_block_in_context(context, overloaded, name)
 				else
 					Bindings.append_basic_block(overloaded, name)
 				end
-				
+
 			when BasicBlock
 				if context
 					Bindings.insert_basic_block_in_context(context, overloaded, name)
@@ -61,10 +61,10 @@ module RLTK::CG
 					Bindings.insert_basic_block(overloaded, name)
 				end
 			end
-			
+
 			self.build(builder, *block_args, &block) if block
 		end
-		
+
 		# Used to add instructions to a BasicBlock.  The block given to this
 		# method is executed inside the context of a {Builder} object, either
 		# the one passed in the *builder* parameter or one created for this
@@ -85,7 +85,7 @@ module RLTK::CG
 		def build(builder = nil, *block_args, &block)
 			if builder then builder else Builder.new end.build(self, *block_args, &block)
 		end
-		
+
 		# Creates a new BasicBlock inserted immediately before this block.
 		#
 		# @param [String]	name		Name of this BasicBlock.
@@ -95,36 +95,36 @@ module RLTK::CG
 		def insert_before(name = '', context = nil)
 			BasicBlock.new(self, name, context)
 		end
-		
+
 		# @return [InstructionCollect] Collection of all instructions inside this BasicBlock.
 		def instructions
 			@instructions ||= InstructionCollection.new(self)
 		end
-		
+
 		# @return [BasicBlock, nil] BasicBlock that occures immediately after this block or nil.
 		def next
 			if (ptr = Bindings.get_next_basic_block(@ptr)).null? then nil else BasicBlock.new(ptr) end
 		end
-		
+
 		# @return [Function] Function object that this BasicBlock belongs to.
 		def parent
 			if (ptr = Bindings.get_basic_block_parent(@ptr)).null? then nil else Function.new(ptr) end
 		end
-		
+
 		# @return [BasicBlock, nil] BasicBlock that occures immediately before this block or nil.
 		def previous
 			if (ptr = Bindings.get_previous_basic_block(@ptr)).null? then nil else BasicBlock.new(ptr) end
 		end
-		
+
 		# This class is used to access all of the {Instruction Instructions} that have been added to a {BasicBlock}.
 		class InstructionCollection
 			include Enumerable
-			
+
 			# @param [BasicBlock] bb BasicBlock this collection belongs to.
 			def initialize(bb)
 				@bb = bb
 			end
-			
+
 			# Iterate over each {Instruction} in this collection.
 			#
 			# @yieldparam inst [Instruction]
@@ -132,22 +132,22 @@ module RLTK::CG
 			# @return [Enumerator] An Enumerator is returned if no block is given.
 			def each
 				return to_enum(:each) unless block_given?
-				
+
 				inst = self.first
-				
+
 				while inst
 					yield inst
 					inst = inst.next
 				end
-				
+
 				self
 			end
-			
+
 			# @return [Instruction] First instruction in this collection.
 			def first
 				if (ptr = Bindings.get_first_instruction(@bb)).null? then nil else Instruction.from_ptr(ptr) end
 			end
-			
+
 			# @return [Instruction] Last instruction in this collection.
 			def last
 				if (ptr = Bindings.get_last_instruction(@bb)).null? then nil else Instruction.from_ptr(ptr) end

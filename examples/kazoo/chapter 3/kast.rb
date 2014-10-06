@@ -31,7 +31,7 @@ module Kazoo
 
 	class Call < Expression
 		value :name, String
-	
+
 		child :args, [Expression]
 	end
 

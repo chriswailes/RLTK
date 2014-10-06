@@ -13,21 +13,21 @@ module RLTK
 	class StreamPosition
 		# @return [Integer]
 		attr_accessor :stream_offset
-		
+
 		# @return [Integer]
 		attr_accessor :line_number
-		
+
 		# @return [Integer]
 		attr_accessor :line_offset
-		
+
 		# @return [Integer]
 		attr_accessor :length
-		
+
 		# @return [String]
 		attr_accessor :file_name
-		
+
 		alias :start :line_offset
-		
+
 		# Instantiates a new StreamPosition object with the values specified.
 		#
 		# @param [Integer]		stream_offset	The position from the beginning of the stream.
@@ -43,19 +43,19 @@ module RLTK
 			@file_name	= file_name
 		end
 	end
-	
+
 	# The Token class is used to represent the output of a RLTK::Lexer and the
 	# input of a RLTK::Parser.
 	class Token
 		# @return [Symbol]
 		attr_reader :type
-		
+
 		# @return [Symbol]
 		attr_reader :value
-		
+
 		# @return [StreamPosition] StreamPosition object associated with this token.
 		attr_reader :position
-		
+
 		# Instantiates a new Token object with the values specified.
 		#
 		# @param [Symbol]				type		A symbol representing the type of this Token.
@@ -64,10 +64,10 @@ module RLTK
 		def initialize(type, value = nil, position = nil)
 			@type	= type
 			@value	= value
-			
+
 			@position	= position
 		end
-		
+
 		# Compares one token to another.  This only tests the token's *type*
 		# and *value* and not the location of the token in its source.
 		#
@@ -77,7 +77,7 @@ module RLTK
 		def ==(other)
 			self.type == other.type and self.value == other.value
 		end
-		
+
 		# @return [String] String representing the tokens *type* and *value*.
 		def to_s
 			if value

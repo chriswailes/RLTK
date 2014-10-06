@@ -19,18 +19,18 @@ require 'rltk/cg/builder'
 #######################
 
 module RLTK::CG
-	
+
 	class Contractor < Builder
-		
+
 		include Filigree::Visitor
-		
+
 		####################
 		# Instance Methods #
 		####################
-		
+
 		# Alias out the RLTK::Visitor.visit method.
 		alias :wrapped_visit :visit
-		
+
 		# Visit an object in the context of this builder.  See the
 		# Filigree::Visitor's visit method for more details about the basic
 		# behaviour of this method.  The special options for this method are:
@@ -42,9 +42,9 @@ module RLTK::CG
 		# @return [Object]
 		def visit(object, at: nil, rcb: false)
 			target at if at
-			
+
 			result = wrapped_visit(object)
-			
+
 			if rcb then [result, current_block] else result end
 		end
 	end

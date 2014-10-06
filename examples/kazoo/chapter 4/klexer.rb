@@ -10,11 +10,11 @@ module Kazoo
 	class Lexer < RLTK::Lexer
 		# Skip whitespace.
 		rule(/\s/)
-		
+
 		# Keywords
 		rule(/def/)	{ :DEF    }
 		rule(/extern/)	{ :EXTERN }
-		
+
 		# Operators and delimiters.
 		rule(/\(/)	{ :LPAREN }
 		rule(/\)/)	{ :RPAREN }
@@ -25,15 +25,15 @@ module Kazoo
 		rule(/\*/)	{ :MUL    }
 		rule(/\//)	{ :DIV    }
 		rule(/</)		{ :LT     }
-		
+
 		# Identifier rule.
 		rule(/[A-Za-z][A-Za-z0-9]*/) { |t| [:IDENT, t] }
-		
+
 		# Numeric rules.
 		rule(/\d+/)		{ |t| [:NUMBER, t.to_f] }
 		rule(/\.\d+/)		{ |t| [:NUMBER, t.to_f] }
 		rule(/\d+\.\d+/)	{ |t| [:NUMBER, t.to_f] }
-		
+
 		# Comment rules.
 		rule(/#/)				{ push_state :comment }
 		rule(/\n/, :comment)	{ pop_state }

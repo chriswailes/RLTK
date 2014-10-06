@@ -13,20 +13,20 @@ class RLTKTagFactory < YARD::Tags::DefaultFactory
 		else super
 		end
 	end
-	
+
 	private
-	
+
 	def inst_tag(text)
 		url		= "http://llvm.org/docs/LangRef.html#i_#{text}"
 		markup	= "<a href=\"#{url}\">LLVM Instruction: #{text}</a>"
-		
+
 		YARD::Tags::Tag.new('see', markup)
 	end
 
 	def pass_tag(text)
 		url		= "http://llvm.org/docs/Passes.html##{text}"
 		markup	= "<a href=\"#{url}\">LLVM Pass: #{text}</a>"
-		
+
 		YARD::Tags::Tag.new('see', markup)
 	end
 end
