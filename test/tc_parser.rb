@@ -276,6 +276,14 @@ class ParserTester < Minitest::Test
 		finalize
 	end
 	
+	class UselessParser < RLTK::Parser
+		production(:s, 'A+') { |a| a }
+	end
+	
+	class UselessParser0 < RLTK::Parser
+	
+	end
+	
 	def test_ambiguous_grammar
 		actual = AmbiguousParser.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'), {:accept => :all})
 		assert_equal([7, 9], actual.sort)
@@ -297,6 +305,14 @@ class ParserTester < Minitest::Test
 		
 		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
 		assert_equal(9, actual)
+	end
+	
+	def test_construction_error
+		assert_raises(RLTK::ParserConstructionException) do
+			Class.new(RLTK::Parser) do
+				finalize
+			end
+		end
 	end
 	
 	def test_ebnf_parsing
@@ -659,5 +675,9 @@ class ParserTester < Minitest::Test
 		assert_equal(result0, result1)
 		
 		File.unlink(tmpfile)
+	end
+	
+	def test_uesless_parser_exception
+		assert_raises(RLTK::UselessParserException) { UselessParser.new }
 	end
 end

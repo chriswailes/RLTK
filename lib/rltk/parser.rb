@@ -83,6 +83,14 @@ module RLTK
 	# never be observed in the wild.
 	class InternalParserException < Exception; end
 	
+	# Used to indicate that a parser is empty or hasn't been finalized.
+	class UselessParserException < Exception
+		# Sets the error messsage for this exception.
+		def initialize
+			super('Parser has not been finalized.')
+		end
+	end
+	
 	# The Parser class may be sub-classed to produce new parsers.  These
 	# parsers have a lot of features, and are described in the main
 	# documentation.
@@ -95,6 +103,16 @@ module RLTK
 		#################
 		
 		class << self
+			# The overridden new prevents un-finalized parsers from being
+			# instantiated.
+			def new(*args)
+				if @symbols.nil?
+					raise UselessParserException
+				else
+					super(*args)
+				end
+			end
+		
 			# Installs instance class varialbes into a class.
 			#
 			# @return [void]
@@ -529,6 +547,11 @@ module RLTK
 			#
 			# @return [void]
 			def finalize(opts = {})
+				
+				if @grammar.productions.empty?
+					raise ParserConstructionException,
+					      "Parser has no productions.  Cowardly refusing to construct an empty parser."
+				end
 				
 				# Get the full options hash.
 				opts = build_finalize_opts(opts)
