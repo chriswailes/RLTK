@@ -120,7 +120,7 @@ module RLTK
 				@curr_lhs  = nil
 				@curr_prec = nil
 
-				@conflicts = Hash.new {|h, k| h[k] = Array.new}
+				@conflicts = Hash.new {|h, k| h[k] = Array.new; h}
 				@grammar   = CFG.new
 
 				@lh_sides  = Hash.new
@@ -131,6 +131,7 @@ module RLTK
 				@prec_counts      = {:left => 0, :right => 0, :non => 0}
 				@production_precs = Array.new
 				@token_precs      = Hash.new
+				@token_hooks      = Hash.new {|h, k| h[k] = []; h}
 
 				# Set the default argument handling policy.  Valid values
 				# are :array and :splat.
@@ -810,8 +811,8 @@ module RLTK
 			# @return [Object, Array<Object>]  Result or results of parsing the given tokens.
 			def parse(tokens, opts = {})
 				# Get the full options hash.
-				opts	= build_parse_opts(opts)
-				v	= opts[:verbose]
+				opts = build_parse_opts(opts)
+				v    = opts[:verbose]
 
 				if opts[:verbose]
 					v.puts("Input tokens:")
@@ -843,6 +844,9 @@ module RLTK
 
 					# Iterate over the stacks until each one is done.
 					while (stack = processing.shift)
+						# Execute any token hooks in this stack's environment.
+						@token_hooks[token].each { |hook| opts[:env].instance_exec hook}
+
 						# Get the available actions for this stack.
 						actions = @states[stack.state].on?(token.type)
 
@@ -1223,6 +1227,22 @@ module RLTK
 			# @return [void]
 			def start(symbol)
 				@grammar.start symbol
+			end
+
+			# Add a hook that is executed whenever *sym* is seen.
+			#
+			# The *sym* must be a terminal symbol.
+			#
+			# @param [Symbol]  sym   Symbol to hook into
+			# @param [Proc]    proc  Code to execute when the block is seen
+			#
+			# @return [void]
+			def token_hook(sym, &proc)
+				if CFG::is_terminal?(sym)
+					@token_hooks[sym] << proc
+				else
+					raise 'Method token_hook expects `sym` to be non-terminal.'
+				end
 			end
 		end
 

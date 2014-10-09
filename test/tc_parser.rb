@@ -280,8 +280,26 @@ class ParserTester < Minitest::Test
 		production(:s, 'A+') { |a| a }
 	end
 
-	class UselessParser0 < RLTK::Parser
+	class TokenHookParser < RLTK::Parser
+		dat :array
 
+		production(:s) do
+			clause('A A A A') { |_| nil }
+			clause('B B B B') { |_| nil }
+		end
+
+		token_hook(:A) { @counter += 1 }
+		token_hook(:B) { @counter += 2 }
+
+		class Environment < Environment
+			attr_reader :counter
+
+			def initialize
+				@counter = 0
+			end
+		end
+
+		finalize
 	end
 
 	def test_ambiguous_grammar
@@ -640,6 +658,16 @@ class ParserTester < Minitest::Test
 		expected = 6
 
 		assert_equal(expected, actual)
+	end
+
+	def test_token_hooks
+		parser = TokenHookParser.new
+
+		parser.parse(AlphaLexer.lex('a a a a'))
+		assert_equal(4, parser.env.counter)
+
+		parser.parse(AlphaLexer.lex('b b b b'))
+		assert_equal(12, parser.env.counter)
 	end
 
 	def test_underscore_tokens
