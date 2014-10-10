@@ -120,7 +120,7 @@ module RLTK
 				@curr_lhs  = nil
 				@curr_prec = nil
 
-				@conflicts = Hash.new {|h, k| h[k] = Array.new; h}
+				@conflicts = Hash.new {|h, k| h[k] = Array.new}
 				@grammar   = CFG.new
 
 				@lh_sides  = Hash.new
@@ -131,7 +131,7 @@ module RLTK
 				@prec_counts      = {:left => 0, :right => 0, :non => 0}
 				@production_precs = Array.new
 				@token_precs      = Hash.new
-				@token_hooks      = Hash.new {|h, k| h[k] = []; h}
+				@token_hooks      = Hash.new {|h, k| h[k] = []}
 
 				# Set the default argument handling policy.  Valid values
 				# are :array and :splat.
@@ -845,7 +845,7 @@ module RLTK
 					# Iterate over the stacks until each one is done.
 					while (stack = processing.shift)
 						# Execute any token hooks in this stack's environment.
-						@token_hooks[token].each { |hook| opts[:env].instance_exec hook}
+						@token_hooks[token.type].each { |hook| opts[:env].instance_exec &hook}
 
 						# Get the available actions for this stack.
 						actions = @states[stack.state].on?(token.type)
