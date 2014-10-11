@@ -12,6 +12,7 @@ require 'filigree/abstract_class'
 require 'filigree/class'
 require 'filigree/match'
 require 'filigree/types'
+require 'filigree/visitor'
 
 #######################
 # Classes and Modules #
@@ -20,6 +21,8 @@ require 'filigree/types'
 module RLTK
 	# This class is a good start for all your abstract syntax tree node needs.
 	class ASTNode
+
+		include Filigree::Visitable
 
 		extend Filigree::AbstractClass
 		extend Filigree::Destructurable
@@ -227,7 +230,7 @@ module RLTK
 		end
 
 		# This method allows ASTNodes to be destructured for pattern matching.
-		def call(arity)
+		def destructure(arity)
 			if arity == self.values.length
 				self.values
 			else
