@@ -102,6 +102,24 @@ module RLTK
 			production
 		end
 
+		# If the production already exists it will be returned.  If it does not
+		# exist then it will be created and then returned.
+		#
+		# @param [Symbol]                         name           The name of the production to add
+		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list
+		# @param [Symbol, String]                 separator      The list separator symbol or symbols
+		#
+		# @return [void]
+		def get_list_production(name, list_elements, separator = '')
+			if @nonterms.include?(name)
+				name
+
+			else
+				build_list_production(name, list_elements, separator)
+			end
+		end
+		alias :get_list :get_list_production
+
 		# Builds a production representing a (possibly empty) list of tokens.
 		# These tokens may optionally be separated by a provided token.  This
 		# function is used to eliminate the EBNF * operator.
@@ -132,6 +150,24 @@ module RLTK
 			name
 		end
 		alias :list :build_list_production
+
+		# If the production already exists it will be returned.  If it does not
+		# exist then it will be created and then returned.
+		#
+		# @param [Symbol]                         name           The name of the production to add
+		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list
+		# @param [Symbol, String]                 separator      The list separator symbol or symbols
+		#
+		# @return [void]
+		def get_nonempty_list_production(name, list_elements, separator = '')
+			if @nonterms.include?(name)
+				name
+
+			else
+				build_nonempty_list_production(name, list_elements, separator)
+			end
+		end
+		alias :get_nonempty_list :get_nonempty_list_production
 
 		# Builds a production representing a non-empty list of tokens.  These
 		# tokens may optionally be separated by a provided token.  This
@@ -195,6 +231,24 @@ module RLTK
 		end
 		alias :nonempty_list :build_nonempty_list_production
 
+		# If the production already exists it will be returned.  If it does not
+		# exist then it will be created and then returned.
+		#
+		# @param [Symbol]                         name           The name of the production to add
+		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list
+		# @param [Symbol, String]                 separator      The list separator symbol or symbols
+		#
+		# @return [void]
+		def get_optional_production(name, list_elements, separator = '')
+			if @nonterms.include?(name)
+				name
+
+			else
+				build_optional_production(name, list_elements, separator)
+			end
+		end
+		alias :get_optional :get_optional_production
+
 		# Build a production for an optional symbol.  This is used to
 		# eliminate the EBNF ? operator.
 		#
@@ -222,6 +276,7 @@ module RLTK
 
 			name
 		end
+		alias :optional :build_optional_production
 
 		# Sets the EBNF callback to *callback*.
 		#
@@ -271,9 +326,9 @@ module RLTK
 
 						rhs <<
 						case ttype1
-						when :QUESTION then self.build_optional_production("#{tvalue0.downcase}_optional".to_sym, tvalue0)
-						when :STAR     then self.build_list_production("#{tvalue0.downcase}_list".to_sym, tvalue0)
-						when :PLUS     then self.build_nonempty_list_production("#{tvalue0.downcase}_nonempty_list".to_sym, tvalue0)
+						when :QUESTION then self.get_optional_production("#{tvalue0.downcase}_optional".to_sym, tvalue0)
+						when :STAR     then self.get_list_production("#{tvalue0.downcase}_list".to_sym, tvalue0)
+						when :PLUS     then self.get_nonempty_list_production("#{tvalue0.downcase}_nonempty_list".to_sym, tvalue0)
 						else                tvalue0
 						end
 					else
