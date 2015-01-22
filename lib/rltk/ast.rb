@@ -433,14 +433,15 @@ module RLTK
 			when :values   then (self.class.init_values + self.class.init_children).zip(objects)
 			when :children then (self.class.init_children + self.class.init_values).zip(objects)
 			when :def      then self.class.def_order.zip(objects)
-			end
+			end.first(objects.length)
 
 			pairs.each do |name, value|
 				self.send("#{name}=", value)
 			end
 
 			self.class.array_members.each do |member|
-				self.instance_variable_set('@' + member, []) if self.send(member).nil?
+				ivar_name = '@' + member.to_s
+				self.instance_variable_set(ivar_name, []) if self.instance_variable_get(ivar_name).nil?
 			end
 
 			self.instance_exec(&block) if not block.nil?
