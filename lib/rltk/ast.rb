@@ -61,11 +61,17 @@ module RLTK
 					@child_types = Array.new
 					@value_names = Array.new
 					@value_types = Array.new
+
+					@init_children = Array.new
+					@init_values   = Array.new
 				else
 					@child_names = self.superclass.child_names.clone
 					@child_types = self.superclass.child_types.clone
 					@value_names = self.superclass.value_names.clone
 					@value_types = self.superclass.value_types.clone
+
+					@init_children = self.superclass.init_children.clone
+					@init_values   = self.superclass.init_values.clone
 				end
 			end
 			protected :install_icvars
@@ -85,11 +91,12 @@ module RLTK
 			# methods that include type checking.  The type of this
 			# child must be a subclass of the ASTNode class.
 			#
-			# @param [String, Symbol]  name  Name of child node.
+			# @param [String, Symbol]  name  Name of child node
 			# @param [Class]           type  Type of child node.  Must be a subclass of ASTNode.
+			# @param [Boolean]         omit  Include the child in the constructor or not
 			#
 			# @return [void]
-			def child(name, type)
+			def child(name, type, omit = false)
 				check_odr(name)
 
 				if type.is_a?(Array) and type.length == 1
@@ -110,6 +117,9 @@ module RLTK
 
 				@child_names << name
 				@child_types << type
+
+				@init_children << name unless omit
+
 				define_accessor(name, type, true)
 			end
 
@@ -134,11 +144,11 @@ module RLTK
 			def define_accessor(name, type, set_parent = false)
 				ivar_name = ('@' + name.to_s).to_sym
 
-				define_method(name) do
-					self.instance_variable_get(ivar_name)
-				end
-
 				if type.is_a?(Class)
+					define_method(name) do
+						self.instance_variable_get(ivar_name)
+					end
+
 					if set_parent
 						define_method((name.to_s + '=').to_sym) do |value|
 							self.instance_variable_set(ivar_name, check_type(value, type, nil, true))
@@ -152,6 +162,10 @@ module RLTK
 					end
 
 				else
+					define_method(name) do
+						(v = self.instance_variable_get(ivar_name)).nil? ? self.instance_variable_set(ivar_name, []) : v
+					end
+
 					if set_parent
 						define_method((name.to_s + '=').to_sym) do |value|
 							self.instance_variable_set(ivar_name, check_array_type(value, type.first, nil, true))
@@ -167,15 +181,26 @@ module RLTK
 			end
 			private :define_accessor
 
+			# @return [Array<Symbol>]  Array of the names of children that should be included in the constructor
+			def init_children
+				@init_children
+			end
+
+			# @return [Array<Symbol>]  Array of the names of values that should be included in the constructor
+			def init_values
+				@init_values
+			end
+
 			# Defined a value for this AST class and its subclasses.
 			# The name of the value will be used to define accessor
 			# methods that include type checking.
 			#
 			# @param [String, Symbol]  name  Name of value
 			# @param [Class]           type  Type of value
+			# @param [Boolean]         omit  Include the value in the constructor or not
 			#
 			# @return [void]
-			def value(name, type)
+			def value(name, type, omit = false)
 				check_odr(name)
 
 				if type.is_a?(Array) and type.length == 1
@@ -190,6 +215,9 @@ module RLTK
 
 				@value_names << name
 				@value_types << type
+
+				@init_values << name unless omit
+
 				define_accessor(name, type)
 			end
 
@@ -389,15 +417,19 @@ module RLTK
 
 			# Pad out the objects array with nil values and empty
 			# arrays.
-			all_types       = self.class.value_types + self.class.child_types
-			remaining_types = all_types[objects.length..-1]
+#			all_types       = self.class.value_types + self.class.child_types
+#			remaining_types = all_types[objects.length..-1]
 
-			objects += remaining_types.map { |type| type.is_a?(Array) ? [] : nil }
+#			objects += remaining_types.map { |type| type.is_a?(Array) ? [] : nil }
 
-			pivot = self.class.value_names.length
+#			pivot = self.class.value_names.length
 
-			self.values   = objects[0...pivot]
-			self.children = objects[pivot..-1]
+#			self.values   = objects[0...pivot]
+#			self.children = objects[pivot..-1]
+
+			(self.class.init_values + self.class.init_children).zip(objects).each do |name, value|
+				self.send("#{name}=", value)
+			end
 
 			self.instance_exec(&block) if not block.nil?
 		end

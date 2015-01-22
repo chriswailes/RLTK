@@ -48,6 +48,12 @@ class ASTNodeTester < Minitest::Test
 		value :b, Integer
 	end
 
+	class ONode < RLTK::ASTNode
+		value :a, Integer
+		value :b, Integer, true
+		value :c, Integer
+	end
+
 	def setup
 		@leaf0 = CNode.new
 		@tree0 = ANode.new(BNode.new(@leaf0), BNode.new)
@@ -220,6 +226,14 @@ class ASTNodeTester < Minitest::Test
 		assert_equal(node.note?(:b), false)
 		assert_equal(node.delete_note(:a), :b)
 		assert_nil(node[:a])
+	end
+
+	def test_omit
+		onode = ONode.new(1, 3)
+
+		assert_equal(1, onode.a)
+		assert_nil(onode.b)
+		assert_equal(3, onode.c)
 	end
 
 	def test_one_definition_rule
