@@ -39,6 +39,11 @@ module RLTK
 
 		class << self
 
+			# @return [Array<Symbol>]  List of members (children and values) that have array types
+			def array_members
+				@array_members
+			end
+
 			# Check to make sure a name isn't re-defining a value or child.
 			#
 			# @raise [ArgumentError]  Raised if the name is already used for an existing value or child
@@ -57,16 +62,18 @@ module RLTK
 			# @return [void]
 			def install_icvars
 				if self.superclass == ASTNode
-					@child_names = Array.new
-					@value_names = Array.new
+					@child_names   = Array.new
+					@value_names   = Array.new
+					@array_members = Array.new
 
 					@init_order    = :values
 					@def_order     = Array.new
 					@init_children = Array.new
 					@init_values   = Array.new
 				else
-					@child_names = self.superclass.child_names.clone
-					@value_names = self.superclass.value_names.clone
+					@child_names   = self.superclass.child_names.clone
+					@value_names   = self.superclass.value_names.clone
+					@array_members = self.superclass.array_members.clone
 
 					@init_order    = self.superclass.init_order
 					@def_order     = self.superclass.def_order.clone
@@ -109,8 +116,7 @@ module RLTK
 					raise 'Child and Value types must be a class name or an array with a single class name element.'
 				end
 
-				# Check to make sure that type is a subclass of
-				# ASTNode.
+				# Check to make sure that type is a subclass of ASTNode.
 				if not t.subclass_of?(ASTNode)
 					raise "A child's type specification must be a subclass of ASTNode."
 				end
@@ -118,6 +124,7 @@ module RLTK
 				@child_names   << name
 				@def_order     << name
 				@init_children << name unless omit
+				@array_members << name if type.is_a?(Array)
 
 				define_accessor(name, type, true)
 			end
@@ -143,11 +150,11 @@ module RLTK
 			def define_accessor(name, type, set_parent = false)
 				ivar_name = ('@' + name.to_s).to_sym
 
-				if type.is_a?(Class)
-					define_method(name) do
-						self.instance_variable_get(ivar_name)
-					end
+				define_method(name) do
+					self.instance_variable_get(ivar_name)
+				end
 
+				if type.is_a?(Class)
 					if set_parent
 						define_method((name.to_s + '=').to_sym) do |value|
 							self.instance_variable_set(ivar_name, check_type(value, type, nil, true))
@@ -161,10 +168,6 @@ module RLTK
 					end
 
 				else
-					define_method(name) do
-						(v = self.instance_variable_get(ivar_name)).nil? ? self.instance_variable_set(ivar_name, []) : v
-					end
-
 					if set_parent
 						define_method((name.to_s + '=').to_sym) do |value|
 							self.instance_variable_set(ivar_name, check_array_type(value, type.first, nil, true))
@@ -224,19 +227,14 @@ module RLTK
 			def value(name, type, omit = false)
 				check_odr(name)
 
-				if type.is_a?(Array) and type.length == 1
-					t = type.first
-
-				elsif type.is_a?(Class)
-					t = type
-
-				else
+				if not (type.is_a?(Class) or (type.is_a?(Array) and type.length == 1))
 					raise 'Child and Value types must be a class name or an array with a single class name element.'
 				end
 
-				@value_names << name
-				@def_order   << name
-				@init_values << name unless omit
+				@value_names   << name
+				@def_order     << name
+				@init_values   << name unless omit
+				@array_members << name if type.is_a?(Array)
 
 				define_accessor(name, type)
 			end
@@ -439,6 +437,10 @@ module RLTK
 
 			pairs.each do |name, value|
 				self.send("#{name}=", value)
+			end
+
+			self.class.array_members.each do |member|
+				self.instance_variable_set('@' + member, []) if self.send(member).nil?
 			end
 
 			self.instance_exec(&block) if not block.nil?

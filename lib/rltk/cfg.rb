@@ -236,15 +236,14 @@ module RLTK
 		#
 		# @param [Symbol]                         name           The name of the production to add
 		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list
-		# @param [Symbol, String]                 separator      The list separator symbol or symbols
 		#
 		# @return [void]
-		def get_optional_production(name, list_elements, separator = '')
+		def get_optional_production(name, list_elements)
 			if @nonterms.include?(name)
 				name
 
 			else
-				build_optional_production(name, list_elements, separator)
+				build_optional_production(name, list_elements)
 			end
 		end
 		alias :get_optional :get_optional_production
