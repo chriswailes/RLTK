@@ -54,6 +54,26 @@ class ASTNodeTester < Minitest::Test
 		value :c, Integer
 	end
 
+	class ValuesFirstNode < RLTK::ASTNode
+		child :b, ValuesFirstNode
+		value :a, Integer
+	end
+
+	class ChildrenFirstNode < RLTK::ASTNode
+		init_order :children
+
+		value :b, Integer
+		child :a, ChildrenFirstNode
+	end
+
+	class DefOrderNode < RLTK::ASTNode
+		init_order :def
+
+		value :a, Integer
+		child :b, DefOrderNode
+		value :c, Float
+	end
+
 	def setup
 		@leaf0 = CNode.new
 		@tree0 = ANode.new(BNode.new(@leaf0), BNode.new)
@@ -246,6 +266,24 @@ class ASTNodeTester < Minitest::Test
 		Class.new(ENode) do
 			asserter.assert_raises(ArgumentError) { value :str, String }
 		end
+	end
+
+	def test_ordering
+		vfn = ValuesFirstNode.new(42, ValuesFirstNode.new)
+
+		assert_equal(42, vfn.a)
+		assert_instance_of(ValuesFirstNode, vfn.b)
+
+		cfn = ChildrenFirstNode.new(ChildrenFirstNode.new(), 42)
+
+		assert_instance_of(ChildrenFirstNode, cfn.a)
+		assert_equal(42, cfn.b)
+
+		dfn = DefOrderNode.new(4, DefOrderNode.new, 2.0)
+
+		assert_equal(4, dfn.a)
+		assert_instance_of(DefOrderNode, dfn.b)
+		assert_equal(2.0, dfn.c)
 	end
 
 	def test_root

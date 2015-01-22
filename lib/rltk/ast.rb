@@ -58,18 +58,18 @@ module RLTK
 			def install_icvars
 				if self.superclass == ASTNode
 					@child_names = Array.new
-					@child_types = Array.new
 					@value_names = Array.new
-					@value_types = Array.new
 
+					@init_order    = :values
+					@def_order     = Array.new
 					@init_children = Array.new
 					@init_values   = Array.new
 				else
 					@child_names = self.superclass.child_names.clone
-					@child_types = self.superclass.child_types.clone
 					@value_names = self.superclass.value_names.clone
-					@value_types = self.superclass.value_types.clone
 
+					@init_order    = self.superclass.init_order
+					@def_order     = self.superclass.def_order.clone
 					@init_children = self.superclass.init_children.clone
 					@init_values   = self.superclass.init_values.clone
 				end
@@ -115,9 +115,8 @@ module RLTK
 					raise "A child's type specification must be a subclass of ASTNode."
 				end
 
-				@child_names << name
-				@child_types << type
-
+				@child_names   << name
+				@def_order     << name
 				@init_children << name unless omit
 
 				define_accessor(name, type, true)
@@ -128,9 +127,9 @@ module RLTK
 				@child_names
 			end
 
-			# @return [Array]  Array of types of this node class's children
-			def child_types
-				@child_types
+			# @return [Array<Symbol>]  Array of names of values/children in the order they were defined
+			def def_order
+				@def_order
 			end
 
 			# This method defines a type checking accessor named *name*
@@ -191,6 +190,28 @@ module RLTK
 				@init_values
 			end
 
+			# A getter and setter for a class's initialization order.  If the
+			# init_order value is `:values` the constructor will expect all of
+			# the values and then the children.  If it is `:children` then the
+			# constructor expects children and then values.  If it is `:def`
+			# the constructor expects to values and children in the order that
+			# they were defined.  If val is nil the current value will be
+			# returned.
+			#
+			# The default ordering is `:values`, which matches the behavior of
+			# previous versions of RLTK.
+			#
+			# @param [:values, :children, :def]  val  The new initialization order
+			#
+			# @return [:values, :children, :def]  The current initialization order
+			def init_order(val = nil)
+				if val
+					@init_order = val
+				else
+					@init_order
+				end
+			end
+
 			# Defined a value for this AST class and its subclasses.
 			# The name of the value will be used to define accessor
 			# methods that include type checking.
@@ -214,8 +235,7 @@ module RLTK
 				end
 
 				@value_names << name
-				@value_types << type
-
+				@def_order   << name
 				@init_values << name unless omit
 
 				define_accessor(name, type)
@@ -224,11 +244,6 @@ module RLTK
 			# @return [Array<Symbol>]  Array of the names of this node class's values
 			def value_names
 				@value_names
-			end
-
-			# @return [Array<Symbol>]  Array of the types of this node class's values
-			def value_types
-				@value_types
 			end
 		end
 
@@ -415,19 +430,14 @@ module RLTK
 			@notes  = Hash.new()
 			@parent = nil
 
-			# Pad out the objects array with nil values and empty
-			# arrays.
-#			all_types       = self.class.value_types + self.class.child_types
-#			remaining_types = all_types[objects.length..-1]
+			pairs =
+			case self.class.init_order
+			when :values   then (self.class.init_values + self.class.init_children).zip(objects)
+			when :children then (self.class.init_children + self.class.init_values).zip(objects)
+			when :def      then self.class.def_order.zip(objects)
+			end
 
-#			objects += remaining_types.map { |type| type.is_a?(Array) ? [] : nil }
-
-#			pivot = self.class.value_names.length
-
-#			self.values   = objects[0...pivot]
-#			self.children = objects[pivot..-1]
-
-			(self.class.init_values + self.class.init_children).zip(objects).each do |name, value|
+			pairs.each do |name, value|
 				self.send("#{name}=", value)
 			end
 
