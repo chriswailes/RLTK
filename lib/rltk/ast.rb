@@ -57,7 +57,7 @@ module RLTK
 				end
 			end
 
-			# Installs instance class varialbes into a class.
+			# Installs instance class variables into a class.
 			#
 			# @return [void]
 			def install_icvars
@@ -122,9 +122,12 @@ module RLTK
 				end
 
 				@child_names   << name
-				@def_order     << name
-				@init_children << name unless omit
 				@array_members << name if type.is_a?(Array)
+
+				if not omit
+					@def_order     << name
+					@init_children << name
+				end
 
 				define_accessor(name, type, true)
 			end
@@ -232,9 +235,12 @@ module RLTK
 				end
 
 				@value_names   << name
-				@def_order     << name
-				@init_values   << name unless omit
 				@array_members << name if type.is_a?(Array)
+
+				if not omit
+					@def_order   << name
+					@init_values << name
+				end
 
 				define_accessor(name, type)
 			end
@@ -436,7 +442,13 @@ module RLTK
 			end.first(objects.length)
 
 			pairs.each do |name, value|
-				self.send("#{name}=", value)
+#				begin
+					self.send("#{name}=", value)
+#				rescue Exception => e
+#					require 'pp'
+#					puts self.class.init_order
+#					pp pairs.map(&:first)
+#				end
 			end
 
 			self.class.array_members.each do |member|
