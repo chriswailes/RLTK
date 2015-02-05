@@ -292,7 +292,12 @@ module RLTK
 			if arity == self.values.length
 				self.values
 			else
-				[*self.values, *self.children]
+				case self.class.member_order
+				when :values   then (self.class.inc_values + self.class.inc_children)
+				when :children then (self.class.inc_children + self.class.inc_values)
+				when :def      then self.class.def_order
+				when Array     then self.class.member_order
+				end
 			end
 		end
 
@@ -447,11 +452,11 @@ module RLTK
 
 			pairs =
 			case self.class.member_order
-			when :values   then (self.class.inc_values + self.class.inc_children).zip(objects)
-			when :children then (self.class.inc_children + self.class.inc_values).zip(objects)
-			when :def      then self.class.def_order.zip(objects)
-			when Array     then self.class.member_order.zip(objects)
-			end.first(objects.length)
+			when :values   then (self.class.inc_values + self.class.inc_children)
+			when :children then (self.class.inc_children + self.class.inc_values)
+			when :def      then self.class.def_order
+			when Array     then self.class.member_order
+			end.zip(objects).first(objects.length)
 
 			pairs.each do |name, value|
 				self.send("#{name}=", value)
