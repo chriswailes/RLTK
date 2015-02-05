@@ -75,7 +75,7 @@ module RLTK
 					@value_names   = self.superclass.value_names.clone
 					@array_members = self.superclass.array_members.clone
 
-					@member_order = self.superclass.member_order
+					@member_order = (v = self.superclass.member_order).is_a?(Symbol) ? v : v.clone
 					@def_order    = self.superclass.def_order.clone
 					@inc_children = self.superclass.inc_children.clone
 					@inc_values   = self.superclass.inc_values.clone
@@ -289,16 +289,12 @@ module RLTK
 
 		# This method allows ASTNodes to be destructured for pattern matching.
 		def destructure(arity)
-			if arity == self.values.length
-				self.values
-			else
-				case self.class.member_order
-				when :values   then (self.class.inc_values + self.class.inc_children)
-				when :children then (self.class.inc_children + self.class.inc_values)
-				when :def      then self.class.def_order
-				when Array     then self.class.member_order
-				end.map { |m| self.send m }
-			end
+			case self.class.member_order
+			when :values   then (self.class.inc_values + self.class.inc_children)
+			when :children then (self.class.inc_children + self.class.inc_values)
+			when :def      then self.class.def_order
+			when Array     then self.class.member_order
+			end.map { |m| self.send m }
 		end
 
 		# @param [Class] as The type that should be returned by the method.  Must be either Array or hash.
