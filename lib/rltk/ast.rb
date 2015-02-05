@@ -297,7 +297,7 @@ module RLTK
 				when :children then (self.class.inc_children + self.class.inc_values)
 				when :def      then self.class.def_order
 				when Array     then self.class.member_order
-				end
+				end.map { |m| self.send m }
 			end
 		end
 

@@ -281,26 +281,34 @@ class ASTNodeTester < Minitest::Test
 	def test_ordering
 		vfn = ValuesFirstNode.new(42, ValuesFirstNode.new)
 
-		assert_equal(42, vfn.a)
-		assert_instance_of(ValuesFirstNode, vfn.b)
+		a, b = vfn.destructure(2)
+
+		assert_equal(42, a)
+		assert_instance_of(ValuesFirstNode, b)
 
 		cfn = ChildrenFirstNode.new(ChildrenFirstNode.new, 42)
 
-		assert_instance_of(ChildrenFirstNode, cfn.a)
-		assert_equal(42, cfn.b)
+		a, b = cfn.destructure(2)
+
+		assert_instance_of(ChildrenFirstNode, a)
+		assert_equal(42, b)
 
 		dfn = DefOrderNode.new(4, DefOrderNode.new, 2.0)
 
-		assert_equal(4, dfn.a)
-		assert_instance_of(DefOrderNode, dfn.b)
-		assert_equal(2.0, dfn.c)
+		a, b, c = dfn.destructure(3)
+
+		assert_equal(4, a)
+		assert_instance_of(DefOrderNode, b)
+		assert_equal(2.0, c)
 
 		con = CustomOrderNode.new(42, CustomOrderNode.new, 'foo')
 
-		assert_equal(42, con.a)
-		assert_instance_of(CustomOrderNode, con.b)
-		assert_equal('foo', con.c)
-		assert_nil(con.d)
+		a, b, c, d = con.destructure(4)
+
+		assert_equal(42, a)
+		assert_instance_of(CustomOrderNode, b)
+		assert_equal('foo', c)
+		assert_nil(d)
 	end
 
 	def test_root
