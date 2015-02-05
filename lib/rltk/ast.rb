@@ -66,19 +66,19 @@ module RLTK
 					@value_names   = Array.new
 					@array_members = Array.new
 
-					@init_order    = :values
-					@def_order     = Array.new
-					@init_children = Array.new
-					@init_values   = Array.new
+					@member_order = :values
+					@def_order    = Array.new
+					@inc_children = Array.new
+					@inc_values   = Array.new
 				else
 					@child_names   = self.superclass.child_names.clone
 					@value_names   = self.superclass.value_names.clone
 					@array_members = self.superclass.array_members.clone
 
-					@init_order    = self.superclass.init_order
-					@def_order     = self.superclass.def_order.clone
-					@init_children = self.superclass.init_children.clone
-					@init_values   = self.superclass.init_values.clone
+					@member_order = self.superclass.member_order
+					@def_order    = self.superclass.def_order.clone
+					@inc_children = self.superclass.inc_children.clone
+					@inc_values   = self.superclass.inc_values.clone
 				end
 			end
 			protected :install_icvars
@@ -125,8 +125,8 @@ module RLTK
 				@array_members << name if type.is_a?(Array)
 
 				if not omit
-					@def_order     << name
-					@init_children << name
+					@def_order    << name
+					@inc_children << name
 				end
 
 				define_accessor(name, type, true)
@@ -186,19 +186,29 @@ module RLTK
 			end
 			private :define_accessor
 
+			# Define a custom ordering for the class to use when building the
+			# default constructor and destructurer.
+			#
+			# @param [Array<Symbol>]  members  List of member names
+			#
+			# @return [void]
+			def custom_order(*members)
+				@member_order = members
+			end
+
 			# @return [Array<Symbol>]  Array of the names of children that should be included in the constructor
-			def init_children
-				@init_children
+			def inc_children
+				@inc_children
 			end
 
 			# @return [Array<Symbol>]  Array of the names of values that should be included in the constructor
-			def init_values
-				@init_values
+			def inc_values
+				@inc_values
 			end
 
 			# A getter and setter for a class's initialization order.  If the
-			# init_order value is `:values` the constructor will expect all of
-			# the values and then the children.  If it is `:children` then the
+			# order value is `:values` the constructor will expect all of the
+			# values and then the children.  If it is `:children` then the
 			# constructor expects children and then values.  If it is `:def`
 			# the constructor expects to values and children in the order that
 			# they were defined.  If val is nil the current value will be
@@ -210,13 +220,14 @@ module RLTK
 			# @param [:values, :children, :def]  val  The new initialization order
 			#
 			# @return [:values, :children, :def]  The current initialization order
-			def init_order(val = nil)
+			def member_order(val = nil)
 				if val
-					@init_order = val
+					@member_order = val
 				else
-					@init_order
+					@member_order
 				end
 			end
+			alias :order :member_order
 
 			# Defined a value for this AST class and its subclasses.
 			# The name of the value will be used to define accessor
@@ -238,8 +249,8 @@ module RLTK
 				@array_members << name if type.is_a?(Array)
 
 				if not omit
-					@def_order   << name
-					@init_values << name
+					@def_order  << name
+					@inc_values << name
 				end
 
 				define_accessor(name, type)
@@ -435,20 +446,15 @@ module RLTK
 			@parent = nil
 
 			pairs =
-			case self.class.init_order
-			when :values   then (self.class.init_values + self.class.init_children).zip(objects)
-			when :children then (self.class.init_children + self.class.init_values).zip(objects)
+			case self.class.member_order
+			when :values   then (self.class.inc_values + self.class.inc_children).zip(objects)
+			when :children then (self.class.inc_children + self.class.inc_values).zip(objects)
 			when :def      then self.class.def_order.zip(objects)
+			when Array     then self.class.member_order.zip(objects)
 			end.first(objects.length)
 
 			pairs.each do |name, value|
-#				begin
-					self.send("#{name}=", value)
-#				rescue Exception => e
-#					require 'pp'
-#					puts self.class.init_order
-#					pp pairs.map(&:first)
-#				end
+				self.send("#{name}=", value)
 			end
 
 			self.class.array_members.each do |member|

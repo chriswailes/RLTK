@@ -60,18 +60,28 @@ class ASTNodeTester < Minitest::Test
 	end
 
 	class ChildrenFirstNode < RLTK::ASTNode
-		init_order :children
+		order :children
 
 		value :b, Integer
 		child :a, ChildrenFirstNode
 	end
 
 	class DefOrderNode < RLTK::ASTNode
-		init_order :def
+		order :def
 
 		value :a, Integer
 		child :b, DefOrderNode
 		value :c, Float
+	end
+
+	class CustomOrderNode < RLTK::ASTNode
+		custom_order :a, :b, :c, :d
+
+		child :b, CustomOrderNode
+		child :d, CustomOrderNode
+
+		value :a, Integer
+		value :c, String
 	end
 
 	def setup
@@ -274,7 +284,7 @@ class ASTNodeTester < Minitest::Test
 		assert_equal(42, vfn.a)
 		assert_instance_of(ValuesFirstNode, vfn.b)
 
-		cfn = ChildrenFirstNode.new(ChildrenFirstNode.new(), 42)
+		cfn = ChildrenFirstNode.new(ChildrenFirstNode.new, 42)
 
 		assert_instance_of(ChildrenFirstNode, cfn.a)
 		assert_equal(42, cfn.b)
@@ -284,6 +294,13 @@ class ASTNodeTester < Minitest::Test
 		assert_equal(4, dfn.a)
 		assert_instance_of(DefOrderNode, dfn.b)
 		assert_equal(2.0, dfn.c)
+
+		con = CustomOrderNode.new(42, CustomOrderNode.new, 'foo')
+
+		assert_equal(42, con.a)
+		assert_instance_of(CustomOrderNode, con.b)
+		assert_equal('foo', con.c)
+		assert_nil(con.d)
 	end
 
 	def test_root
