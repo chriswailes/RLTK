@@ -52,6 +52,7 @@ def initialize
   @module = RLTK::CG::Module.new('Kazoo JIT')
   @st     = Hash.new
 end
+```
 
 The {RLTK::CG::Module} class is the LLVM construct that contains all of the functions and global variables in a chunk of code. In many ways, it is the top-level structure that the LLVM IR uses to contain code.  The {RLTK::CG::Contractor} class is a subclass of {RLTK::CG::Builder}, which is a helper object that is used to generate LLVM instructions.  The Contractor keeps track of the current place to insert instructions and has methods to create new instructions.  The symbol table (`@st`) keeps track of which values are defined in the current scope and what their LLVM representation is.  In this form of Kazoo the only things that can be referenced are function parameters.  As such, function parameters will be in this map when generating code for their function body.
 
