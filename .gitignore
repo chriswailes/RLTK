@@ -5,6 +5,7 @@ examples/kazoo/**/*.o
 examples/kazoo/**/*.so
 
 *.tbl
+*.parse_table
 
 .yardoc/*
 
