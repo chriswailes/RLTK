@@ -142,7 +142,7 @@ module RLTK
 
 						if (newlines = txt.count("\n")) > 0
 							line_number += newlines
-							line_offset  = 0
+							line_offset = txt.rpartition("\n").last.length
 						else
 							line_offset += txt.length()
 						end
