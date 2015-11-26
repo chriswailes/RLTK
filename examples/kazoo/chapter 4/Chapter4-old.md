@@ -119,7 +119,7 @@ Code generation for prototypes and functions must handle a number of details, wh
 	if fun = @module.functions[node.name]
 		if fun.blocks.size != 0
 			raise "Redefinition of function #{node.name}."
-			
+
 		elsif fun.params.size != node.arg_names.length
 			raise "Redefinition of function #{node.name} with different number of arguments."
 		end
@@ -157,7 +157,7 @@ Once the insertion point is set up, we call the `translate_expression` method fo
 	fun.blocks.append('entry', nil, @builder, self) do |jit|
 		ret jit.translate_expression(node.body)
 	end
-	
+
 	# Verify the function and return it.
 	returning(fun) { fun.verify }
 
@@ -217,4 +217,4 @@ Here is how you declare an external function and then call it:
 
 When you quit the current demo, it dumps out the IR for the entire module generated.  Here you can see the big picture with all the functions referencing each other.
 
-This wraps up the third chapter of the Kazoo tutorial.  In the [next chapter](file.Chapter5.html) we'll describe how to add JIT compilation and optimization support to this so we can actually start running code!  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 4`" directory.
+This wraps up the third chapter of the Kazoo tutorial.  In the [next chapter](../chapter%205/Chapter5.md) we'll describe how to add JIT compilation and optimization support to this so we can actually start running code!  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 4`" directory.

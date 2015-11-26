@@ -131,14 +131,14 @@ Next, we must build our merge block:
 	phi = @builder.phi(RLTK::CG::DoubleType, {new_then_bb => then_value, new_else_bb => else_value}, 'iftmp')
 
 The first two lines here are now familiar: the first adds the "merge" block to the Function object, and the second block changes the insertion point so that newly created code will go into the "merge" block.  Once that is done, we need to create the PHI node and set up the block/value pairs for the PHI.
-	
+
 	start_bb.build { cond(cond_value, then_bb, else_bb) }
 
 Once the blocks are created, we can emit the conditional branch that chooses between them.  Note that creating new blocks does not implicitly affect the IRBuilder, so it is still inserting into the block that the condition went into. This is why we needed to save the "start" block.
 
 	new_then_bb.build { br(merge_bb) }
 	new_else_bb.build { br(merge_bb) }
-	
+
 	returning(phi) { @builder.position_at_end(merge_bb) }
 
 To finish off the blocks, we create an unconditional branch to the merge block.  One interesting (and very important) aspect of the LLVM IR is that it [requires all basic blocks to be "terminated"](http://llvm.org/docs/LangRef.html#functionstructure) with a [control flow instruction](http://llvm.org/docs/LangRef.html#terminators) such as return or branch.  This means that all control flow, including fall throughs must be made explicit in the LLVM IR. If you violate this rule, the verifier will emit an error.
@@ -176,7 +176,7 @@ The AST variant is just as simple.  It basically boils down to capturing the var
 
 	class For < Expression
 		value :var, String
-	
+
 		child :init, Expression
 		child :cond, Expression
 		child :step, Expression
@@ -277,4 +277,4 @@ The only thing remaining now is to do some cleanup.  We first need to restore th
 
 	ZERO
 
-With this, we conclude the "Adding Control Flow to Kazoo" chapter of the tutorial.  In this chapter we added two control flow constructs, and used them to motivate a couple of aspects of the LLVM IR that are important for front-end implementors to know.  In the [next chapter](file.Chapter7.html), we will add a couple of additional operators to Kazoo and then use them to do some actual computation.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 6`" directory.
+With this, we conclude the "Adding Control Flow to Kazoo" chapter of the tutorial.  In this chapter we added two control flow constructs, and used them to motivate a couple of aspects of the LLVM IR that are important for front-end implementors to know.  In the [next chapter](../chapter%207/Chapter7.md), we will add a couple of additional operators to Kazoo and then use them to do some actual computation.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 6`" directory.

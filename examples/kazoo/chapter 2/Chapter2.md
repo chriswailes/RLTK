@@ -63,4 +63,4 @@ class Function < RLTK::ASTNode
 end
 ```
 
-In the [next chapter](file.Chapter3.html) we will write a parser that takes input from our lexer and uses the AST node definitions to build an AST from our input. The full code for this chapter can be found in the "`examples/kazoo/chapter 2`" directory.
+In the [next chapter](../chapter%203/Chapter3.md) we will write a parser that takes input from our lexer and uses the AST node definitions to build an AST from our input. The full code for this chapter can be found in the "`examples/kazoo/chapter 2`" directory.
