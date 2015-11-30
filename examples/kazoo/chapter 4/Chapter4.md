@@ -2,7 +2,7 @@
 
 In this chapter we will be translating the AST that our parser builds into LLVM intermediate representation (IR).  This will teach you a little bit about how LLVM does things, as well as demonstrate how easy it is to use.
 
-Also of note is that in this chapter we begin to diverge more substantially from both previous versions of this tutorial and from LLVM's tutorial.  Older versions that use the {RLTK::CG::Builder} class directly will be linked at the beginning of each chapter.  As such, here is the link to the [old version of Chapter 4](file.Chapter4-old.html).
+Also of note is that in this chapter we begin to diverge more substantially from both previous versions of this tutorial and from LLVM's tutorial.  Older versions that use the {RLTK::CG::Builder} class directly will be linked at the beginning of each chapter.  As such, here is the link to the [old version of Chapter 4](Chapter4-old.md).
 
 ## Code Generation Setup
 
@@ -128,7 +128,7 @@ end
 
 The code above initially does a function name lookup in the LLVM Module's symbol table.  Recall that the LLVM Module is the container that holds all of the functions we are JIT'ing. By giving each function the same name as what the user specifies, we can use the LLVM symbol table to resolve function names for us.
 
-Once we have the function to call, we recursively translate each argument that is to be passed in, and create an LLVM call instruction.  Note that LLVM uses the native C calling conventions by default, allowing these calls to also call into standard library functions like `sin` and `cos`, with no additional effort.  The `args.push('calltmp')` simply adds a name for the variable that holds the value returned by the call instruction. 
+Once we have the function to call, we recursively translate each argument that is to be passed in, and create an LLVM call instruction.  Note that LLVM uses the native C calling conventions by default, allowing these calls to also call into standard library functions like `sin` and `cos`, with no additional effort.  The `args.push('calltmp')` simply adds a name for the variable that holds the value returned by the call instruction.
 
 ## Function Code Generation
 
@@ -141,7 +141,7 @@ if fun = @module.functions[node.name]
 
   elsif fun.params.size != node.arg_names.length
     raise "Redefinition of function #{node.name} with different number of arguments."
-  
+
   else
     fun = @module.functions.add(node.name, RLTK::CG::DoubleType, Array.new(node.arg_names.length, RLTK::CG::DoubleType))
   end
@@ -189,7 +189,7 @@ returning(fun) { fun.verify }
 ## It's All Starting To Come Together!
 
 For now, code generation to LLVM doesn't really get us much, except that we can look at the pretty IR calls. The driver file for this chapter changes things up a little bit and will use the JIT to generate our IR and print it out.  This gives a nice way to look at the LLVM IR for simple functions.  For example:
-	
+
 ```
 Kazoo > 4 + 5;
 
@@ -250,4 +250,4 @@ entry:
 
 When you quit the current demo, it dumps out the IR for the entire module generated.  Here you can see the big picture with all the functions referencing each other.
 
-This wraps up the third chapter of the Kazoo tutorial.  In the [next chapter](file.Chapter5.html) we'll describe how to add JIT compilation and optimization support to this so we can actually start running code!  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 4`" directory.
+This wraps up the third chapter of the Kazoo tutorial.  In the [next chapter](../chapter%205/Chapter5.md) we'll describe how to add JIT compilation and optimization support to this so we can actually start running code!  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 4`" directory.

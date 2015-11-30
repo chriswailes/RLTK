@@ -2,7 +2,7 @@
 
 Welcome to Chapter 5 of the  tutorial.  Chapters 1-4 described the implementation of the simple Kazoo language and included support for generating LLVM IR, followed by optimizations and a JIT compiler.  Unfortunately, as presented, Kazoo is mostly useless: it has no control flow other than call and return.  This means that you can't have conditional branches in the code, significantly limiting its power.  In this episode of "Build That Compiler", we'll extend Kazoo to have an if/then/else expression plus a simple 'for' loop.
 
-The old version of Chapter 6 can be found [here](file.Chapter6-old.html).
+The old version of Chapter 6 can be found [here](Chapter6-old.md).
 
 ## If/Then/Else
 
@@ -284,7 +284,7 @@ We'll eventually need to insert a branch into this basic block, but that can't h
 
 ```Ruby
 loop_bb0 = fun.blocks.append('loop')
-		
+
 _, loop_bb1 = visit node.body, at: loop_bb0, rcb: true
 ```
 
@@ -319,4 +319,4 @@ The only thing remaining now is to do some cleanup.  We first need to restore th
 ZERO
 ```
 
-With this, we conclude the "Adding Control Flow to Kazoo" chapter of the tutorial.  In this chapter we added two control flow constructs, and used them to motivate a couple of aspects of the LLVM IR that are important for front-end implementors to know.  In the [next chapter](file.Chapter7.html), we will add a couple of additional operators to Kazoo and then use them to do some actual computation.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 6`" directory.
+With this, we conclude the "Adding Control Flow to Kazoo" chapter of the tutorial.  In this chapter we added two control flow constructs, and used them to motivate a couple of aspects of the LLVM IR that are important for front-end implementors to know.  In the [next chapter](../chapter%207/Chapter7.md), we will add a couple of additional operators to Kazoo and then use them to do some actual computation.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 6`" directory.

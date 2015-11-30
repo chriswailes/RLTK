@@ -17,10 +17,10 @@ In order to get per-function optimizations going, we will use a {RLTK::CG::Funct
 		@module	= RLTK::CG::Module.new('Kazoo JIT')
 		@builder	= RLTK::CG::Builder.new
 		@st		= Hash.new
-		
+
 		# Execution Engine
 		@engine = RLTK::CG::JITCompiler.new(@module)
-		
+
 		# Add passes to the Function Pass Manager.
 		@engine.fpm.add(:InstCombine, :Reassociate, :GVN, :CFGSimplify)
 	end
@@ -198,4 +198,4 @@ To load this library (`libkazoo.so`) and inform LLVM about it we'll add the foll
 
 Now we can produce simple output to the console by using things like: "`extern putchard(x); putchard(120);`", which prints a lowercase 'x' on the console (120 is the ASCII code for 'x').  Similar code could be used to implement file I/O, console input, and many other capabilities in Kazoo.
 
-This completes the JIT and optimizer chapter of the Kazoo tutorial. At this point, we can compile a non-Turing-complete programming language, optimize and JIT compile it in a user-driven way.  In the [next chapter](file.Chapter6.html) we'll look into extending the language with control flow constructs, tackling some interesting LLVM IR issues along the way.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 5`" directory.
+This completes the JIT and optimizer chapter of the Kazoo tutorial. At this point, we can compile a non-Turing-complete programming language, optimize and JIT compile it in a user-driven way.  In the [next chapter](../chapter%206/Chapter6.md) we'll look into extending the language with control flow constructs, tackling some interesting LLVM IR issues along the way.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 5`" directory.

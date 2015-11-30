@@ -67,4 +67,4 @@ rule(/./, :comment)
 
 When attempting to match a substring of the input RLTK lexers only use the rules that are defined for their current state.  The first rule says that when the lexer encounters a # it should enter the `:comment` state.  The second rule says that if we encounter a newline we should pop the current state off of the state stack, but *only* if we are already in the `:comment` state.  Lastly, we add a rule that will discard any single character input. Since this rule is specified after the newline rule we will never discard a newline.
 
-And that finishes our lexer for now! The full code for this chapter can be found in the "`examples/kazoo/chapter 1`" directory.  Continue on to the [next chapter](file.Chapter2.html) to see how we use RLTK to define AST nodes for Kazoo.
+And that finishes our lexer for now! The full code for this chapter can be found in the "`examples/kazoo/chapter 1`" directory.  Continue on to the [next chapter](../chapter%202/Chapter2.md) to see how we use RLTK to define AST nodes for Kazoo.

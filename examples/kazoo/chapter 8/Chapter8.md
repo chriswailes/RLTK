@@ -2,7 +2,7 @@
 
 Welcome to Chapter 8 of the tutorial.  In chapters 1 through 6 we've built a very respectable, albeit simple, [functional programming language](http://en.wikipedia.org/wiki/Functional_programming).  In our journey we learned some parsing techniques, how to build and represent an AST, how to build LLVM IR, and how to optimize the resultant code as well as JIT compile it.
 
-(The old version of Chapter 8 can be found [here](file.Chapter8-old.html).)
+(The old version of Chapter 8 can be found [here](Chapter8-old.md).)
 
 While Kazoo is interesting as a functional language, the fact that it is functional makes it "too easy" to generate LLVM IR for it.  In particular, a functional language makes it very easy to build LLVM IR directly in SSA form.  Since LLVM requires that the input code be in SSA form, this is a very nice property and it is often unclear to newcomers how to generate code for an imperative language with mutable variables.
 

@@ -2,7 +2,7 @@
 
 In the previous chapters we described the implementation of the lexer, parser, and AST for our simple language, Kazoo, and added support for generating LLVM IR for it.  This chapter describes two new techniques: adding optimizer support to your language, and adding JIT compiler support. These additions will demonstrate how to get nice, efficient code for the Kazoo language.
 
-The old version of Chapter 5 can be found [here](file.Chapter5-old.html).
+The old version of Chapter 5 can be found [here](Chapter5-old.md).
 
 ## LLVM Optimization Passes
 
@@ -228,4 +228,4 @@ RLTK::CG::Support.load_library('./libkazoo.so')
 
 Now we can produce simple output to the console by using things like: "`extern putchard(x); putchard(120);`", which prints a lowercase 'x' on the console (120 is the ASCII code for 'x').  Similar code could be used to implement file I/O, console input, and many other capabilities in Kazoo.
 
-This completes the JIT and optimizer chapter of the Kazoo tutorial. At this point, we can compile a non-Turing-complete programming language, optimize and JIT compile it in a user-driven way.  In the [next chapter](file.Chapter6.html) we'll look into extending the language with control flow constructs, tackling some interesting LLVM IR issues along the way.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 5`" directory.
+This completes the JIT and optimizer chapter of the Kazoo tutorial. At this point, we can compile a non-Turing-complete programming language, optimize and JIT compile it in a user-driven way.  In the [next chapter](../chapter%206/Chapter6.md) we'll look into extending the language with control flow constructs, tackling some interesting LLVM IR issues along the way.  The full code listing for this chapter can be found in the "`examples/kazoo/chapter 5`" directory.
