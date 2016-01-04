@@ -38,7 +38,7 @@ Once the {RLTK::CG::FunctionPassManager} is set up we need to make use of it.  W
 
 ```Ruby
 def optimize(fun)
-  @engine.fpm.run(fun)
+  @module.fpm.run(fun)
 
   fun
 end
