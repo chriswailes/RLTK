@@ -106,7 +106,7 @@ module RLTK
 			# The overridden new prevents un-finalized parsers from being
 			# instantiated.
 			def new(*args)
-				if @symbols.nil?
+				if not @symbols
 					raise UselessParserException
 				else
 					super(*args)
@@ -120,12 +120,15 @@ module RLTK
 				@curr_lhs  = nil
 				@curr_prec = nil
 
-				@conflicts = Hash.new {|h, k| h[k] = Array.new}
-				@grammar   = CFG.new
+				@conflicts     = Hash.new {|h, k| h[k] = Array.new}
+				@grammar       = CFG.new
+				@grammar_prime = nil
 
 				@lh_sides  = Hash.new
 				@procs     = Array.new
 				@states    = Array.new
+				
+				@symbols = nil
 
 				# Variables for dealing with precedence.
 				@prec_counts      = {:left => 0, :right => 0, :non => 0}
@@ -565,7 +568,7 @@ module RLTK
 				# Check to make sure we can load the necessary information
 				# from the specified object.
 				if opts[:use] and (
-					(opts[:use].is_a?(String) and File.exists?(opts[:use]) and File.mtime(opts[:use]) > File.mtime(def_file)) or
+					(opts[:use].is_a?(String) and File.exist?(opts[:use]) and File.mtime(opts[:use]) > File.mtime(def_file)) or
 					(opts[:use].is_a?(File) and opts[:use].mtime > File.mtime(def_file))
 					)
 

@@ -271,7 +271,7 @@ class ParserTester < Minitest::Test
 	end
 
 	class SelectionParser < RLTK::Parser
-		production(:s, 'A+ .B+') { |bs| bs.inject &:+ }
+		production(:s, 'A+ .B+') { |bs| bs.inject(&:+) }
 
 		finalize
 	end
