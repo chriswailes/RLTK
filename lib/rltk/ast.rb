@@ -154,7 +154,7 @@ module RLTK
 				ivar_name = ('@' + name.to_s).to_sym
 
 				define_method(name) do
-					self.instance_variable_get(ivar_name)
+					self.instance_variable_defined?(ivar_name) ? self.instance_variable_get(ivar_name) : nil
 				end
 
 				if type.is_a?(Class)

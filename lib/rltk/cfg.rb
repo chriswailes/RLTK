@@ -320,11 +320,8 @@ module RLTK
 					(ttype0 == :TERM ? @terms : @nonterms) << tvalue0
 
 					if i + 1 < tokens.length
-						ttype1  = tokens[i + 1].type
-						tvalue1 = tokens[i + 1].value
-
 						rhs <<
-						case ttype1
+						case tokens[i + 1].type
 						when :QUESTION then self.get_optional_production("#{tvalue0.downcase}_optional".to_sym, tvalue0)
 						when :STAR     then self.get_list_production("#{tvalue0.downcase}_list".to_sym, tvalue0)
 						when :PLUS     then self.get_nonempty_list_production("#{tvalue0.downcase}_nonempty_list".to_sym, tvalue0)

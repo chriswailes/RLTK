@@ -490,8 +490,8 @@ module RLTK
 						io.puts
 
 						io.puts("\t# ITEMS #")
-						max = state.items.inject(0) do |max, item|
-							if item.lhs.to_s.length > max then item.lhs.to_s.length else max end
+						max = state.items.inject(0) do |inner_max, item|
+							if item.lhs.to_s.length > inner_max then item.lhs.to_s.length else inner_max end
 						end
 
 						state.each do |item|
@@ -845,7 +845,7 @@ module RLTK
 					# Iterate over the stacks until each one is done.
 					while (stack = processing.shift)
 						# Execute any token hooks in this stack's environment.
-						@token_hooks[token.type].each { |hook| opts[:env].instance_exec &hook}
+						@token_hooks[token.type].each { |hook| opts[:env].instance_exec(&hook)}
 
 						# Get the available actions for this stack.
 						actions = @states[stack.state].on?(token.type)
@@ -920,28 +920,28 @@ module RLTK
 						# stack as necessary.
 						pairs = [[stack, actions.pop]] + actions.map {|action| [stack.branch(stack_id += 1), action] }
 
-						pairs.each do |stack, action|
+						pairs.each do |new_stack, action|
 							if v
 								v.puts
 								v.puts('Current stack:')
-								v.puts("\tID: #{stack.id}")
-								v.puts("\tState stack:\t#{stack.state_stack.inspect}")
-								v.puts("\tOutput Stack:\t#{stack.output_stack.inspect}")
+								v.puts("\tID: #{new_stack.id}")
+								v.puts("\tState stack:\t#{new_stack.state_stack.inspect}")
+								v.puts("\tOutput Stack:\t#{new_stack.output_stack.inspect}")
 								v.puts
 								v.puts("Action taken: #{action.to_s}")
 							end
 
 							if action.is_a?(Accept)
 								if opts[:accept] == :all
-									accepted << stack
+									accepted << new_stack
 								else
 									v.puts('Accepting input.') if v
-									opts[:parse_tree].puts(stack.tree) if opts[:parse_tree]
+									opts[:parse_tree].puts(new_stack.tree) if opts[:parse_tree]
 
 									if opts[:env].he
-										raise HandledError.new(opts[:env].errors, stack.result)
+										raise HandledError.new(opts[:env].errors, new_stack.result)
 									else
-										return stack.result
+										return new_stack.result
 									end
 								end
 
@@ -953,7 +953,7 @@ module RLTK
 									raise InternalParserException, "No production #{action.id} found."
 								end
 
-								args, positions = stack.pop(pop_size)
+								args, positions = new_stack.pop(pop_size)
 								opts[:env].set_positions(positions)
 
 								if not production_proc.selections.empty?
@@ -967,7 +967,7 @@ module RLTK
 									opts[:env].instance_exec(*args, &production_proc)
 								end
 
-								if (goto = @states[stack.state].on?(@lh_sides[action.id]).first)
+								if (goto = @states[new_stack.state].on?(@lh_sides[action.id]).first)
 
 									v.puts("Going to state #{goto.id}.\n") if v
 
@@ -976,7 +976,7 @@ module RLTK
 									if args.empty?
 										# Empty productions need to be
 										# handled specially.
-										pos0 = stack.position
+										pos0 = new_stack.position
 
 										pos0.stream_offset	+= pos0.length + 1
 										pos0.line_offset	+= pos0.length + 1
@@ -989,7 +989,7 @@ module RLTK
 										pos0.length = (pos1.stream_offset + pos1.length) - pos0.stream_offset
 									end
 
-									stack.push(goto.id, result, @lh_sides[action.id], pos0)
+									new_stack.push(goto.id, result, @lh_sides[action.id], pos0)
 								else
 									raise InternalParserException, "No GoTo action found in state #{stack.state} " +
 										"after reducing by production #{action.id}"
@@ -997,17 +997,17 @@ module RLTK
 
 								# This stack is NOT ready for the next
 								# token.
-								processing << stack
+								processing << new_stack
 
 								# Exit error mode if necessary.
 								error_mode = false if error_mode and not reduction_guard
 
 							elsif action.is_a?(Shift)
-								stack.push(action.id, token.value, token.type, token.position)
+								new_stack.push(action.id, token.value, token.type, token.position)
 
 								# This stack is ready for the next
 								# token.
-								moving_on << stack
+								moving_on << new_stack
 
 								# Exit error mode.
 								error_mode = false
