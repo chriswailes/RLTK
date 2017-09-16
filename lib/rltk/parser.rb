@@ -66,13 +66,9 @@ module RLTK
 
 		# @return [String] String representation of the error.
 		def to_s
-<<<<<<< HEAD
 			seen = @context_length == :all ? @seen : @seen[-@context_length..-1]
 			remaining = @context_length == :all ? @remaining : @remaining[0..@context_length]
 			"String not in language.  Token info:\n\tSeen: #{seen}\n\tCurrent: #{@current}\n\tRemaining: #{remaining}"
-=======
-			"String not in language. Token info:\n\tSeen: #{@seen}\n\tCurrent: #{@current}\n\tRemaining: #{@remaining}"
->>>>>>> Updating RLTK for ruby 2.4
 		end
 	end
 
@@ -174,8 +170,18 @@ module RLTK
 
 						when :list
 							case which
-							when :empty
-							when
+							when :single
+								ProdProc.new { |el| [el] }
+
+							when :multiple
+								ProdProc.new(:splat, sels) do |*syms|
+									el = syms[1..-1]
+									syms.first << (el.length == 1 ? el.first : el)
+								end
+
+							else
+								ProdProc.new { |*el| el.length == 1 ? el.first : el }
+							end
 						end,
 
 #						when :elp
@@ -799,9 +805,8 @@ module RLTK
 			          parse_tree: false,
 			          verbose:    false)
 
-			    # Reasonable use of one letter variable name?
+				# Reasonable use of one letter variable name?
 				v = verbose
-
 				if verbose
 					v.puts("Input tokens:")
 					v.puts(tokens.map(&:type).inspect)
