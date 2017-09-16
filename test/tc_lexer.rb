@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/04/06
-# Description:	This file contains unit tests for the RLTK::Lexer class.
+# Author:      Chris Wailes <chris.wailes+rltk@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/04/06
+# Description: This file contains unit tests for the RLTK::Lexer class.
 
 ############
 # Requires #
@@ -53,7 +53,7 @@ class LexerTester < Minitest::Test
 	end
 
 	class FlagLexer < RLTK::Lexer
-		rule(/a/)	 { set_flag(:a); :A }
+		rule(/a/)  { set_flag(:a); :A }
 		rule(/\s/)
 
 		rule(/b/, :default, [:a])     { set_flag(:b); :B }
@@ -61,7 +61,7 @@ class LexerTester < Minitest::Test
 	end
 
 	class StateLexer < RLTK::Lexer
-		rule(/a/)    { :A }
+		rule(/a/)  { :A }
 		rule(/\s/)
 
 		rule(/\(\*/) { push_state(:comment) }
@@ -97,7 +97,7 @@ class LexerTester < Minitest::Test
 	def test_ebnf
 		expected = [
 			RLTK::Token.new(:NONTERM, :aaa),
-			RLTK::Token.new(:TERM, :BBB),
+			RLTK::Token.new(:TERM,    :BBB),
 
 			RLTK::Token.new(:STAR),
 			RLTK::Token.new(:PLUS),
@@ -106,7 +106,6 @@ class LexerTester < Minitest::Test
 		]
 
 		actual = RLTK::Lexers::EBNF.lex('aaa BBB * + ?')
-
 		assert_equal(expected, actual)
 	end
 
@@ -119,11 +118,9 @@ class LexerTester < Minitest::Test
 		]
 
 		actual = ENVLexer.lex('aaa')
-
 		assert_equal(expected, actual)
 
 		lexer = ENVLexer.new
-
 		assert_equal(expected, lexer.lex('aaa'))
 
 		expected = [
@@ -132,7 +129,6 @@ class LexerTester < Minitest::Test
 			RLTK::Token.new(:A, 5),
 			RLTK::Token.new(:EOS)
 		]
-
 		assert_equal(expected, lexer.lex('aaa'))
 	end
 
@@ -189,7 +185,6 @@ class LexerTester < Minitest::Test
 		]
 
 		actual = ABLongest.lex('aaabbb')
-
 		assert_equal(expected, actual)
 	end
 

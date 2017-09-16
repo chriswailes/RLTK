@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/01/20
-# Description:	This file contains a lexer for Extended Backus–Naur Form.
+# Author:      Chris Wailes <chris.wailes@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/01/20
+# Description: This file contains a lexer for Extended Backus–Naur Form.
 
 ############
 # Requires #

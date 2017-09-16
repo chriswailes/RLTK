@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/04/06
-# Description:	This file contains unit tests for the RLTK::Parser class.
+# Author:      Chris Wailes <chris.wailes+rltk@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/04/06
+# Description: This file contains unit tests for the RLTK::Parser class.
 
 ############
 # Requires #
@@ -195,7 +195,7 @@ class ParserTester < Minitest::Test
 	class DummyError1 < StandardError; end
 	class DummyError2 < StandardError; end
 
-	class ErrorCalc < RLTK::Parser
+	class ErrorCalcParser < RLTK::Parser
 		left :ERROR
 		right :PLS, :SUB, :MUL, :DIV, :NUM
 
@@ -208,6 +208,21 @@ class ParserTester < Minitest::Test
 			clause('e DIV e') { |e0, _, e1| e0 / e1 }
 
 			clause('e PLS ERROR e') { |e0, _, ts, e1| error(ts); e0 + e1 }
+		end
+
+		finalize
+	end
+
+	class AssocCalcParser < RLTK::Parser
+		left :PLS, :DIV ; right :SUB, :MUL
+
+		production(:e) do
+			clause('NUM') {|n| n}
+
+			clause('e PLS e') { |e0, _, e1| e0 + e1 }
+			clause('e SUB e') { |e0, _, e1| e0 - e1 }
+			clause('e MUL e') { |e0, _, e1| e0 * e1 }
+			clause('e DIV e') { |e0, _, e1| e0 / e1 }
 		end
 
 		finalize
@@ -229,8 +244,8 @@ class ParserTester < Minitest::Test
 		production(:line) do
 			clause('NEWLINE') { |_| nil }
 
-			clause('WORD+ SEMI NEWLINE')	{ |w, _, _| w }
-			clause('WORD+ ERROR')		{ |w, e| error(pos(1).line_number); w }
+			clause('WORD+ SEMI NEWLINE') { |w, _, _| w }
+			clause('WORD+ ERROR')        { |w, e| error(pos(1).line_number); w }
 		end
 
 		finalize
@@ -303,7 +318,7 @@ class ParserTester < Minitest::Test
 	end
 
 	def test_ambiguous_grammar
-		actual = AmbiguousParser.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'), {:accept => :all})
+		actual = AmbiguousParser.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'), {accept: :all})
 		assert_equal([7, 9], actual.sort)
 	end
 
@@ -323,6 +338,14 @@ class ParserTester < Minitest::Test
 
 		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
 		assert_equal(9, actual)
+	end
+
+	def test_associativity
+		actual = AssocCalcParser.parse(RLTK::Lexers::Calculator.lex('5 - 3 - 2'))
+		assert_equal(4, actual)
+
+		actual = AssocCalcParser.parse(RLTK::Lexers::Calculator.lex('12 / 2 / 2'))
+		assert_equal(3, actual)
 	end
 
 	def test_construction_error
@@ -404,6 +427,7 @@ class ParserTester < Minitest::Test
 		actual   = GreedTestParser1.parse(AlphaLexer.lex(''))
 		assert_equal(expected, actual)
 
+		# TODO: Figure out what to do with this.
 #		expected = ['a', nil]
 #		actual   = GreedTestParser1.parse(AlphaLexer.lex('a'))
 #		assert_equal(expected, actual)
@@ -499,7 +523,7 @@ class ParserTester < Minitest::Test
 		# Test to see if we can continue parsing after errors are encounterd.
 
 		begin
-			ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 + + 1'))
+			ErrorCalcParser.parse(RLTK::Lexers::Calculator.lex('1 + + 1'))
 
 		rescue RLTK::HandledError => e
 			assert_equal(1, e.errors.first.length)
@@ -510,7 +534,7 @@ class ParserTester < Minitest::Test
 		# encountered.
 
 		begin
-			ErrorCalc.parse(RLTK::Lexers::Calculator.lex('1 + + + + + + 1'))
+			ErrorCalcParser.parse(RLTK::Lexers::Calculator.lex('1 + + + + + + 1'))
 
 		rescue RLTK::HandledError => e
 			assert_equal(5, e.errors.first.length)
@@ -528,11 +552,15 @@ class ParserTester < Minitest::Test
 		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('(1 + 2) * 3'))
 		assert_equal(9, actual)
 
-		assert_raises(RLTK::NotInLanguage) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *')) }
+		assert_raises(RLTK::NotInLanguage) do
+			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *'))
+		end
 	end
 
 	def test_input
-		assert_raises(RLTK::BadToken) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::EBNF.lex('A B C')) }
+		assert_raises(RLTK::BadToken) do
+			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::EBNF.lex('A B C'))
+		end
 	end
 
 	def test_nonempty_list
@@ -637,7 +665,9 @@ class ParserTester < Minitest::Test
 		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *'))
 		assert_equal(9, actual)
 
-		assert_raises(RLTK::NotInLanguage) { RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3')) }
+		assert_raises(RLTK::NotInLanguage) do
+			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
+		end
 	end
 
 	def test_prefix_calc
@@ -650,7 +680,9 @@ class ParserTester < Minitest::Test
 		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
 		assert_equal(9, actual)
 
-		assert_raises(RLTK::NotInLanguage) { RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3')) }
+		assert_raises(RLTK::NotInLanguage) do
+			RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'))
+		end
 	end
 
 	def test_selection_parser

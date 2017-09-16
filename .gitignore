@@ -1,8 +1,6 @@
 pkg/*
 doc/*
 coverage/*
-examples/kazoo/**/*.o
-examples/kazoo/**/*.so
 
 *.tbl
 *.parse_table

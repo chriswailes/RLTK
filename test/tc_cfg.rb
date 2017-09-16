@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/04/06
-# Description:	This file contains unit tests for the RLTK::CFG class.
+# Author:      Chris Wailes <chris.wailes+rltk@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/04/06
+# Description: This file contains unit tests for the RLTK::CFG class.
 
 ############
 # Requires #
@@ -118,13 +118,13 @@ class CFGTester < Minitest::Test
 	end
 
 	def test_is_nonterminal
-		assert(RLTK::CFG::is_nonterminal?(:lowercase))
+		assert( RLTK::CFG::is_nonterminal?(:lowercase))
 		assert(!RLTK::CFG::is_nonterminal?(:UPERCASE))
 	end
 
 	def test_is_terminal
 		assert(!RLTK::CFG::is_terminal?(:lowercase))
-		assert(RLTK::CFG::is_terminal?(:UPERCASE))
+		assert( RLTK::CFG::is_terminal?(:UPERCASE))
 	end
 
 	def test_item

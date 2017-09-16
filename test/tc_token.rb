@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/04/06
-# Description:	This file contains unit tests for the RLTK::Token class.
+# Author:      Chris Wailes <chris.wailes+rltk@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/04/06
+# Description: This file contains unit tests for the RLTK::Token class.
 
 ############
 # Requires #

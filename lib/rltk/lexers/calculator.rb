@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/03/04
-# Description:	This file contains a lexer for a simple calculator.
+# Author:      Chris Wailes <chris.wailes+rltk@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/03/04
+# Description: This file contains a lexer for a simple calculator.
 
 ############
 # Requires #
@@ -28,15 +28,15 @@ module RLTK
 			# Default State #
 			#################
 
-			rule(/\+/)	{ :PLS }
-			rule(/-/)		{ :SUB }
-			rule(/\*/)	{ :MUL }
-			rule(/\//)	{ :DIV }
+			rule(/\+/) { :PLS }
+			rule(/-/)  { :SUB }
+			rule(/\*/) { :MUL }
+			rule(/\//) { :DIV }
 
-			rule(/\(/)	{ :LPAREN }
-			rule(/\)/)	{ :RPAREN }
+			rule(/\(/) { :LPAREN }
+			rule(/\)/) { :RPAREN }
 
-			rule(/[0-9]+/)	{ |t| [:NUM, t.to_i] }
+			rule(/[0-9]+/) { |t| [:NUM, t.to_i] }
 
 			rule(/\s/)
 		end

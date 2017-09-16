@@ -1,10 +1,10 @@
 # encoding: utf-8
 
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/03/24
-# Description:	This file contains the a class representing a context-free
-#			grammar.
+# Author:      Chris Wailes <chris.wailes+rltk@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/03/24
+# Description: This file contains the a class representing a context-free
+#              grammar.
 
 ############
 # Requires #
@@ -30,13 +30,13 @@ module RLTK
 	# used to manipulate arbitrary CFGs.
 	class CFG
 
-		# @return [Symbol] The grammar's starting symbol.
+		# @return [Symbol]  The grammar's starting symbol.
 		attr_reader :start_symbol
 
 		# This is used by the {CFG#production} method to wrap {CFG#clause}
 		# calls.
 		#
-		# @return [Symbol] The current left-hand side symbol.
+		# @return [Symbol]  The current left-hand side symbol.
 		attr_accessor :curr_lhs
 
 		#################
@@ -46,7 +46,7 @@ module RLTK
 		# Tests to see if a symbol is a terminal symbol, as used by the CFG
 		# class.
 		#
-		# @param [Symbol] sym The symbol to test.
+		# @param [Symbol]  sym  The symbol to test.
 		#
 		# @return [Boolean]
 		def self.is_terminal?(sym)
@@ -56,7 +56,7 @@ module RLTK
 		# Tests to see if a symbol is a non-terminal symbol, as used by the
 		# CFG class.
 		#
-		# @param [Symbol] sym The symbol to test.
+		# @param [Symbol]  sym  The symbol to test.
 		#
 		# @return [Boolean]
 		def self.is_nonterminal?(sym)
@@ -71,7 +71,7 @@ module RLTK
 		# programmer of the generation of new productions due to EBNF
 		# operators.
 		#
-		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded.
+		# @param [Proc]  callback  A Proc object to be called when EBNF operators are expanded.
 		def initialize(&callback)
 			@curr_lhs           = nil
 			@callback           = callback || Proc.new {}
@@ -93,7 +93,7 @@ module RLTK
 
 		# Adds *production* to the appropriate internal data structures.
 		#
-		# @param [Production] production The production to add to the grammar.
+		# @param [Production]  production  The production to add to the grammar.
 		#
 		# @return [void]
 		def add_production(production)
@@ -144,8 +144,8 @@ module RLTK
 			production, _ = self.production(name, name_prime)
 			@callback.call(:elp, :nonempty, production)
 
-			# Add remaining productions via nonempty_list helper.
-			self.nonempty_list(name_prime, list_elements, separator)
+#			# Add remaining productions via nonempty_list helper.
+#			self.nonempty_list(name_prime, list_elements, separator)
 
 			name
 		end
@@ -279,7 +279,7 @@ module RLTK
 
 		# Sets the EBNF callback to *callback*.
 		#
-		# @param [Proc] callback A Proc object to be called when EBNF operators are expanded and list productions are added.
+		# @param [Proc]  callback  A Proc object to be called when EBNF operators are expanded and list productions are added.
 		#
 		# @return [void]
 		def callback(&callback)
@@ -293,7 +293,7 @@ module RLTK
 		# CFG.production call's argument.  This is the function that is
 		# responsible for removing EBNF symbols from the grammar.
 		#
-		# @param [String, Symbol] expression The right-hand side of a CFG production.
+		# @param [String, Symbol]  expression  The right-hand side of a CFG production.
 		#
 		# @return [Array(Production, Array<Integer>)]
 		def clause(expression)
@@ -319,8 +319,8 @@ module RLTK
 					# Add this symbol to the correct collection.
 					(ttype0 == :TERM ? @terms : @nonterms) << tvalue0
 
+					rhs <<
 					if i + 1 < tokens.length
-						rhs <<
 						case tokens[i + 1].type
 						when :QUESTION then self.get_optional_production("#{tvalue0.downcase}_optional".to_sym, tvalue0)
 						when :STAR     then self.get_list_production("#{tvalue0.downcase}_list".to_sym, tvalue0)
@@ -328,7 +328,7 @@ module RLTK
 						else                tvalue0
 						end
 					else
-						rhs << tvalue0
+						tvalue0
 					end
 
 					symbol_count += 1
@@ -361,8 +361,8 @@ module RLTK
 			if sentence.is_a?(Symbol)
 				first_set_prime(sentence)
 
-			elsif sentence.inject(true) { |m, sym| m and self.symbols.include?(sym) }
-				set0 = []
+			elsif sentence.all? { |sym| self.symbols.include? sym }
+				set0           = []
 				all_have_empty = true
 
 				sentence.each do |sym|
@@ -509,6 +509,7 @@ module RLTK
 				@production_buffer.clone
 			end
 
+			# Restore the lhs in case it was changed.
 			@curr_lhs = prev_lhs
 			return ret_val
 		end
@@ -573,9 +574,9 @@ module RLTK
 			# @param [Symbol]         lhs  Left-hand side of the production.
 			# @param [Array<Symbol>]  rhs  Right-hand side of the production.
 			def initialize(id, lhs, rhs)
-				@id	= id
-				@lhs	= lhs
-				@rhs	= rhs
+				@id  = id
+				@lhs = lhs
+				@rhs = rhs
 			end
 
 			# Comparese on production to another.  Returns true only if the
@@ -585,7 +586,8 @@ module RLTK
 			#
 			# @return [Boolean]
 			def ==(other)
-				self.lhs == other.lhs and self.rhs == other.rhs
+				self.lhs == other.lhs and
+				self.rhs == other.rhs
 			end
 
 			# @return [Production]  A new copy of this production.
@@ -638,7 +640,9 @@ module RLTK
 			#
 			# @return [Boolean]
 			def ==(other)
-				self.dot == other.dot and self.lhs == other.lhs and self.rhs == other.rhs
+				self.dot == other.dot and
+				self.lhs == other.lhs and
+				self.rhs == other.rhs
 			end
 
 			# Moves the items dot forward by one if the end of the right-hand

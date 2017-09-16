@@ -18,9 +18,6 @@ request_file('simplecov', 'SimpleCov is not installed.') do
 	end
 end
 
-# Gems
-require 'ffi'
-
 # Ruby Language Toolkit
 require 'rltk/version'
 
@@ -30,18 +27,3 @@ require 'tc_ast'
 require 'tc_cfg'
 require 'tc_lexer'
 require 'tc_parser'
-
-begin
-	# Check to make sure the target LLVM library is present.
-	class Tester
-		extend FFI::Library
-
-		ffi_lib("LLVM-#{RLTK::LLVM_TARGET_VERSION}")
-	end
-
-	# The test suite for the LLVM bindings
-	require 'cg/ts_cg'
-
-rescue LoadError
-	puts "Unable to test LLVM bindings.  Library LLVM-#{RLTK::LLVM_TARGET_VERSION} not found."
-end

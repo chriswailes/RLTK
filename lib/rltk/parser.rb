@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/01/19
-# Description:	This file contains the base class for parsers that use RLTK.
+# Author:      Chris Wailes <chris.wailes@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/01/19
+# Description: This file contains the base class for parsers that use RLTK.
 
 ############
 # Requires #
@@ -9,6 +9,7 @@
 
 # Ruby Language Toolkit
 require 'rltk/cfg'
+require 'rltk/helpers'
 
 #######################
 # Classes and Modules #
@@ -65,9 +66,13 @@ module RLTK
 
 		# @return [String] String representation of the error.
 		def to_s
+<<<<<<< HEAD
 			seen = @context_length == :all ? @seen : @seen[-@context_length..-1]
 			remaining = @context_length == :all ? @remaining : @remaining[0..@context_length]
 			"String not in language.  Token info:\n\tSeen: #{seen}\n\tCurrent: #{@current}\n\tRemaining: #{remaining}"
+=======
+			"String not in language. Token info:\n\tSeen: #{@seen}\n\tCurrent: #{@current}\n\tRemaining: #{@remaining}"
+>>>>>>> Updating RLTK for ruby 2.4
 		end
 	end
 
@@ -112,7 +117,8 @@ module RLTK
 	# parsers have a lot of features, and are described in the main
 	# documentation.
 	class Parser
-		# @return [Environment] Environment used by the instantiated parser.
+
+		# @return [Environment]  Environment used by the instantiated parser.
 		attr_reader :env
 
 		#################
@@ -141,10 +147,10 @@ module RLTK
 				@grammar       = CFG.new
 				@grammar_prime = nil
 
-				@lh_sides  = Hash.new
-				@procs     = Array.new
-				@states    = Array.new
-				
+				@lh_sides = Hash.new
+				@procs    = Array.new
+				@states   = Array.new
+
 				@symbols = nil
 
 				# Variables for dealing with precedence.
@@ -184,7 +190,7 @@ module RLTK
 								end
 
 							else
-								ProdProc.new { |*el|   el.length == 1 ? el.first : el }
+								ProdProc.new { |*el| el.length == 1 ? el.first : el }
 							end
 						end,
 						p.rhs.length
@@ -207,9 +213,9 @@ module RLTK
 			# with the same items as *state* in the state list its ID is
 			# returned and *state* is discarded.
 			#
-			# @param [State] state State to add to the parser.
+			# @param [State]  state  State to add to the parser.
 			#
-			# @return [Integer] The ID of the state.
+			# @return [Integer]  The ID of the state.
 			def add_state(state)
 				if (id = @states.index(state))
 					id
@@ -221,43 +227,6 @@ module RLTK
 					@states.length - 1
 				end
 			end
-
-			# Build a hash with the default options for Parser.finalize
-			# and then update it with the values from *opts*.
-			#
-			# @param [Hash{Symbol => Object}] opts Hash containing options for finalize.
-			#
-			# @return [Hash{Symbol => Object}]
-			def build_finalize_opts(opts)
-				opts[:explain]	= self.get_io(opts[:explain])
-
-				{
-					explain:    false,
-					lookahead:  true,
-					precedence: true,
-					use:        false
-				}.update(opts)
-			end
-			private :build_finalize_opts
-
-			# Build a hash with the default options for Parser.parse and
-			# then update it with the values from *opts*.
-			#
-			# @param [Hash{Symbol => Object}] opts Hash containing options for parse.
-			#
-			# @return [Hash{Symbol => Object}]
-			def build_parse_opts(opts)
-				opts[:parse_tree] = self.get_io(opts[:parse_tree])
-				opts[:verbose]    = self.get_io(opts[:verbose])
-
-				{
-					accept:     :first,
-					env:        self::Environment.new,
-					parse_tree: false,
-					verbose:    false
-				}.update(opts)
-			end
-			private :build_parse_opts
 
 			# This method is used to (surprise) check the sanity of the
 			# constructed parser.  It checks to make sure all non-terminals
@@ -272,7 +241,8 @@ module RLTK
 				# left-hand side of some production.
 				@grammar.nonterms.each do |sym|
 					if not @lh_sides.values.include?(sym)
-						raise ParserConstructionException, "Non-terminal #{sym} does not appear on the left-hand side of any production."
+						raise ParserConstructionException,
+						      "Non-terminal #{sym} does not appear on the left-hand side of any production."
 					end
 				end
 
@@ -284,12 +254,14 @@ module RLTK
 							actions.each do |action|
 								if action.is_a?(Accept)
 									if sym != :EOS
-										raise ParserConstructionException, "Accept action found for terminal #{sym} in state #{state.id}."
+										raise ParserConstructionException,
+										      "Accept action found for terminal #{sym} in state #{state.id}."
 									end
 
 								elsif not (action.is_a?(GoTo) or action.is_a?(Reduce) or action.is_a?(Shift))
-									raise ParserConstructionException, "Object of type #{action.class} found in actions for terminal " +
-										"#{sym} in state #{state.id}."
+									raise ParserConstructionException,
+									      "Object of type #{action.class} found in actions for terminal " +
+									      "#{sym} in state #{state.id}."
 
 								end
 							end
@@ -300,10 +272,12 @@ module RLTK
 						else
 							# Here we check actions for non-terminals.
 							if actions.length > 1
-								raise ParserConstructionException, "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
+								raise ParserConstructionException,
+								      "State #{state.id} has multiple GoTo actions for non-terminal #{sym}."
 
 							elsif actions.length == 1 and not actions.first.is_a?(GoTo)
-								raise ParserConstructionException, "State #{state.id} has non-GoTo action for non-terminal #{sym}."
+								raise ParserConstructionException,
+								      "State #{state.id} has non-GoTo action for non-terminal #{sym}."
 
 							end
 						end
@@ -365,7 +339,7 @@ module RLTK
 				expected_arity = (selections.empty? ? production.rhs.length : selections.length)
 				if arg_type == :splat and action.arity != expected_arity
 					raise ParserConstructionException,
-					      "Incorrect number of action parameters.  Expected #{expected_arity} but got #{action.arity}." +
+					      "Incorrect number of action parameters. Expected #{expected_arity} but got #{action.arity}." +
 						  ' Action arity must match the number of terminals and non-terminals in the clause.'
 				end
 
@@ -407,7 +381,7 @@ module RLTK
 			# arguments in the way specified here, unless overridden in the
 			# call to {Parser.clause}.
 			#
-			# @param [:array, :splat] type The default argument type.
+			# @param [:array, :splat]  type  The default argument type.
 			#
 			# @return [void]
 			def default_arg_type(type)
@@ -426,7 +400,7 @@ module RLTK
 			# This function will print a description of the parser to the
 			# provided IO object.
 			#
-			# @param [IO] io Input/Output object used for printing the parser's explanation.
+			# @param [IO]  io   Input/Output object used for printing the parser's explanation.
 			#
 			# @return [void]
 			def explain(io)
@@ -441,7 +415,7 @@ module RLTK
 					# Print the productions.
 					@grammar.productions.each do |sym, productions|
 
-						max_rhs_length = productions.inject(0) { |m, p| if (len = p.to_s.length) > m then len else m end }
+						max_rhs_length = productions.lazy.map { |p| p.to_s.length }.max
 
 						productions.each do |production|
 							p_string = production.to_s
@@ -464,7 +438,7 @@ module RLTK
 					io.puts('##########')
 					io.puts
 
-					max_token_len = @grammar.terms.inject(0) { |m, t| if t.length > m then t.length else m end }
+					max_token_len = @grammar.terms.lazy.map(&:length).max
 
 					@grammar.terms.sort {|a,b| a.to_s <=> b.to_s }.each do |term|
 						io.print("\t#{term}")
@@ -510,9 +484,7 @@ module RLTK
 						io.puts
 
 						io.puts("\t# ITEMS #")
-						max = state.items.inject(0) do |inner_max, item|
-							if item.lhs.to_s.length > inner_max then item.lhs.to_s.length else inner_max end
-						end
+						max = state.items.lazy.map { |item| item.lhs.to_s.length }.max
 
 						state.each do |item|
 							io.puts("\t#{item.to_s(max)}")
@@ -548,7 +520,8 @@ module RLTK
 					# Close any IO objects that aren't $stdout.
 					io.close if io.is_a?(IO) and io != $stdout
 				else
-					raise ParserConstructionException, 'Parser.explain called outside of finalize.'
+					raise ParserConstructionException,
+					      'Parser.explain called outside of finalize.'
 				end
 			end
 
@@ -559,37 +532,39 @@ module RLTK
 			# No calls to {Parser.production} may appear after the call to
 			# Parser.finalize.
 			#
+			# TODO: Rename the `use` parameter
+			# TODO: Rename the `explain` parameter and associated functions
+			#
 			# @param [Hash] opts Options describing how to finalize the parser.
 			#
-			# @option opts [Boolean,String,IO]  :explain     To explain the parser or not.
-			# @option opts [Boolean]            :lookahead   To use lookahead info for conflict resolution.
-			# @option opts [Boolean]            :precedence  To use precedence info for conflict resolution.
-			# @option opts [String,IO]          :use         A file name or object that is used to load/save the parser.
+			# @option [Boolean]            lookahead   To use lookahead info for conflict resolution.
+			# @option [Boolean]            precedence  To use precedence info for conflict resolution.
+			# @option [Boolean,String,IO]  explain     To explain the parser or not.
+			# @option [String,IO]          use         A file name or object that is used to load/save the parser.
 			#
 			# @return [void]
-			def finalize(opts = {})
+			def finalize(lookahead:  true,
+			             precedence: true,
+			             explain:    false,
+			             use:        false)
 
 				if @grammar.productions.empty?
 					raise ParserConstructionException,
-					      "Parser has no productions.  Cowardly refusing to construct an empty parser."
+					      "Parser has no productions. Cowardly refusing to construct an empty parser."
 				end
-
-				# Get the full options hash.
-				opts = build_finalize_opts(opts)
 
 				# Get the name of the file in which the parser is defined.
 				#
 				# FIXME: See why this is failing for the simple ListParser example.
-				def_file = caller()[2].split(':')[0] if opts[:use]
+				def_file = caller()[2].split(':')[0] if use
 
 				# Check to make sure we can load the necessary information
 				# from the specified object.
-				if opts[:use] and (
-					(opts[:use].is_a?(String) and File.exist?(opts[:use]) and File.mtime(opts[:use]) > File.mtime(def_file)) or
-					(opts[:use].is_a?(File) and opts[:use].mtime > File.mtime(def_file))
-					)
+				if use and (
+				   (use.is_a?(String) and File.exist?(use) and File.mtime(use) > File.mtime(def_file)) or
+				   (use.is_a?(File)   and use.mtime > File.mtime(def_file)))
 
-					file = self.get_io(opts[:use], 'r')
+					file = RLTK::get_io(use, 'r')
 
 					# Un-marshal our saved data structures.
 					file.flock(File::LOCK_SH)
@@ -597,7 +572,7 @@ module RLTK
 					file.flock(File::LOCK_UN)
 
 					# Close the file if we opened it.
-					file.close if opts[:use].is_a?(String)
+					file.close if use.is_a?(String)
 
 					# Remove any un-needed data and return.
 					return self.clean
@@ -664,46 +639,28 @@ module RLTK
 				# Build the production.id -> production.lhs map.
 				@grammar.productions(:id).each { |id, production| @lh_sides[id] = production.lhs }
 
-				# Prune the parsing table for unnecessary reduce actions.
-				self.prune(opts[:lookahead], opts[:precedence])
+				# Prune the parsing table of unnecessary reduce actions.
+				self.prune(lookahead, precedence)
 
 				# Check the parser for inconsistencies.
 				self.check_sanity
 
 				# Print the table if requested.
-				self.explain(opts[:explain]) if opts[:explain]
+				self.explain(RLTK::get_io(explain)) if explain
 
 				# Remove any data that is no longer needed.
 				self.clean
 
 				# Store the parser's final data structures if requested.
-				if opts[:use]
-					io = self.get_io(opts[:use])
+				if use
+					io = RLTK::get_io(use)
 
 					io.flock(File::LOCK_EX) if io.is_a?(File)
 					Marshal.dump([@lh_sides, @states, @symbols], io)
 					io.flock(File::LOCK_UN) if io.is_a?(File)
 
 					# Close the IO object if we opened it.
-					io.close if opts[:use].is_a?(String)
-				end
-			end
-
-			# Converts an object into an IO object as appropriate.
-			#
-			# @param [Object]  o     Object to be converted into an IO object.
-			# @param [String]  mode  String representing the mode to open the IO object in.
-			#
-			# @return [IO, false] The IO object or false if a conversion wasn't possible.
-			def get_io(o, mode = 'w')
-				if o.is_a?(TrueClass)
-					$stdout
-				elsif o.is_a?(String)
-					File.open(o, mode)
-				elsif o.is_a?(IO)
-					o
-				else
-					false
+					io.close if use.is_a?(String)
 				end
 			end
 
@@ -742,7 +699,8 @@ module RLTK
 						state.each do |item|
 							lhs = "#{state.id}_#{item.next_symbol}".to_sym
 
-							next unless CFG::is_nonterminal?(item.next_symbol) and not @grammar_prime.productions.keys.include?(lhs)
+							next unless CFG::is_nonterminal?(item.next_symbol) and
+							            not @grammar_prime.productions.keys.include?(lhs)
 
 							@grammar.productions[item.next_symbol].each do |production|
 								rhs = ''
@@ -785,7 +743,7 @@ module RLTK
 			def left(*symbols)
 				prec_level = @prec_counts[:left] += 1
 
-				symbols.map { |s| s.to_sym }.each do |sym|
+				symbols.map(&:to_sym).each do |sym|
 					@token_precs[sym] = [:left, prec_level]
 				end
 			end
@@ -799,7 +757,7 @@ module RLTK
 			def nonassoc(*symbols)
 				prec_level = @prec_counts[:non] += 1
 
-				symbols.map { |s| s.to_sym }.each do |sym|
+				symbols.map(&:to_sym).each do |sym|
 					@token_precs[sym] = [:non, prec_level]
 				end
 			end
@@ -829,14 +787,18 @@ module RLTK
 			# @option opts [Boolean,String,IO]  :verbose     To be verbose or not.
 			#
 			# @return [Object, Array<Object>]  Result or results of parsing the given tokens.
-			def parse(tokens, opts = {})
-				# Get the full options hash.
-				opts = build_parse_opts(opts)
-				v    = opts[:verbose]
+			def parse(tokens,
+			          accept:     :first,
+			          env:        self::Environment.new,
+			          parse_tree: false,
+			          verbose:    false)
 
-				if opts[:verbose]
+			    # Reasonable use of one letter variable name?
+				v = verbose
+
+				if verbose
 					v.puts("Input tokens:")
-					v.puts(tokens.map { |t| t.type }.inspect)
+					v.puts(tokens.map(&:type).inspect)
 					v.puts
 				end
 
@@ -860,12 +822,12 @@ module RLTK
 					# grammar definition.
 					raise BadToken.new(token) if not @symbols.include?(token.type)
 
-					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
+					v.puts("Current token: #{token.type}#{token.value ? "(#{token.value})" : ''}") if v
 
 					# Iterate over the stacks until each one is done.
 					while (stack = processing.shift)
 						# Execute any token hooks in this stack's environment.
-						@token_hooks[token.type].each { |hook| opts[:env].instance_exec(&hook)}
+						@token_hooks[token.type].each { |hook| env.instance_exec(&hook)}
 
 						# Get the available actions for this stack.
 						actions = @states[stack.state].on?(token.type)
@@ -874,7 +836,7 @@ module RLTK
 							# If we are already in error mode and there
 							# are no actions we skip this token.
 							if error_mode
-								v.puts("Discarding token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
+								v.puts("Discarding token: #{token.type}#{token.value ? "(#{token.value})" : ''}") if v
 
 								# Add the current token to the array
 								# that corresponds to the output value
@@ -888,7 +850,6 @@ module RLTK
 							# We would be dropping the last stack so we
 							# are going to go into error mode.
 							if accepted.empty? and moving_on.empty? and processing.empty?
-
 								if v
 									v.puts
 									v.puts('Current stack:')
@@ -915,22 +876,22 @@ module RLTK
 								if stack.state
 									# We found a valid error state.
 									error_mode = reduction_guard = true
-									opts[:env].he = true
+									env.he = true
 									moving_on << stack
 
 									if v
-										v.puts('Invalid input encountered.  Entering error handling mode.')
-										v.puts("Discarding token: #{token.type}#{if token.value then "(#{token.value})" end}")
+										v.puts('Invalid input encountered. Entering error handling mode.')
+										v.puts("Discarding token: #{token.type}#{token.value ? "(#{token.value})" : ''}")
 									end
 								else
 									# No valid error states could be
 									# found.  Time to print a message
 									# and leave.
 
-									v.puts("No more actions for stack #{stack.id}.  Dropping stack.") if v
+									v.puts("No more actions for stack #{stack.id}. Dropping stack.") if v
 								end
 							else
-								v.puts("No more actions for stack #{stack.id}.  Dropping stack.") if v
+								v.puts("No more actions for stack #{stack.id}. Dropping stack.") if v
 							end
 
 							next
@@ -952,14 +913,14 @@ module RLTK
 							end
 
 							if action.is_a?(Accept)
-								if opts[:accept] == :all
+								if accept == :all
 									accepted << new_stack
 								else
 									v.puts('Accepting input.') if v
-									opts[:parse_tree].puts(new_stack.tree) if opts[:parse_tree]
+									parse_tree.puts(new_stack.tree) if parse_tree
 
-									if opts[:env].he
-										raise HandledError.new(opts[:env].errors, new_stack.result)
+									if env.he
+										raise HandledError.new(env.errors, new_stack.result)
 									else
 										return new_stack.result
 									end
@@ -974,7 +935,7 @@ module RLTK
 								end
 
 								args, positions = new_stack.pop(pop_size)
-								opts[:env].set_positions(positions)
+								env.set_positions(positions)
 
 								if not production_proc.selections.empty?
 									args = args.values_at(*production_proc.selections)
@@ -982,9 +943,9 @@ module RLTK
 
 								result =
 								if production_proc.arg_type == :array
-									opts[:env].instance_exec(args, &production_proc)
+									env.instance_exec(args, &production_proc)
 								else
-									opts[:env].instance_exec(*args, &production_proc)
+									env.instance_exec(*args, &production_proc)
 								end
 
 								if (goto = @states[new_stack.state].on?(@lh_sides[action.id]).first)
@@ -998,21 +959,22 @@ module RLTK
 										# handled specially.
 										pos0 = new_stack.position
 
-										pos0.stream_offset	+= pos0.length + 1
-										pos0.line_offset	+= pos0.length + 1
+										pos0.stream_offset += pos0.length + 1
+										pos0.line_offset   += pos0.length + 1
 
 										pos0.length = 0
 									else
-										pos0 = opts[:env].pos( 0)
-										pos1 = opts[:env].pos(-1)
+										pos0 = env.pos( 0)
+										pos1 = env.pos(-1)
 
 										pos0.length = (pos1.stream_offset + pos1.length) - pos0.stream_offset
 									end
 
 									new_stack.push(goto.id, result, @lh_sides[action.id], pos0)
 								else
-									raise InternalParserException, "No GoTo action found in state #{stack.state} " +
-										"after reducing by production #{action.id}"
+									raise InternalParserException,
+									      "No GoTo action found in state #{stack.state} " +
+									      "after reducing by production #{action.id}"
 								end
 
 								# This stack is NOT ready for the next
@@ -1042,7 +1004,7 @@ module RLTK
 
 					# If we don't have any active stacks at this point the
 					# string isn't in the language.
-					if opts[:accept] == :first and processing.length == 0
+					if accept == :first and processing.length == 0
 						v.close if v and v != $stdout
 						raise NotInLanguage.new(tokens[0...index], tokens[index], tokens[index.next..-1])
 					end
@@ -1059,13 +1021,13 @@ module RLTK
 				end
 
 				accepted.each do |stack|
-					opts[:parse_tree].puts(stack.tree)
-				end if opts[:parse_tree]
+					parse_tree.puts(stack.tree)
+				end if parse_tree
 
 				results = accepted.map { |stack| stack.result }
 
-				if opts[:env].he
-					raise HandledError.new(opts[:env].errors, results)
+				if env.he
+					raise HandledError.new(env.errors, results)
 				else
 					return results
 				end
@@ -1079,18 +1041,19 @@ module RLTK
 			# Parser.clause.  A precedence can be associate with this
 			# production by setting *precedence* to a terminal symbol.
 			#
-			# @param [Symbol]				symbol		Left-hand side of the production.
-			# @param [String, Symbol, nil]	expression	Right-hand side of the production.
-			# @param [Symbol, nil]			precedence	Symbol representing the precedence of this produciton.
-			# @param [:array, :splat]		arg_type		Method to use when passing arguments to the action.
-			# @param [Proc]				action		Action associated with this production.
+			# @param [Symbol]               symbol      Left-hand side of the production.
+			# @param [String, Symbol, nil]  expression  Right-hand side of the production.
+			# @param [Symbol, nil]          precedence  Symbol representing the precedence of this produciton.
+			# @param [:array, :splat]       arg_type    Method to use when passing arguments to the action.
+			# @param [Proc]                 action      Action associated with this production.
 			#
 			# @return [void]
 			def production(symbol, expression = nil, precedence = nil, arg_type = @default_arg_type, &action)
 
 				# Check the symbol.
 				if not (symbol.is_a?(Symbol) or symbol.is_a?(String)) or not CFG::is_nonterminal?(symbol)
-					raise ParserConstructionException, 'Production symbols must be Strings or Symbols and be in all lowercase.'
+					raise ParserConstructionException,
+					      'Production symbols must be Strings or Symbols and be in all lowercase.'
 				end
 
 				@grammar.curr_lhs = symbol.to_sym
@@ -1128,7 +1091,7 @@ module RLTK
 				# If both options are false there is no pruning to do.
 				return if not (do_lookahead or do_precedence)
 
-				each_state do |state0|
+				self.each_state do |state0|
 
 					#####################
 					# Lookahead Pruning #
@@ -1136,7 +1099,7 @@ module RLTK
 
 					if do_lookahead
 						# Find all of the reductions in this state.
-						reductions = state0.actions.values.flatten.uniq.select { |a| a.is_a?(Reduce) }
+						reductions = state0.actions.values.flatten.lazy.uniq.select { |a| a.is_a?(Reduce) }
 
 						reductions.each do |reduction|
 							production = @grammar.productions(:id)[reduction.id]
@@ -1144,7 +1107,7 @@ module RLTK
 							lookahead = Array.new
 
 							# Build the lookahead set.
-							each_state do |state1|
+							self.each_state do |state1|
 								if self.check_reachability(state1, state0, production.rhs)
 									lookahead |= self.grammar_prime.follow_set("#{state1.id}_#{production.lhs}".to_sym)
 								end
@@ -1159,12 +1122,11 @@ module RLTK
 							# scale back the amount of pruning done.
 							pruning_candidates = terms - lookahead
 
-							if terms.include?(:ERROR)
-								pruning_candidates.each do |sym|
-									state0.actions[sym].delete(reduction) if state0.conflict_on?(sym)
+							no_error_term = (not terms.include?(:ERROR))
+							pruning_candidates.each do |sym|
+								if no_error_term or state0.conflict_on?(sym)
+									state0.actions[sym].delete(reduction)
 								end
-							else
-								pruning_candidates.each { |sym| state0.actions[sym].delete(reduction) }
 							end
 						end
 					end
@@ -1185,16 +1147,12 @@ module RLTK
 							# Reduce/Reduce conflict.
 							next unless actions and actions.length > 1
 
-							resolve_ok = actions.inject(true) do |m, a|
-								if a.is_a?(Reduce)
-									m and @production_precs[a.id]
-								else
-									m
-								end
-							end and actions.inject(false) { |m, a| m or a.is_a?(Shift) }
+							resolve_ok =
+							actions.all? { |a|	not a.is_a?(Reduce) or @production_precs[a.id] } and
+							actions.any? { |a| a.is_a?(Shift) }
 
 							if @token_precs[symbol] and resolve_ok
-								max_prec = 0
+								max_prec        = 0
 								selected_action = nil
 
 								# Grab the associativity and precedence
@@ -1229,13 +1187,13 @@ module RLTK
 			# are right associative.  Subsequent calls to this method will
 			# give their arguments higher precedence.
 			#
-			# @param [Array<Symbol>] symbols Symbols that are right-associative.
+			# @param [Array<Symbol>]  symbols  Symbols that are right-associative.
 			#
 			# @return [void]
 			def right(*symbols)
 				prec_level = @prec_counts[:right] += 1
 
-				symbols.map { |s| s.to_sym }.each do |sym|
+				symbols.map(&:to_sym).each do |sym|
 					@token_precs[sym] = [:right, prec_level]
 				end
 			end
@@ -1279,8 +1237,13 @@ module RLTK
 		# Parses the given token stream using the encapsulated environment.
 		#
 		# @see .parse
-		def parse(tokens, opts = {})
-			self.class.parse(tokens, {:env => @env}.update(opts))
+		def parse(tokens,
+		          accept:     :first,
+		          env:        @env,
+		          parse_tree: false,
+		          verbose:    false)
+
+			self.class.parse(tokens, accept: accept, env: env, parse_tree: parse_tree, verbose: verbose)
 		end
 
 		################################
@@ -1388,16 +1351,18 @@ module RLTK
 				# respond to `clone` but always raise an error.
 				new_output_stack = @output_stack.map do |o|
 					# Check to see if we can obtain a deep copy.
-					if 0.respond_to?(:copy)
+					if o.respond_to?(:copy)
 						o.copy
-
+					elsif o.respond_to?(:clone)
+						o.clone
 					else
-						begin o.clone rescue o end
+						o
 					end
 				end
 
 				ParseStack.new(new_id, new_output_stack, @state_stack.clone,
-					@node_stack.clone, @connections.clone, @labels.clone, @positions.clone)
+				               @node_stack.clone, @connections.clone,
+				               @labels.clone, @positions.clone)
 			end
 
 			# @return [StreamPosition] Position data for the last symbol on the stack.
@@ -1411,18 +1376,18 @@ module RLTK
 
 			# Push new state and other information onto the stack.
 			#
-			# @param [Integer]			state	ID of the shifted state.
-			# @param [Object]			o		Value of Token that caused the shift.
-			# @param [Symbol]			node0	Label for node in parse tree.
-			# @param [StreamPosition]	position	Position token that got shifted.
+			# @param [Integer]         state     ID of the shifted state.
+			# @param [Object]          o         Value of Token that caused the shift.
+			# @param [Symbol]          node0     Label for node in parse tree.
+			# @param [StreamPosition]  position  Position token that got shifted.
 			#
 			# @return [void]
 			def push(state, o, node0, position)
-				@state_stack	<< state
-				@output_stack	<< o
-				@node_stack	<< @labels.length
-				@labels		<< if CFG::is_terminal?(node0) and o then node0.to_s + "(#{o})" else node0 end
-				@positions	<< position
+				@state_stack  << state
+				@output_stack << o
+				@node_stack   << @labels.length
+				@labels       << if CFG::is_terminal?(node0) and o then node0.to_s + "(#{o})" else node0 end
+				@positions    << position
 
 				if CFG::is_nonterminal?(node0)
 					@cbuffer.each do |node1|
@@ -1455,7 +1420,8 @@ module RLTK
 				if @output_stack.length == 1
 					return @output_stack.last
 				else
-					raise InternalParserException, "The parsing stack should have 1 element on the output stack, not #{@output_stack.length}."
+					raise InternalParserException,
+					      "The parsing stack should have 1 element on the output stack, not #{@output_stack.length}."
 				end
 			end
 
@@ -1466,7 +1432,7 @@ module RLTK
 
 			# @return [String] Representation of the parse tree in the DOT langauge.
 			def tree
-				tree  = "digraph tree#{@id} {\n"
+				tree = "digraph tree#{@id} {\n"
 
 				@labels.each_with_index do |label, i|
 					tree += "\tnode#{i} [label=\"#{label}\""
@@ -1491,10 +1457,10 @@ module RLTK
 		# The State class is used to represent sets of items and actions to be
 		# used during parsing.
 		class State
-			# @return [Integer] State's ID.
+			# @return [Integer]  State's ID.
 			attr_accessor :id
 
-			# @return  [Array<CFG::Item>]  Item objects that comprise this state
+			# @return [Array<CFG::Item>]  Item objects that comprise this state
 			attr_reader :items
 
 			# @return [Hash{Symbol => Array<Action>}]  Maps lookahead symbols to actions
@@ -1533,7 +1499,7 @@ module RLTK
 				@actions.each { |k, v| if CFG::is_terminal?(k) and k != :ERROR then v << action end }
 			end
 
-			# @param [CFG::Item] item Item to add to this state.
+			# @param [CFG::Item]  item  Item to add to this state.
 			def append(item)
 				if item.is_a?(CFG::Item) and not @items.include?(item) then @items << item end
 			end
@@ -1569,8 +1535,8 @@ module RLTK
 			# @return [:SR, :RR, nil]
 			def conflict_on?(sym)
 
-				reductions	= 0
-				shifts		= 0
+				reductions = 0
+				shifts     = 0
 
 				@actions[sym].each do |action|
 					if action.is_a?(Reduce)
@@ -1604,15 +1570,16 @@ module RLTK
 
 			# Specify an Action to perform when the input token is *symbol*.
 			#
-			# @param [Symbol] symbol Symbol to add action for.
-			# @param [Action] action Action for symbol.
+			# @param [Symbol]  symbol  Symbol to add action for.
+			# @param [Action]  action  Action for symbol.
 			#
 			# @return [void]
 			def on(symbol, action)
 				if @actions.key?(symbol)
 					@actions[symbol] << action
 				else
-					raise ParserConstructionException, "Attempting to set action for token (#{symbol}) not seen in grammar definition."
+					raise ParserConstructionException,
+					      "Attempting to set action for token (#{symbol}) not seen in grammar definition."
 				end
 			end
 
@@ -1633,7 +1600,8 @@ module RLTK
 			# @return [:array, :splat]  Method that should be used to pass arguments to this proc.
 			attr_reader :arg_type
 
-			# @return [Array<Integer>]  Mask for selection of tokens to pass to action.  Empty mask means pass all.
+			# @return [Array<Integer>]  Mask for selection of tokens to pass to action. Empty
+			#                           mask means pass all.
 			attr_reader :selections
 
 			def initialize(arg_type = :splat, selections = [])

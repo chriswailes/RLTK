@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/04/06
-# Description:	This file contains unit tests for the RLTK::ASTNode class.
+# Author:      Chris Wailes <chris.wailes+rltk@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/04/06
+# Description: This file contains unit tests for the RLTK::ASTNode class.
 
 ############
 # Requires #
@@ -92,57 +92,58 @@ class ASTNodeTester < Minitest::Test
 		@tree2 = ANode.new(BNode.new, BNode.new(CNode.new))
 		@tree3 = ANode.new(CNode.new(BNode.new), CNode.new)
 
-		@tree4 =	SNode.new('F',
-					SNode.new('B',
-						SNode.new('A'),
-						SNode.new('D',
-							SNode.new('C'),
-							SNode.new('E')
-						),
+		@tree4 =
+			SNode.new('F',
+				SNode.new('B',
+					SNode.new('A'),
+					SNode.new('D',
+						SNode.new('C'),
+						SNode.new('E')
 					),
-					SNode.new('G',
-						nil,
-						SNode.new('I',
-							SNode.new('H')
-						)
+				),
+				SNode.new('G',
+					nil,
+					SNode.new('I',
+						SNode.new('H')
 					)
 				)
+			)
 
-		@tree5 = FNode.new('one',
+		@tree5 =
+			FNode.new('one',
 				[FNode.new('two',
 					[ENode.new('three')]),
-				ENode.new('four')])
+				 ENode.new('four')])
 
-		@tree6 = FNode.new('one',
+		@tree6 =
+			FNode.new('one',
 				[FNode.new('two',
 					[ENode.new('three')]),
-				ENode.new('four')])
+				 ENode.new('four')])
 
-		@tree7 = FNode.new('one!',
+		@tree7 =
+			FNode.new('one!',
 				[FNode.new('two!',
 					[ENode.new('three!')]),
-				ENode.new('four!')])
+				 ENode.new('four!')])
 
 		@bc_proc = Proc.new do |n|
 			case n
 			when BNode then	CNode.new(n.left, n.right)
 			when CNode then	BNode.new(n.left, n.right)
-			else				n
+			else            n
 			end
 		end
 	end
 
 	def test_children
 		node = ANode.new
-
 		assert_equal(node.children, [nil, nil])
 
 		node.children = (expected_children = [BNode.new, CNode.new])
-
 		assert_equal(node.children, expected_children)
 
-		node.children = (expected_children = {:left => CNode.new, :right => BNode.new})
-
+		node.children = (expected_children = {left: CNode.new, right: BNode.new})
 		assert_equal(node.children(Hash), expected_children)
 	end
 
@@ -162,22 +163,22 @@ class ASTNodeTester < Minitest::Test
 
 	def test_each
 		# Test pre-order
-		nodes	= []
-		expected	= ['F', 'B', 'A', 'D', 'C', 'E', 'G', 'I', 'H']
+		nodes    = []
+		expected = ['F', 'B', 'A', 'D', 'C', 'E', 'G', 'I', 'H']
 		@tree4.each(:pre) { |n| nodes << n.string }
 
 		assert_equal(expected, nodes)
 
 		# Test post-order
-		nodes	= []
-		expected	= ['A', 'C', 'E', 'D', 'B', 'H', 'I', 'G', 'F']
+		nodes    = []
+		expected = ['A', 'C', 'E', 'D', 'B', 'H', 'I', 'G', 'F']
 		@tree4.each(:post) { |n| nodes << n.string }
 
 		assert_equal(expected, nodes)
 
 		# Test level-order
-		nodes	= []
-		expected	= ['F', 'B', 'G', 'A', 'D', 'I', 'C', 'E', 'H']
+		nodes    = []
+		expected = ['F', 'B', 'G', 'A', 'D', 'I', 'C', 'E', 'H']
 		@tree4.each(:level) { |n| nodes << n.string }
 
 		assert_equal(expected, nodes)
@@ -216,9 +217,7 @@ class ASTNodeTester < Minitest::Test
 		assert_equal(@tree3, mapped_tree)
 
 		mapped_tree = @tree5.map do |c|
-			c.str += '!'
-
-			c
+			c.tap { c.str += '!' }
 		end
 
 		assert_equal(@tree6, @tree5)
@@ -238,9 +237,7 @@ class ASTNodeTester < Minitest::Test
 		assert_equal(CNode.new, replace_node)
 
 		@tree5.map! do |c|
-			c.str += '!'
-
-			c
+			c.tap { c.str += '!' }
 		end
 
 		refute_equal(@tree6, @tree5)
@@ -318,15 +315,12 @@ class ASTNodeTester < Minitest::Test
 
 	def test_value
 		node = VNode.new
-
 		assert_equal(node.values, [nil, nil])
 
 		node.values = (expected_values = [42, 1984])
-
 		assert_equal(node.values, expected_values)
 
 		node.values = (expected_values = {:a => 1984, :b => 42})
-
 		assert_equal(node.values(Hash), expected_values)
 	end
 end

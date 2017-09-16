@@ -5,7 +5,5 @@
 
 module RLTK
 	# The version number of the RLTK library.
-	VERSION             = '3.0.2'
-	# The version of LLVM targeted by RLTK.
-	LLVM_TARGET_VERSION = '3.4'
+	VERSION = '4.0.0'
 end

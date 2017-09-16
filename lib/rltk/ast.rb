@@ -1,7 +1,7 @@
-# Author:		Chris Wailes <chris.wailes@gmail.com>
-# Project: 	Ruby Language Toolkit
-# Date:		2011/01/19
-# Description:	This file provides a base Node class for ASTs.
+# Author:      Chris Wailes <chris.wailes+rltk@gmail.com>
+# Project:     Ruby Language Toolkit
+# Date:        2011/01/19
+# Description: This file provides a base Node class for ASTs.
 
 ############
 # Requires #
@@ -19,6 +19,8 @@ require 'filigree/visitor'
 #######################
 
 module RLTK
+	using Filigree
+
 	# This class is a good start for all your abstract syntax tree node needs.
 	class ASTNode
 
@@ -49,11 +51,13 @@ module RLTK
 			# @raise [ArgumentError]  Raised if the name is already used for an existing value or child
 			def check_odr(name)
 				if @child_names.include? name
-					raise ArgumentError, "Class #{self} or one of its superclasses already defines a child named #{name}"
+					raise ArgumentError,
+					      "Class #{self} or one of its superclasses already defines a child named #{name}"
 				end
 
 				if @value_names.include?(name)
-					raise ArgumentError, "Class #{self} or one of its superclasses already defines a value named #{name}"
+					raise ArgumentError,
+					      "Class #{self} or one of its superclasses already defines a value named #{name}"
 				end
 			end
 
@@ -113,7 +117,8 @@ module RLTK
 					t = type
 
 				else
-					raise 'Child and Value types must be a class name or an array with a single class name element.'
+					raise 'Child and Value types must be a class name or an array ' +
+					      'with a single class name element.'
 				end
 
 				# Check to make sure that type is a subclass of ASTNode.
@@ -154,32 +159,36 @@ module RLTK
 				ivar_name = ('@' + name.to_s).to_sym
 
 				define_method(name) do
-					self.instance_variable_defined?(ivar_name) ? self.instance_variable_get(ivar_name) : nil
+					self.instance_variable_defined?(ivar_name) ?
+						self.instance_variable_get(ivar_name) : nil
 				end
 
 				if type.is_a?(Class)
 					if set_parent
 						define_method((name.to_s + '=').to_sym) do |value|
-							self.instance_variable_set(ivar_name, check_type(value, type, nil, true))
+							self.instance_variable_set(ivar_name, check_type(value, type, nillable: true))
 							value.parent = self if value
 						end
 
 					else
 						define_method((name.to_s + '=').to_sym) do |value|
-							self.instance_variable_set(ivar_name, check_type(value, type, nil, true))
+							self.instance_variable_set(ivar_name, check_type(value, type, nillable: true))
 						end
 					end
 
 				else
 					if set_parent
 						define_method((name.to_s + '=').to_sym) do |value|
-							self.instance_variable_set(ivar_name, check_array_type(value, type.first, nil, true))
+							self.instance_variable_set(ivar_name,
+							                           check_array_type(value, type.first, nillable: true))
+
 							value.each { |c| c.parent = self }
 						end
 
 					else
 						define_method((name.to_s + '=').to_sym) do |value|
-							self.instance_variable_set(ivar_name, check_array_type(value, type.first, nil, true))
+							self.instance_variable_set(ivar_name,
+							                           check_array_type(value, type.first, nillable: true))
 						end
 					end
 				end
@@ -242,7 +251,8 @@ module RLTK
 				check_odr(name)
 
 				if not (type.is_a?(Class) or (type.is_a?(Array) and type.length == 1))
-					raise 'Child and Value types must be a class name or an array with a single class name element.'
+					raise 'Child and Value types must be a class name or an array ' +
+					      'with a single class name element.'
 				end
 
 				@value_names   << name
@@ -274,7 +284,9 @@ module RLTK
 		#
 		# @return [Boolean]
 		def ==(other)
-			self.class == other.class and self.values == other.values and self.children == other.children
+			self.class    == other.class    and
+			self.values   == other.values   and
+			self.children == other.children
 		end
 
 		# @return [Object]  Note with the name *key*
@@ -290,14 +302,14 @@ module RLTK
 		# This method allows ASTNodes to be destructured for pattern matching.
 		def destructure(arity)
 			case self.class.member_order
-			when :values   then (self.class.inc_values + self.class.inc_children)
+			when :values   then (self.class.inc_values   + self.class.inc_children)
 			when :children then (self.class.inc_children + self.class.inc_values)
-			when :def      then self.class.def_order
-			when Array     then self.class.member_order
+			when :def      then  self.class.def_order
+			when Array     then  self.class.member_order
 			end.map { |m| self.send m }
 		end
 
-		# @param [Class] as The type that should be returned by the method.  Must be either Array or hash.
+		# @param [Class]  as  The type that should be returned by the method.  Must be either Array or hash.
 		#
 		# @return [Array<ASTNode>, Hash{Symbol => ASTNode}] Array or Hash of this node's children.
 		def children(as = Array)
@@ -316,7 +328,7 @@ module RLTK
 		# If a hash is provided as an argument the key is used as the name of
 		# the child a object should be assigned to.
 		#
-		# @param [Array<ASTNode>, Hash{Symbol => ASTNode}] children Children to be assigned to this node.
+		# @param [Array<ASTNode>, Hash{Symbol => ASTNode}]  children  Children to be assigned to this node.
 		#
 		# @return [void]
 		def children=(children)
@@ -352,11 +364,11 @@ module RLTK
 		# is true it will also remove the note from the node's children.
 		#
 		# @param [Object]   key        The key of the note to remove
-		# @param [Boolean]  recursive	 Do a recursive removal or not
+		# @param [Boolean]  recursive  Do a recursive removal or not
 		def delete_note(key, recursive = true)
 			if recursive
 				self.children.each do |child|
-					next if not child
+					next if child.nil?
 
 					if child.is_a?(Array)
 						child.each { |c| c.delete_note(key, true) }
@@ -375,7 +387,8 @@ module RLTK
 		#
 		# @param [nil, IO, String]  dest   Where the serialized version of the AST will end up.  If nil,
 		#                                  this method will return the AST as a string.
-		# @param [Fixnum]           limit  Recursion depth.  If -1 is specified there is no limit on the recursion depth.
+		# @param [Fixnum]           limit  Recursion depth.  If -1 is specified there is no limit on the
+		#                                  recursion depth.
 		#
 		# @return [void, String]  String if *dest* is nil, void otherwise.
 		def dump(dest = nil, limit = -1)
@@ -383,7 +396,8 @@ module RLTK
 			when nil    then Marshal.dump(self, limit)
 			when String then File.open(dest, 'w') { |f| Marshal.dump(self, f, limit) }
 			when IO     then Marshal.dump(self, dest, limit)
-			else	            raise TypeError, "AST#dump expects nil, a String, or an IO object for the dest parameter."
+			else             raise TypeError, 'AST#dump expects nil, a String, or an IO object ' +
+			                                  'for the dest parameter.'
 			end
 		end
 
@@ -448,10 +462,10 @@ module RLTK
 
 			pairs =
 			case self.class.member_order
-			when :values   then (self.class.inc_values + self.class.inc_children)
+			when :values   then (self.class.inc_values   + self.class.inc_children)
 			when :children then (self.class.inc_children + self.class.inc_values)
-			when :def      then self.class.def_order
-			when Array     then self.class.member_order
+			when :def      then  self.class.def_order
+			when Array     then  self.class.member_order
 			end.zip(objects).first(objects.length)
 
 			pairs.each do |name, value|
@@ -486,7 +500,7 @@ module RLTK
 				end
 			end
 
-			new_node		= self.class.new(*new_values, *new_children)
+			new_node       = self.class.new(*new_values, *new_children)
 			new_node.notes = self.notes
 
 			block.call(new_node)
@@ -497,8 +511,8 @@ module RLTK
 		# children of a node are visited before the node itself.
 		#
 		# @note The root node can not be replaced and as such the result of
-		#	calling the provided block on the root node is used as the
-		#	return value.
+		#       calling the provided block on the root node is used as the
+		#       return value.
 		#
 		# @return [Object]  Result of calling the given block on the root node
 		def map!(&block)
