@@ -20,8 +20,12 @@ module RLTK
 	# that wasn't used in the grammar's definition.
 	class BadToken < StandardError
 		# @return [String] String representation of the error.
+		def initialize(token)
+			@token = token
+		end
+
 		def to_s
-			'Unexpected token.  Token not present in grammar definition.'
+			"Unexpected token: #{token.inspect}.  Token not present in grammar definition."
 		end
 	end
 
@@ -841,7 +845,7 @@ module RLTK
 				tokens.each_with_index do |token, index|
 					# Check to make sure this token was seen in the
 					# grammar definition.
-					raise BadToken if not @symbols.include?(token.type)
+                    raise BadToken.new(token) if not @symbols.include?(token.type)
 
 					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
 
