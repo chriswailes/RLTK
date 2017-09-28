@@ -25,7 +25,7 @@ module RLTK
 		end
 
 		def to_s
-			"Unexpected token: #{token.inspect}.  Token not present in grammar definition."
+			"Unexpected token: #{@token.inspect}.  Token not present in grammar definition."
 		end
 	end
 
