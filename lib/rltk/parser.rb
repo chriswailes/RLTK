@@ -845,7 +845,7 @@ module RLTK
 				tokens.each_with_index do |token, index|
 					# Check to make sure this token was seen in the
 					# grammar definition.
-                    raise BadToken.new(token) if not @symbols.include?(token.type)
+					raise BadToken.new(token) if not @symbols.include?(token.type)
 
 					v.puts("Current token: #{token.type}#{if token.value then "(#{token.value})" end}") if v
 
