@@ -172,27 +172,33 @@ module RLTK
 							else             ProdProc.new { |o|   o }
 							end
 
-						when :elp
+						when :list
 							case which
-							when :empty then ProdProc.new { ||         [] }
-							else             ProdProc.new { |prime| prime }
-							end
-
-						when :nelp
-							case which
-							when :single
-								ProdProc.new { |el| [el] }
-
-							when :multiple
-								ProdProc.new(:splat, sels) do |*syms|
-									el = syms[1..-1]
-									syms.first << (el.length == 1 ? el.first : el)
-								end
-
-							else
-								ProdProc.new { |*el| el.length == 1 ? el.first : el }
-							end
+							when :empty
+							when
 						end,
+
+#						when :elp
+#							case which
+#							when :empty then ProdProc.new { ||         [] }
+#							else             ProdProc.new { |prime| prime }
+#							end
+
+#						when :nelp
+#							case which
+#							when :single
+#								ProdProc.new { |el| [el] }
+
+#							when :multiple
+#								ProdProc.new(:splat, sels) do |*syms|
+#									el = syms[1..-1]
+#									syms.first << (el.length == 1 ? el.first : el)
+#								end
+
+#							else
+#								ProdProc.new { |*el| el.length == 1 ? el.first : el }
+#							end
+#						end,
 						p.rhs.length
 					]
 

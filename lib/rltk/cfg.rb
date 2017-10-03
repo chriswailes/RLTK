@@ -102,6 +102,32 @@ module RLTK
 			production
 		end
 
+		# Builds a production representing a (possibly empty) list of tokens.
+		# These tokens may optionally be separated by a provided token.  This
+		# function is used to eliminate the EBNF * operator.
+		#
+		# @param [Symbol]                         name           The name of the production to add
+		# @param [String, Symbol, Array<String>]  list_elements  Expression(s) that may appear in the list
+		# @param [Symbol, String]                 separator      The list separator symbol or symbols
+		#
+		# @return [void]
+		def list(name, list_elements, separator: '')
+			self.build_list_production(name, list_elements, separator, true)
+		end
+
+		# Builds a production representing a non-empty list of tokens.  These
+		# tokens may optionally be separated by a provided token.  This
+		# function is used to eliminate the EBNF + operator.
+		#
+		# @param [Symbol]                                 name           The name of the production to add
+		# @param [String, Symbol, Array<String, Symbol>]  list_elements  Expression(s) that may appear in the list
+		# @param [Symbol, String]                         separator      The list separator symbol or symbols
+		#
+		# @return [void]
+		def nonempty_list(name, list_elements, separator: '')
+			self.build_list_production(name, list_elements, separator, false)
+		end
+
 		# If the production already exists it will be returned.  If it does not
 		# exist then it will be created and then returned.
 		#
@@ -115,7 +141,7 @@ module RLTK
 				name
 
 			else
-				build_list_production(name, list_elements, separator)
+				self.build_list_production(name, list_elements, separator, empty: false)
 			end
 		end
 		alias :get_list :get_list_production
@@ -129,27 +155,27 @@ module RLTK
 		# @param [Symbol, String]                 separator      The list separator symbol or symbols
 		#
 		# @return [void]
-		def build_list_production(name, list_elements, separator = '')
-			# Add the items for the following productions:
-			#
-			# name: | name_prime
+#		def build_list_production(name, list_elements, separator = '')
+#			# Add the items for the following productions:
+#			#
+#			# name: | name_prime
 
-			name_prime = "#{name}_prime".to_sym
+#			name_prime = "#{name}_prime".to_sym
 
-			# 1st Production
-			production, _ = self.production(name, '')
-			@callback.call(:elp, :empty, production)
+#			# 1st Production
+#			production, _ = self.production(name, '')
+#			@callback.call(:elp, :empty, production)
 
-			# 2nd Production
-			production, _ = self.production(name, name_prime)
-			@callback.call(:elp, :nonempty, production)
+#			# 2nd Production
+#			production, _ = self.production(name, name_prime)
+#			@callback.call(:elp, :nonempty, production)
 
 #			# Add remaining productions via nonempty_list helper.
 #			self.nonempty_list(name_prime, list_elements, separator)
 
-			name
-		end
-		alias :list :build_list_production
+#			name
+#		end
+#		alias :list :build_list_production
 
 		# If the production already exists it will be returned.  If it does not
 		# exist then it will be created and then returned.
@@ -164,72 +190,103 @@ module RLTK
 				name
 
 			else
-				build_nonempty_list_production(name, list_elements, separator)
+				self.build_list_production(name, list_elements, separator, empty: false)
 			end
 		end
 		alias :get_nonempty_list :get_nonempty_list_production
 
-		# Builds a production representing a non-empty list of tokens.  These
-		# tokens may optionally be separated by a provided token.  This
-		# function is used to eliminate the EBNF + operator.
+		# Builds either an empty or non-empty list production.  These tokens
+		# may optionally be separated by a provided token.  This function is
+		# used to eliminate the EBNF + and * operators.
 		#
 		# @param [Symbol]                                 name           The name of the production to add
 		# @param [String, Symbol, Array<String, Symbol>]  list_elements  Expression(s) that may appear in the list
 		# @param [Symbol, String]                         separator      The list separator symbol or symbols
+		# @param [Boolean]                                empty          If the list may be empty or not
 		#
 		# @return [void]
-		def build_nonempty_list_production(name, list_elements, separator = '')
+		def build_list_production(name, list_elements, separator, empty)
 			# Add the items for the following productions:
 			#
 			# If there is only one list element:
 			#
+			#   # For non-empty lists
 			#   name: list_element | name separator list_element
+			#
+			#   # For empty lists
+			#   name: ɛ | name separator list_element
 			#
 			# else
 			#
+			#   # For non-empty lists
 			#   name: name_list_elements | name separator name_list_elements
 			#
 			#   name_list_elements: #{list_elements.join('|')}
+			#
+			#   # For empty lists
+			#   name: ɛ | name separator name_list_elements
+			#
+			#   name_list_elements: #{list_elements.join('|')}
 
-			build_elements_productions = false
+			if separator != '' and empty
+				# Add the items for the following productions:
+				#
+				# name: | name_prime
 
-			list_element_string =
-			if list_elements.is_a?(Array)
-				if list_elements.empty?
-					raise ArgumentError, 'Parameter list_elements must not be empty.'
+				name_prime = "#{name}_prime".to_sym
 
-				elsif list_elements.length == 1
-					list_elements.first
+				# 1st Production
+				production, _ = self.production(name, '')
+				@callback.call(:elp, :empty, production) # FIXME
 
-				else
-					build_elements_productions = true
-					"#{name}_list_elements"
-				end
+				# 2nd Production
+				production, _ = self.production(name, name_prime)
+				@callback.call(:elp, :nonempty, production) # FIXME
+
+				# Add remaining productions via nonempty_list helper.
+				self.build_list_production(name_prime, list_elements, separator, false)
 			else
-				list_elements
-			end
 
-			list_element_selected_string = list_element_string.to_s.split.map { |s| ".#{s}" }.join(' ')
+				build_elements_productions = false
 
-			# Single Element Production
-			production, _ = self.production(name, list_element_string)
-			@callback.call(:nelp, :single, production)
+				list_element_string =
+				if list_elements.is_a?(Array)
+					if list_elements.empty?
+						raise ArgumentError,
+							  'Parameter list_elements must not be empty.'
 
-			# Multiple Element Production
-			production, selections = self.production(name, ".#{name} #{separator} #{list_element_selected_string}")
-			@callback.call(:nelp, :multiple, production, selections)
+					elsif list_elements.length == 1
+						list_elements.first
 
-			if build_elements_productions
-				# List Element Productions
-				list_elements.each do |element|
-					production, _ = self.production(list_element_string, element)
-					@callback.call(:nelp, :elements, production)
+					else
+						build_elements_productions = true
+						"#{name}_list_elements"
+					end
+				else
+					list_elements
+				end
+
+				list_element_selected_string = list_element_string.to_s.split.map { |s| ".#{s}" }.join(' ')
+
+				# Single Element Production
+				production, _ = self.production(name, empty ? '' : list_element_string)
+				@callback.call(:list, empty ? :empty : :single, production)  # FIXME
+
+				# Multiple Element Production
+				production, selections = self.production(name, ".#{name} #{separator} #{list_element_selected_string}")
+				@callback.call(:list, :multiple, production, selections) # FIXME
+
+				if build_elements_productions
+					# List Element Productions
+					list_elements.each do |element|
+						production, _ = self.production(list_element_string, element)
+						@callback.call(:nelp, :elements, production) # FIXME
+					end
 				end
 			end
 
 			name
 		end
-		alias :nonempty_list :build_nonempty_list_production
 
 		# If the production already exists it will be returned.  If it does not
 		# exist then it will be created and then returned.
