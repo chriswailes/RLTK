@@ -141,7 +141,7 @@ module RLTK
 				name
 
 			else
-				self.build_list_production(name, list_elements, separator, empty: false)
+				self.build_list_production(name, list_elements, separator, true)
 			end
 		end
 		alias :get_list :get_list_production
@@ -190,7 +190,7 @@ module RLTK
 				name
 
 			else
-				self.build_list_production(name, list_elements, separator, empty: false)
+				self.build_list_production(name, list_elements, separator, false)
 			end
 		end
 		alias :get_nonempty_list :get_nonempty_list_production
@@ -237,11 +237,11 @@ module RLTK
 
 				# 1st Production
 				production, _ = self.production(name, '')
-				@callback.call(:elp, :empty, production) # FIXME
+				@callback.call(:list, :empty_wrapper, production) # FIXME []
 
 				# 2nd Production
 				production, _ = self.production(name, name_prime)
-				@callback.call(:elp, :nonempty, production) # FIXME
+				@callback.call(:list, :nonempty_wrapper, production) # FIXME xs
 
 				# Add remaining productions via nonempty_list helper.
 				self.build_list_production(name_prime, list_elements, separator, false)
@@ -268,19 +268,25 @@ module RLTK
 
 				list_element_selected_string = list_element_string.to_s.split.map { |s| ".#{s}" }.join(' ')
 
-				# Single Element Production
-				production, _ = self.production(name, empty ? '' : list_element_string)
-				@callback.call(:list, empty ? :empty : :single, production)  # FIXME
+				if empty
+					# Empty Production
+					production, _ = self.production(name, '')
+					@callback.call(:list, :empty, production)  # FIXME []
+				else
+					# Single Element Production
+					production, _ = self.production(name, list_element_string)
+					@callback.call(:list, :single, production)  # FIXME [x]
+				end
 
 				# Multiple Element Production
-				production, selections = self.production(name, ".#{name} #{separator} #{list_element_selected_string}")
-				@callback.call(:list, :multiple, production, selections) # FIXME
+				production, selections = self.production(name, ".#{name} #{separator} .#{list_element_selected_string}")
+				@callback.call(:list, :multiple, production, selections) # FIXME xs + [x]
 
 				if build_elements_productions
 					# List Element Productions
 					list_elements.each do |element|
 						production, _ = self.production(list_element_string, element)
-						@callback.call(:nelp, :elements, production) # FIXME
+						@callback.call(:list, :elements, production) # FIXME x
 					end
 				end
 			end

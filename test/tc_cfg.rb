@@ -54,35 +54,23 @@ class CFGTester < Minitest::Test
 		call_count = 0
 		grammar.callback do |type, which, p|
 			refute_nil(p)
+			assert_equal(:list, type)
 
 			case call_count
-			when 0
-				assert_equal(:elp, type)
-				assert_equal(:empty, which)
-
-			when 1
-				assert_equal(:elp, type)
-				assert_equal(:nonempty, which)
-
-			when 2
-				assert_equal(:nelp, type)
-				assert_equal(:single, which)
-
-			when 3
-				assert_equal(:nelp, type)
-				assert_equal(:multiple, which)
+			when 0 then assert_equal(:empty, which)
+			when 1 then assert_equal(:multiple, which)
 			end
 
 			call_count += 1
 		end
 
 		grammar.production(:a, 'A*') { |a| a }
-		assert_equal(4, call_count)
+		assert_equal(2, call_count)
 
 		call_count = 0
 		grammar.callback do |type, which, p|
 			refute_nil(p)
-			assert_equal(type, :nelp)
+			assert_equal(type, :list)
 
 			case call_count
 			when 0 then assert_equal(:single, which)

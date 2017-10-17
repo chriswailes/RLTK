@@ -26,12 +26,12 @@ require 'rltk/parsers/postfix_calc'
 #######################
 
 class ParserTester < Minitest::Test
-	class ABLexer < RLTK::Lexer
-		rule(/a/) { [:A, 1] }
-		rule(/b/) { [:B, 2] }
+#	class ABLexer < RLTK::Lexer
+#		rule(/a/) { [:A, 1] }
+#		rule(/b/) { [:B, 2] }
 
-		rule(/\s/)
-	end
+#		rule(/\s/)
+#	end
 
 	class AlphaLexer < RLTK::Lexer
 		rule(/[A-Za-z]/) { |t| [t.upcase.to_sym, t] }
@@ -41,82 +41,84 @@ class ParserTester < Minitest::Test
 		rule(/\s/)
 	end
 
-	class UnderscoreLexer < RLTK::Lexer
-		rule(/\w/) { |t| [:A_TOKEN, t] }
-	end
+#	class UnderscoreLexer < RLTK::Lexer
+#		rule(/\w/) { |t| [:A_TOKEN, t] }
+#	end
 
-	class APlusBParser < RLTK::Parser
-		production(:a, 'A+ B') { |a, _| a.length }
+#	class APlusBParser < RLTK::Parser
+#		production(:a, 'A+ B') { |a, _| a.length }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class AQuestionBParser < RLTK::Parser
-		production(:a, 'A? B') { |a, _| a }
+#	class AQuestionBParser < RLTK::Parser
+#		production(:a, 'A? B') { |a, _| a }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class AStarBParser < RLTK::Parser
-		production(:a, 'A* B') { |a, _| a.length }
+#	class AStarBParser < RLTK::Parser
+#		production(:a, 'A* B') { |a, _| a.length }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class AmbiguousParser < RLTK::Parser
-		production(:e) do
-			clause('NUM') {|n| n}
+#	class AmbiguousParser < RLTK::Parser
+#		production(:e) do
+#			clause('NUM') {|n| n}
 
-			clause('e PLS e') { |e0, _, e1| e0 + e1 }
-			clause('e SUB e') { |e0, _, e1| e0 - e1 }
-			clause('e MUL e') { |e0, _, e1| e0 * e1 }
-			clause('e DIV e') { |e0, _, e1| e0 / e1 }
-		end
+#			clause('e PLS e') { |e0, _, e1| e0 + e1 }
+#			clause('e SUB e') { |e0, _, e1| e0 - e1 }
+#			clause('e MUL e') { |e0, _, e1| e0 * e1 }
+#			clause('e DIV e') { |e0, _, e1| e0 / e1 }
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class ArrayCalc < RLTK::Parser
-		dat :array
+#	class ArrayCalc < RLTK::Parser
+#		dat :array
 
-		production(:e) do
-			clause('NUM') { |v| v[0] }
+#		production(:e) do
+#			clause('NUM') { |v| v[0] }
 
-			clause('PLS e e') { |v| v[1] + v[2] }
-			clause('SUB e e') { |v| v[1] - v[2] }
-			clause('MUL e e') { |v| v[1] * v[2] }
-			clause('DIV e e') { |v| v[1] / v[2] }
-		end
+#			clause('PLS e e') { |v| v[1] + v[2] }
+#			clause('SUB e e') { |v| v[1] - v[2] }
+#			clause('MUL e e') { |v| v[1] * v[2] }
+#			clause('DIV e e') { |v| v[1] / v[2] }
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
 
-	# This grammar is purposefully ambiguous.  This should not be equivalent
-	# to the grammar produced with `e -> A B? B?`, due to greedy Kleene
-	# operators.
-	class AmbiguousParseStackParser < RLTK::Parser
-		production(:s, 'e*') { |e| e }
+#	# This grammar is purposefully ambiguous.  This should not be equivalent
+#	# to the grammar produced with `e -> A B? B?`, due to greedy Kleene
+#	# operators.
+#	class AmbiguousParseStackParser < RLTK::Parser
+#		production(:s, 'e*') { |e| e }
 
-		production(:e, 'A b_question b_question') { |a, b0, b1| [a, b0, b1] }
+#		production(:e, 'A b_question b_question') { |a, b0, b1| [a, b0, b1] }
 
-		production(:b_question) do
-			clause('')	{ | | nil }
-			clause('B')	{ |b|   b }
-		end
+#		production(:b_question) do
+#			clause('')	{ | | nil }
+#			clause('B')	{ |b|   b }
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class EBNFSelectorParser < RLTK::Parser
-		dat :array
+#	class EBNFSelectorParser < RLTK::Parser
+#		dat :array
 
-		production(:s) do
-			clause('.A .B* .A') { |a| a }
-			clause('.B C* .B')  { |a| a }
-		end
+#		production(:s) do
+#			clause('.A .B* .A') { |a| a }
+#			clause('.B C* .B')  { |a| a }
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
+
+	puts "ELP0"
 
 	class EmptyListParser0 < RLTK::Parser
 		list('list', :A, :COMMA)
@@ -124,268 +126,270 @@ class ParserTester < Minitest::Test
 		finalize
 	end
 
+	puts "ELP1"
+
 	class EmptyListParser1 < RLTK::Parser
 		dat :array
 
 		list('list', ['A', 'B', 'C D'], :COMMA)
 
-		finalize
+		finalize explain: "elp1.pdesc"
 	end
 
-	class GreedTestParser0 < RLTK::Parser
-		production(:e, 'A? A') { |a0, a1| [a0, a1] }
+#	class GreedTestParser0 < RLTK::Parser
+#		production(:e, 'A? A') { |a0, a1| [a0, a1] }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class GreedTestParser1 < RLTK::Parser
-		production(:e, 'A? A?') { |a0, a1| [a0, a1] }
+#	class GreedTestParser1 < RLTK::Parser
+#		production(:e, 'A? A?') { |a0, a1| [a0, a1] }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class GreedTestParser2 < RLTK::Parser
-		production(:e, 'A* A') { |a0, a1| [a0, a1] }
+#	class GreedTestParser2 < RLTK::Parser
+#		production(:e, 'A* A') { |a0, a1| [a0, a1] }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class GreedTestParser3 < RLTK::Parser
-		production(:e, 'A+ A') { |a0, a1| [a0, a1] }
+#	class GreedTestParser3 < RLTK::Parser
+#		production(:e, 'A+ A') { |a0, a1| [a0, a1] }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class NonEmptyListParser0 < RLTK::Parser
-		nonempty_list('list', :A, :COMMA)
+#	class NonEmptyListParser0 < RLTK::Parser
+#		nonempty_list('list', :A, :COMMA)
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class NonEmptyListParser1 < RLTK::Parser
-		nonempty_list('list', [:A, :B], :COMMA)
+#	class NonEmptyListParser1 < RLTK::Parser
+#		nonempty_list('list', [:A, :B], :COMMA)
 
-		finalize explain: 'nelp1.tbl'
-	end
+#		finalize explain: 'nelp1.tbl'
+#	end
 
-	class NonEmptyListParser2 < RLTK::Parser
-		nonempty_list('list', ['A', 'B', 'C D'], :COMMA)
+#	class NonEmptyListParser2 < RLTK::Parser
+#		nonempty_list('list', ['A', 'B', 'C D'], :COMMA)
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class NonEmptyListParser3 < RLTK::Parser
-		nonempty_list('list', 'A+', :COMMA)
+#	class NonEmptyListParser3 < RLTK::Parser
+#		nonempty_list('list', 'A+', :COMMA)
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class NonEmptyListParser4 < RLTK::Parser
-		nonempty_list('list', :A)
+#	class NonEmptyListParser4 < RLTK::Parser
+#		nonempty_list('list', :A)
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class NonEmptyListParser5 < RLTK::Parser
-		nonempty_list('list', :A, 'B C?')
+#	class NonEmptyListParser5 < RLTK::Parser
+#		nonempty_list('list', :A, 'B C?')
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class DummyError1 < StandardError; end
-	class DummyError2 < StandardError; end
+#	class DummyError1 < StandardError; end
+#	class DummyError2 < StandardError; end
 
-	class ErrorCalcParser < RLTK::Parser
-		left :ERROR
-		right :PLS, :SUB, :MUL, :DIV, :NUM
+#	class ErrorCalcParser < RLTK::Parser
+#		left :ERROR
+#		right :PLS, :SUB, :MUL, :DIV, :NUM
 
-		production(:e) do
-			clause('NUM') {|n| n}
+#		production(:e) do
+#			clause('NUM') {|n| n}
 
-			clause('e PLS e') { |e0, _, e1| e0 + e1 }
-			clause('e SUB e') { |e0, _, e1| e0 - e1 }
-			clause('e MUL e') { |e0, _, e1| e0 * e1 }
-			clause('e DIV e') { |e0, _, e1| e0 / e1 }
+#			clause('e PLS e') { |e0, _, e1| e0 + e1 }
+#			clause('e SUB e') { |e0, _, e1| e0 - e1 }
+#			clause('e MUL e') { |e0, _, e1| e0 * e1 }
+#			clause('e DIV e') { |e0, _, e1| e0 / e1 }
 
-			clause('e PLS ERROR e') { |e0, _, ts, e1| error(ts); e0 + e1 }
-		end
+#			clause('e PLS ERROR e') { |e0, _, ts, e1| error(ts); e0 + e1 }
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class AssocCalcParser < RLTK::Parser
-		left :PLS, :DIV ; right :SUB, :MUL
+#	class AssocCalcParser < RLTK::Parser
+#		left :PLS, :DIV ; right :SUB, :MUL
 
-		production(:e) do
-			clause('NUM') {|n| n}
+#		production(:e) do
+#			clause('NUM') {|n| n}
 
-			clause('e PLS e') { |e0, _, e1| e0 + e1 }
-			clause('e SUB e') { |e0, _, e1| e0 - e1 }
-			clause('e MUL e') { |e0, _, e1| e0 * e1 }
-			clause('e DIV e') { |e0, _, e1| e0 / e1 }
-		end
+#			clause('e PLS e') { |e0, _, e1| e0 + e1 }
+#			clause('e SUB e') { |e0, _, e1| e0 - e1 }
+#			clause('e MUL e') { |e0, _, e1| e0 * e1 }
+#			clause('e DIV e') { |e0, _, e1| e0 / e1 }
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class ELLexer < RLTK::Lexer
-		rule(/\n/) { :NEWLINE }
-		rule(/;/)  { :SEMI    }
+#	class ELLexer < RLTK::Lexer
+#		rule(/\n/) { :NEWLINE }
+#		rule(/;/)  { :SEMI    }
 
-		rule(/\s/)
+#		rule(/\s/)
 
-		rule(/[A-Za-z]+/) { |t| [:WORD, t] }
-	end
+#		rule(/[A-Za-z]+/) { |t| [:WORD, t] }
+#	end
 
-	class ErrorLine < RLTK::Parser
+#	class ErrorLine < RLTK::Parser
 
-		production(:s, 'line*') { |l| l }
+#		production(:s, 'line*') { |l| l }
 
-		production(:line) do
-			clause('NEWLINE') { |_| nil }
+#		production(:line) do
+#			clause('NEWLINE') { |_| nil }
 
-			clause('WORD+ SEMI NEWLINE') { |w, _, _| w }
-			clause('WORD+ ERROR')        { |w, e| error(pos(1).line_number); w }
-		end
+#			clause('WORD+ SEMI NEWLINE') { |w, _, _| w }
+#			clause('WORD+ ERROR')        { |w, e| error(pos(1).line_number); w }
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class UnderscoreParser < RLTK::Parser
-		production(:s, 'A_TOKEN+') { |o| o }
+#	class UnderscoreParser < RLTK::Parser
+#		production(:s, 'A_TOKEN+') { |o| o }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class RotatingCalc < RLTK::Parser
-		production(:e) do
-			clause('NUM') {|n| n}
+#	class RotatingCalc < RLTK::Parser
+#		production(:e) do
+#			clause('NUM') {|n| n}
 
-			clause('PLS e e') { |_, e0, e1| e0.send(get_op(:+), e1) }
-			clause('SUB e e') { |_, e0, e1| e0.send(get_op(:-), e1) }
-			clause('MUL e e') { |_, e0, e1| e0.send(get_op(:*), e1) }
-			clause('DIV e e') { |_, e0, e1| e0.send(get_op(:/), e1) }
-		end
+#			clause('PLS e e') { |_, e0, e1| e0.send(get_op(:+), e1) }
+#			clause('SUB e e') { |_, e0, e1| e0.send(get_op(:-), e1) }
+#			clause('MUL e e') { |_, e0, e1| e0.send(get_op(:*), e1) }
+#			clause('DIV e e') { |_, e0, e1| e0.send(get_op(:/), e1) }
+#		end
 
-		class Environment < Environment
-			def initialize
-				@map = { :+ => 0, :- => 1, :* => 2, :/ => 3 }
-				@ops = [ :+, :-, :*, :/ ]
-			end
+#		class Environment < Environment
+#			def initialize
+#				@map = { :+ => 0, :- => 1, :* => 2, :/ => 3 }
+#				@ops = [ :+, :-, :*, :/ ]
+#			end
 
-			def get_op(orig_op)
-				new_op = @ops[@map[orig_op]]
+#			def get_op(orig_op)
+#				new_op = @ops[@map[orig_op]]
 
-				@ops = @ops[1..-1] << @ops[0]
+#				@ops = @ops[1..-1] << @ops[0]
 
-				new_op
-			end
-		end
+#				new_op
+#			end
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class SelectionParser < RLTK::Parser
-		production(:s, 'A+ .B+') { |bs| bs.inject(&:+) }
+#	class SelectionParser < RLTK::Parser
+#		production(:s, 'A+ .B+') { |bs| bs.inject(&:+) }
 
-		finalize
-	end
+#		finalize
+#	end
 
-	class UselessParser < RLTK::Parser
-		production(:s, 'A+') { |a| a }
-	end
+#	class UselessParser < RLTK::Parser
+#		production(:s, 'A+') { |a| a }
+#	end
 
-	class TokenHookParser < RLTK::Parser
-		dat :array
+#	class TokenHookParser < RLTK::Parser
+#		dat :array
 
-		production(:s) do
-			clause('A A A A') { |_| nil }
-			clause('B B B B') { |_| nil }
-		end
+#		production(:s) do
+#			clause('A A A A') { |_| nil }
+#			clause('B B B B') { |_| nil }
+#		end
 
-		token_hook(:A) { @counter += 1 }
-		token_hook(:B) { @counter += 2 }
+#		token_hook(:A) { @counter += 1 }
+#		token_hook(:B) { @counter += 2 }
 
-		class Environment < Environment
-			attr_reader :counter
+#		class Environment < Environment
+#			attr_reader :counter
 
-			def initialize
-				@counter = 0
-			end
-		end
+#			def initialize
+#				@counter = 0
+#			end
+#		end
 
-		finalize
-	end
+#		finalize
+#	end
 
-	def test_ambiguous_grammar
-		actual = AmbiguousParser.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'), {accept: :all})
-		assert_equal([7, 9], actual.sort)
-	end
+#	def test_ambiguous_grammar
+#		actual = AmbiguousParser.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'), {accept: :all})
+#		assert_equal([7, 9], actual.sort)
+#	end
 
 	# This test is to ensure that objects placed on the output stack are
 	# cloned when we split the parse stack.  This was posted as Issue #17 on
 	# Github.
-	def test_ambiguous_parse_stack
-		assert_equal(1, AmbiguousParseStackParser.parse(ABLexer.lex('ab')).length)
-	end
+#	def test_ambiguous_parse_stack
+#		assert_equal(1, AmbiguousParseStackParser.parse(ABLexer.lex('ab')).length)
+#	end
 
-	def test_array_args
-		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
-		assert_equal(3, actual)
+#	def test_array_args
+#		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
+#		assert_equal(3, actual)
 
-		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 * 2 3'))
-		assert_equal(7, actual)
+#		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 * 2 3'))
+#		assert_equal(7, actual)
 
-		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
-		assert_equal(9, actual)
-	end
+#		actual = ArrayCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
+#		assert_equal(9, actual)
+#	end
 
-	def test_associativity
-		actual = AssocCalcParser.parse(RLTK::Lexers::Calculator.lex('5 - 3 - 2'))
-		assert_equal(4, actual)
+#	def test_associativity
+#		actual = AssocCalcParser.parse(RLTK::Lexers::Calculator.lex('5 - 3 - 2'))
+#		assert_equal(4, actual)
 
-		actual = AssocCalcParser.parse(RLTK::Lexers::Calculator.lex('12 / 2 / 2'))
-		assert_equal(3, actual)
-	end
+#		actual = AssocCalcParser.parse(RLTK::Lexers::Calculator.lex('12 / 2 / 2'))
+#		assert_equal(3, actual)
+#	end
 
-	def test_construction_error
-		assert_raises(RLTK::ParserConstructionException) do
-			Class.new(RLTK::Parser) do
-				finalize
-			end
-		end
-	end
+#	def test_construction_error
+#		assert_raises(RLTK::ParserConstructionException) do
+#			Class.new(RLTK::Parser) do
+#				finalize
+#			end
+#		end
+#	end
 
-	def test_ebnf_parsing
-		################
-		# APlusBParser #
-		################
+#	def test_ebnf_parsing
+#		################
+#		# APlusBParser #
+#		################
 
-		assert_raises(RLTK::NotInLanguage) { APlusBParser.parse(ABLexer.lex('b')) }
+#		assert_raises(RLTK::NotInLanguage) { APlusBParser.parse(ABLexer.lex('b')) }
 
-		assert_equal(1, APlusBParser.parse(ABLexer.lex('ab')))
-		assert_equal(2, APlusBParser.parse(ABLexer.lex('aab')))
-		assert_equal(3, APlusBParser.parse(ABLexer.lex('aaab')))
-		assert_equal(4, APlusBParser.parse(ABLexer.lex('aaaab')))
+#		assert_equal(1, APlusBParser.parse(ABLexer.lex('ab')))
+#		assert_equal(2, APlusBParser.parse(ABLexer.lex('aab')))
+#		assert_equal(3, APlusBParser.parse(ABLexer.lex('aaab')))
+#		assert_equal(4, APlusBParser.parse(ABLexer.lex('aaaab')))
 
-		####################
-		# AQuestionBParser #
-		####################
+#		####################
+#		# AQuestionBParser #
+#		####################
 
-		assert_raises(RLTK::NotInLanguage) { AQuestionBParser.parse(ABLexer.lex('aab')) }
-		assert_nil(AQuestionBParser.parse(ABLexer.lex('b')))
-		refute_nil(AQuestionBParser.parse(ABLexer.lex('ab')))
+#		assert_raises(RLTK::NotInLanguage) { AQuestionBParser.parse(ABLexer.lex('aab')) }
+#		assert_nil(AQuestionBParser.parse(ABLexer.lex('b')))
+#		refute_nil(AQuestionBParser.parse(ABLexer.lex('ab')))
 
-		################
-		# AStarBParser #
-		################
+#		################
+#		# AStarBParser #
+#		################
 
-		assert_equal(0, AStarBParser.parse(ABLexer.lex('b')))
-		assert_equal(1, AStarBParser.parse(ABLexer.lex('ab')))
-		assert_equal(2, AStarBParser.parse(ABLexer.lex('aab')))
-		assert_equal(3, AStarBParser.parse(ABLexer.lex('aaab')))
-		assert_equal(4, AStarBParser.parse(ABLexer.lex('aaaab')))
-	end
+#		assert_equal(0, AStarBParser.parse(ABLexer.lex('b')))
+#		assert_equal(1, AStarBParser.parse(ABLexer.lex('ab')))
+#		assert_equal(2, AStarBParser.parse(ABLexer.lex('aab')))
+#		assert_equal(3, AStarBParser.parse(ABLexer.lex('aaab')))
+#		assert_equal(4, AStarBParser.parse(ABLexer.lex('aaaab')))
+#	end
 
 	def test_empty_list
 		####################
@@ -401,343 +405,343 @@ class ParserTester < Minitest::Test
 		####################
 
 		expected = ['a', 'b', ['c', 'd']]
-		actual   = EmptyListParser1.parse(AlphaLexer.lex('a, b, c d'))
+		actual   = EmptyListParser1.parse(AlphaLexer.lex('a, b, c d'), verbose: true)
 		assert_equal(expected, actual)
 	end
 
-	def test_greed
+#	def test_greed
 
-		####################
-		# GreedTestParser0 #
-		####################
+#		####################
+#		# GreedTestParser0 #
+#		####################
 
-		expected = [nil, 'a']
-		actual   = GreedTestParser0.parse(AlphaLexer.lex('a'))
-		assert_equal(expected, actual)
-
-		expected = ['a', 'a']
-		actual   = GreedTestParser0.parse(AlphaLexer.lex('a a'))
-		assert_equal(expected, actual)
-
-		####################
-		# GreedTestParser1 #
-		####################
-
-		expected = [nil, nil]
-		actual   = GreedTestParser1.parse(AlphaLexer.lex(''))
-		assert_equal(expected, actual)
-
-		# TODO: Figure out what to do with this.
-#		expected = ['a', nil]
-#		actual   = GreedTestParser1.parse(AlphaLexer.lex('a'))
+#		expected = [nil, 'a']
+#		actual   = GreedTestParser0.parse(AlphaLexer.lex('a'))
 #		assert_equal(expected, actual)
 
-		expected = ['a', 'a']
-		actual   = GreedTestParser1.parse(AlphaLexer.lex('a a'))
-		assert_equal(expected, actual)
+#		expected = ['a', 'a']
+#		actual   = GreedTestParser0.parse(AlphaLexer.lex('a a'))
+#		assert_equal(expected, actual)
 
-		####################
-		# GreedTestParser2 #
-		####################
+#		####################
+#		# GreedTestParser1 #
+#		####################
 
-		expected = [[], 'a']
-		actual   = GreedTestParser2.parse(AlphaLexer.lex('a'))
-		assert_equal(expected, actual)
+#		expected = [nil, nil]
+#		actual   = GreedTestParser1.parse(AlphaLexer.lex(''))
+#		assert_equal(expected, actual)
 
-		expected = [['a'], 'a']
-		actual   = GreedTestParser2.parse(AlphaLexer.lex('a a'))
-		assert_equal(expected, actual)
+#		# TODO: Figure out what to do with this.
+##		expected = ['a', nil]
+##		actual   = GreedTestParser1.parse(AlphaLexer.lex('a'))
+##		assert_equal(expected, actual)
 
-		expected = [['a', 'a'], 'a']
-		actual   = GreedTestParser2.parse(AlphaLexer.lex('a a a'))
-		assert_equal(expected, actual)
+#		expected = ['a', 'a']
+#		actual   = GreedTestParser1.parse(AlphaLexer.lex('a a'))
+#		assert_equal(expected, actual)
 
-		####################
-		# GreedTestParser3 #
-		####################
+#		####################
+#		# GreedTestParser2 #
+#		####################
 
-		expected = [['a'], 'a']
-		actual   = GreedTestParser3.parse(AlphaLexer.lex('a a'))
-		assert_equal(expected, actual)
+#		expected = [[], 'a']
+#		actual   = GreedTestParser2.parse(AlphaLexer.lex('a'))
+#		assert_equal(expected, actual)
 
-		expected = [['a', 'a'], 'a']
-		actual   = GreedTestParser3.parse(AlphaLexer.lex('a a a'))
-		assert_equal(expected, actual)
-	end
+#		expected = [['a'], 'a']
+#		actual   = GreedTestParser2.parse(AlphaLexer.lex('a a'))
+#		assert_equal(expected, actual)
 
-	def test_ebnf_selector_interplay
-		expected = ['a', ['b', 'b', 'b'], 'a']
-		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('abbba'))
-		assert_equal(expected, actual)
+#		expected = [['a', 'a'], 'a']
+#		actual   = GreedTestParser2.parse(AlphaLexer.lex('a a a'))
+#		assert_equal(expected, actual)
 
-		expected = ['a', [], 'a']
-		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('aa'))
-		assert_equal(expected, actual)
+#		####################
+#		# GreedTestParser3 #
+#		####################
 
-		expected = ['b', 'b']
-		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('bb'))
-		assert_equal(expected, actual)
+#		expected = [['a'], 'a']
+#		actual   = GreedTestParser3.parse(AlphaLexer.lex('a a'))
+#		assert_equal(expected, actual)
 
-		expected = ['b', 'b']
-		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('bcccccb'))
-		assert_equal(expected, actual)
-	end
+#		expected = [['a', 'a'], 'a']
+#		actual   = GreedTestParser3.parse(AlphaLexer.lex('a a a'))
+#		assert_equal(expected, actual)
+#	end
 
-	def test_environment
-		actual = RotatingCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
-		assert_equal(3, actual)
+#	def test_ebnf_selector_interplay
+#		expected = ['a', ['b', 'b', 'b'], 'a']
+#		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('abbba'))
+#		assert_equal(expected, actual)
 
-		actual = RotatingCalc.parse(RLTK::Lexers::Calculator.lex('/ 1 * 2 3'))
-		assert_equal(7, actual)
+#		expected = ['a', [], 'a']
+#		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('aa'))
+#		assert_equal(expected, actual)
 
-		actual = RotatingCalc.parse(RLTK::Lexers::Calculator.lex('- + 1 2 3'))
-		assert_equal(9, actual)
+#		expected = ['b', 'b']
+#		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('bb'))
+#		assert_equal(expected, actual)
 
-		parser = RotatingCalc.new
+#		expected = ['b', 'b']
+#		actual   = EBNFSelectorParser.parse(AlphaLexer.lex('bcccccb'))
+#		assert_equal(expected, actual)
+#	end
 
-		actual = parser.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
-		assert_equal(3, actual)
+#	def test_environment
+#		actual = RotatingCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
+#		assert_equal(3, actual)
 
-		actual = parser.parse(RLTK::Lexers::Calculator.lex('/ 1 2'))
-		assert_equal(3, actual)
-	end
+#		actual = RotatingCalc.parse(RLTK::Lexers::Calculator.lex('/ 1 * 2 3'))
+#		assert_equal(7, actual)
 
-	def test_error_productions
+#		actual = RotatingCalc.parse(RLTK::Lexers::Calculator.lex('- + 1 2 3'))
+#		assert_equal(9, actual)
 
-		# Test to see if error reporting is working correctly.
+#		parser = RotatingCalc.new
 
-		test_string  = "first line;\n"
-		test_string += "second line\n"
-		test_string += "third line;\n"
-		test_string += "fourth line\n"
+#		actual = parser.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
+#		assert_equal(3, actual)
 
-		assert_raises(RLTK::HandledError) { ErrorLine.parse(ELLexer.lex(test_string)) }
+#		actual = parser.parse(RLTK::Lexers::Calculator.lex('/ 1 2'))
+#		assert_equal(3, actual)
+#	end
 
-		begin
-			ErrorLine.parse(ELLexer.lex(test_string))
+#	def test_error_productions
 
-		rescue RLTK::HandledError => e
-			assert_equal([2,4], e.errors)
-		end
+#		# Test to see if error reporting is working correctly.
 
-		# Test to see if we can continue parsing after errors are encounterd.
+#		test_string  = "first line;\n"
+#		test_string += "second line\n"
+#		test_string += "third line;\n"
+#		test_string += "fourth line\n"
 
-		begin
-			ErrorCalcParser.parse(RLTK::Lexers::Calculator.lex('1 + + 1'))
+#		assert_raises(RLTK::HandledError) { ErrorLine.parse(ELLexer.lex(test_string)) }
 
-		rescue RLTK::HandledError => e
-			assert_equal(1, e.errors.first.length)
-			assert_equal(2, e.result)
-		end
+#		begin
+#			ErrorLine.parse(ELLexer.lex(test_string))
 
-		# Test to see if we pop tokens correctly after an error is
-		# encountered.
+#		rescue RLTK::HandledError => e
+#			assert_equal([2,4], e.errors)
+#		end
 
-		begin
-			ErrorCalcParser.parse(RLTK::Lexers::Calculator.lex('1 + + + + + + 1'))
-
-		rescue RLTK::HandledError => e
-			assert_equal(5, e.errors.first.length)
-			assert_equal(2, e.result)
-		end
-	end
-
-	def test_infix_calc
-		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2'))
-		assert_equal(3, actual)
-
-		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'))
-		assert_equal(7, actual)
+#		# Test to see if we can continue parsing after errors are encounterd.
 
-		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('(1 + 2) * 3'))
-		assert_equal(9, actual)
-
-		assert_raises(RLTK::NotInLanguage) do
-			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *'))
-		end
-	end
+#		begin
+#			ErrorCalcParser.parse(RLTK::Lexers::Calculator.lex('1 + + 1'))
+
+#		rescue RLTK::HandledError => e
+#			assert_equal(1, e.errors.first.length)
+#			assert_equal(2, e.result)
+#		end
 
-	def test_input
-		assert_raises(RLTK::BadToken) do
-			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::EBNF.lex('A B C'))
-		end
-	end
+#		# Test to see if we pop tokens correctly after an error is
+#		# encountered.
 
-	def test_nonempty_list
-		#######################
-		# NonEmptyListParser0 #
-		#######################
+#		begin
+#			ErrorCalcParser.parse(RLTK::Lexers::Calculator.lex('1 + + + + + + 1'))
 
-		expected = ['a']
-		actual   = NonEmptyListParser0.parse(AlphaLexer.lex('a'))
-		assert_equal(expected, actual)
+#		rescue RLTK::HandledError => e
+#			assert_equal(5, e.errors.first.length)
+#			assert_equal(2, e.result)
+#		end
+#	end
 
-		expected = ['a', 'a']
-		actual   = NonEmptyListParser0.parse(AlphaLexer.lex('a, a'))
-		assert_equal(expected, actual)
+#	def test_infix_calc
+#		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2'))
+#		assert_equal(3, actual)
 
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(''))   }
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(','))  }
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('aa')) }
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('a,')) }
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(',a')) }
+#		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'))
+#		assert_equal(7, actual)
 
-		#######################
-		# NonEmptyListParser1 #
-		#######################
+#		actual = RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('(1 + 2) * 3'))
+#		assert_equal(9, actual)
 
-		expected = ['a']
-		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('a'))
-		assert_equal(expected, actual)
+#		assert_raises(RLTK::NotInLanguage) do
+#			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *'))
+#		end
+#	end
 
-		expected = ['b']
-		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('b'))
-		assert_equal(expected, actual)
+#	def test_input
+#		assert_raises(RLTK::BadToken) do
+#			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::EBNF.lex('A B C'))
+#		end
+#	end
 
-		expected = ['a', 'b', 'a', 'b']
-		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('a, b, a, b'))
-		assert_equal(expected, actual)
+#	def test_nonempty_list
+#		#######################
+#		# NonEmptyListParser0 #
+#		#######################
 
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a b')) }
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a, ')) }
+#		expected = ['a']
+#		actual   = NonEmptyListParser0.parse(AlphaLexer.lex('a'))
+#		assert_equal(expected, actual)
 
-		#######################
-		# NonEmptyListParser2 #
-		#######################
+#		expected = ['a', 'a']
+#		actual   = NonEmptyListParser0.parse(AlphaLexer.lex('a, a'))
+#		assert_equal(expected, actual)
 
-		expected = ['a']
-		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('a'))
-		assert_equal(expected, actual)
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(''))   }
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(','))  }
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('aa')) }
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex('a,')) }
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser0.parse(AlphaLexer.lex(',a')) }
 
-		expected = ['b']
-		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('b'))
-		assert_equal(expected, actual)
+#		#######################
+#		# NonEmptyListParser1 #
+#		#######################
 
-		expected = [['c', 'd']]
-		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('c d'))
-		assert_equal(expected, actual)
+#		expected = ['a']
+#		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('a'))
+#		assert_equal(expected, actual)
 
-		expected = [['c', 'd'], ['c', 'd']]
-		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('c d, c d'))
-		assert_equal(expected, actual)
+#		expected = ['b']
+#		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('b'))
+#		assert_equal(expected, actual)
 
-		expected = ['a', 'b', ['c', 'd']]
-		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('a, b, c d'))
-		assert_equal(expected, actual)
+#		expected = ['a', 'b', 'a', 'b']
+#		actual   = NonEmptyListParser1.parse(AlphaLexer.lex('a, b, a, b'))
+#		assert_equal(expected, actual)
 
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('c')) }
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('d')) }
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a b')) }
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser1.parse(AlphaLexer.lex('a, ')) }
 
-		#######################
-		# NonEmptyListParser3 #
-		#######################
+#		#######################
+#		# NonEmptyListParser2 #
+#		#######################
 
-		expected = [['a'], ['a', 'a'], ['a', 'a', 'a']]
-		actual   = NonEmptyListParser3.parse(AlphaLexer.lex('a, aa, aaa'))
-		assert_equal(expected, actual)
+#		expected = ['a']
+#		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('a'))
+#		assert_equal(expected, actual)
 
-		#######################
-		# NonEmptyListParser4 #
-		#######################
+#		expected = ['b']
+#		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('b'))
+#		assert_equal(expected, actual)
 
-		expected = ['a', 'a', 'a']
-		actual   = NonEmptyListParser4.parse(AlphaLexer.lex('a a a'))
-		assert_equal(expected, actual)
+#		expected = [['c', 'd']]
+#		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('c d'))
+#		assert_equal(expected, actual)
 
-		#######################
-		# NonEmptyListParser5 #
-		#######################
+#		expected = [['c', 'd'], ['c', 'd']]
+#		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('c d, c d'))
+#		assert_equal(expected, actual)
 
-		expected = ['a', 'a', 'a']
-		actual   = NonEmptyListParser5.parse(AlphaLexer.lex('a b a b c a'))
-		assert_equal(expected, actual)
+#		expected = ['a', 'b', ['c', 'd']]
+#		actual   = NonEmptyListParser2.parse(AlphaLexer.lex('a, b, c d'))
+#		assert_equal(expected, actual)
 
-		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser5.parse(AlphaLexer.lex('a b b a')) }
-	end
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('c')) }
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser2.parse(AlphaLexer.lex('d')) }
 
-	def test_postfix_calc
-		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 +'))
-		assert_equal(3, actual)
+#		#######################
+#		# NonEmptyListParser3 #
+#		#######################
 
-		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 3 * +'))
-		assert_equal(7, actual)
+#		expected = [['a'], ['a', 'a'], ['a', 'a', 'a']]
+#		actual   = NonEmptyListParser3.parse(AlphaLexer.lex('a, aa, aaa'))
+#		assert_equal(expected, actual)
 
-		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *'))
-		assert_equal(9, actual)
+#		#######################
+#		# NonEmptyListParser4 #
+#		#######################
 
-		assert_raises(RLTK::NotInLanguage) do
-			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
-		end
-	end
+#		expected = ['a', 'a', 'a']
+#		actual   = NonEmptyListParser4.parse(AlphaLexer.lex('a a a'))
+#		assert_equal(expected, actual)
 
-	def test_prefix_calc
-		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
-		assert_equal(3, actual)
+#		#######################
+#		# NonEmptyListParser5 #
+#		#######################
 
-		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 * 2 3'))
-		assert_equal(7, actual)
+#		expected = ['a', 'a', 'a']
+#		actual   = NonEmptyListParser5.parse(AlphaLexer.lex('a b a b c a'))
+#		assert_equal(expected, actual)
 
-		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
-		assert_equal(9, actual)
+#		assert_raises(RLTK::NotInLanguage) { NonEmptyListParser5.parse(AlphaLexer.lex('a b b a')) }
+#	end
 
-		assert_raises(RLTK::NotInLanguage) do
-			RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'))
-		end
-	end
+#	def test_postfix_calc
+#		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 +'))
+#		assert_equal(3, actual)
 
-	def test_selection_parser
-		actual   = SelectionParser.parse(ABLexer.lex('aaabbb'))
-		expected = 6
+#		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 3 * +'))
+#		assert_equal(7, actual)
 
-		assert_equal(expected, actual)
-	end
+#		actual = RLTK::Parsers::PostfixCalc.parse(RLTK::Lexers::Calculator.lex('1 2 + 3 *'))
+#		assert_equal(9, actual)
 
-	def test_token_hooks
-		parser = TokenHookParser.new
+#		assert_raises(RLTK::NotInLanguage) do
+#			RLTK::Parsers::InfixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
+#		end
+#	end
 
-		parser.parse(AlphaLexer.lex('a a a a'))
-		assert_equal(4, parser.env.counter)
+#	def test_prefix_calc
+#		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 2'))
+#		assert_equal(3, actual)
 
-		parser.parse(AlphaLexer.lex('b b b b'))
-		assert_equal(12, parser.env.counter)
-	end
+#		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('+ 1 * 2 3'))
+#		assert_equal(7, actual)
 
-	def test_underscore_tokens
-		actual   = UnderscoreParser.parse(UnderscoreLexer.lex('abc')).join
-		expected = 'abc'
+#		actual = RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('* + 1 2 3'))
+#		assert_equal(9, actual)
 
-		assert_equal(expected, actual)
-	end
+#		assert_raises(RLTK::NotInLanguage) do
+#			RLTK::Parsers::PrefixCalc.parse(RLTK::Lexers::Calculator.lex('1 + 2 * 3'))
+#		end
+#	end
 
-	def test_use
-		tmpfile = File.join(Dir.tmpdir, 'usetest')
+#	def test_selection_parser
+#		actual   = SelectionParser.parse(ABLexer.lex('aaabbb'))
+#		expected = 6
 
-		FileUtils.rm(tmpfile) if File.exist?(tmpfile)
+#		assert_equal(expected, actual)
+#	end
 
-		parser0 = Class.new(RLTK::Parser) do
-			production(:a, 'A+') { |a| a.length }
+#	def test_token_hooks
+#		parser = TokenHookParser.new
 
-			finalize use: tmpfile
-		end
+#		parser.parse(AlphaLexer.lex('a a a a'))
+#		assert_equal(4, parser.env.counter)
 
-		result0 = parser0.parse(ABLexer.lex('a'))
+#		parser.parse(AlphaLexer.lex('b b b b'))
+#		assert_equal(12, parser.env.counter)
+#	end
 
-		assert(File.exist?(tmpfile), 'Serialized parser file not found.')
+#	def test_underscore_tokens
+#		actual   = UnderscoreParser.parse(UnderscoreLexer.lex('abc')).join
+#		expected = 'abc'
 
-		parser1 = Class.new(RLTK::Parser) do
-			production(:a, 'A+') { |a| a.length }
+#		assert_equal(expected, actual)
+#	end
 
-			finalize use: tmpfile
-		end
+#	def test_use
+#		tmpfile = File.join(Dir.tmpdir, 'usetest')
 
-		result1 = parser1.parse(ABLexer.lex('a'))
+#		FileUtils.rm(tmpfile) if File.exist?(tmpfile)
 
-		assert_equal(result0, result1)
+#		parser0 = Class.new(RLTK::Parser) do
+#			production(:a, 'A+') { |a| a.length }
 
-		File.unlink(tmpfile)
-	end
+#			finalize use: tmpfile
+#		end
 
-	def test_uesless_parser_exception
-		assert_raises(RLTK::UselessParserException) { UselessParser.new }
-	end
+#		result0 = parser0.parse(ABLexer.lex('a'))
+
+#		assert(File.exist?(tmpfile), 'Serialized parser file not found.')
+
+#		parser1 = Class.new(RLTK::Parser) do
+#			production(:a, 'A+') { |a| a.length }
+
+#			finalize use: tmpfile
+#		end
+
+#		result1 = parser1.parse(ABLexer.lex('a'))
+
+#		assert_equal(result0, result1)
+
+#		File.unlink(tmpfile)
+#	end
+
+#	def test_uesless_parser_exception
+#		assert_raises(RLTK::UselessParserException) { UselessParser.new }
+#	end
 end
