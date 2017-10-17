@@ -6,6 +6,12 @@
 # Description: This file contains the a class representing a context-free
 #              grammar.
 
+#########
+# Notes #
+#########
+
+# FIXME: Catch and handle the case where multiple selectors are used on the same symbol (e.g. A COMMA ..B)
+
 ############
 # Requires #
 ############
@@ -279,7 +285,7 @@ module RLTK
 				end
 
 				# Multiple Element Production
-				production, selections = self.production(name, ".#{name} #{separator} .#{list_element_selected_string}")
+				production, selections = self.production(name, ".#{name} #{separator} #{list_element_selected_string}")
 				@callback.call(:list, :multiple, production, selections) # FIXME xs + [x]
 
 				if build_elements_productions

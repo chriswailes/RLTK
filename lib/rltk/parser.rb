@@ -167,38 +167,27 @@ module RLTK
 
 				@grammar.callback do |type, which, p, sels = []|
 
-					puts "Callback: #{type} / #{which}"
-
 					@procs[p.id] = [
 						case type
+						when :optional
+							case which
+							when :empty then ProdProc.new { ||  nil }
+							else             ProdProc.new { |o|   o }
+							end
+
 						when :list
 							case which
-							when :empty_wrapper
-								ProdProc.new { || [] }
-
-							when :nonempty_wrapper
-								ProdProc.new { |xs| xs }
-
-							when :empty
-								ProdProc.new { || [] }
-
-							when :single
-								ProdProc.new { |x| [x] }
-
+							when :empty_wrapper    then ProdProc.new { ||    [] }
+							when :nonempty_wrapper then ProdProc.new { |xs|  xs }
+							when :empty            then ProdProc.new { ||    [] }
+							when :single           then ProdProc.new { | x| [x] }
 							when :multiple
-								ProdProc.new(:splat, sels) do |*syms|
-									puts "Multiple items: #{syms}"
-									el = syms[1..-1]
-									syms.first << (el.length == 1 ? el.first : el)
+								ProdProc.new(:splat, sels) do |*sym_vals|
+									el = sym_vals[1..-1]
+									sym_vals.first << (el.length == 1 ? el.first : el)
 								end
 							when :elements
-#								ProdProc.new { |*el| el.length == 1 ? el.first : el }
-
-								ProdProc.new do |*el|
-									puts "Got elements: #{el}"
-
-									el.length == 1 ? el.first : el
-								end
+								ProdProc.new { |*el| el.length == 1 ? el.first : el }
 
 							else
 								raise "Unknown callback type: #{type} / #{which}"
