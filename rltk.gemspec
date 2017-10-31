@@ -39,7 +39,7 @@ Gem::Specification.new do |s|
 	################
 	
 	s.add_dependency('ffi', '>= 1.0.0')
-	s.add_dependency('filigree', '>= 0.2.0')
+    s.add_dependency('filigree', '>= 0.2.0', '< 0.4.0')
 	
 	############################
 	# Development Dependencies #
