@@ -494,7 +494,7 @@ end
 # @return [Type] The object *o* or an instance of the class passed in parameter *o*.
 def check_cg_type(o, type = RLTK::CG::Type, blame = 'type', strict = false)
 	if o.is_a?(Class)
-		type_ok = if strict then o == type else o.subclass_of?(type) end
+		type_ok = if strict then o == type else o < type end
 
 		if type_ok
 			if o.includes_module?(Singleton)
@@ -529,7 +529,7 @@ end
 def check_cg_array_type(array, type = RLTK::CG::Type, blame = 'el_types', strict = false)
 	array.map do |o|
 		if o.is_a?(Class)
-			type_ok = if strict then o == type else o.subclass_of?(type) end
+			type_ok = if strict then o == type else o < type end
 
 			if type_ok
 				if o.includes_module?(Singleton)

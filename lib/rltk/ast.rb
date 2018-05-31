@@ -117,7 +117,7 @@ module RLTK
 				end
 
 				# Check to make sure that type is a subclass of ASTNode.
-				if not t.subclass_of?(ASTNode)
+				if not t < ASTNode
 					raise "A child's type specification must be a subclass of ASTNode."
 				end
 
