@@ -17,7 +17,7 @@ require 'rltk/parser'
 module RLTK
 
 	# The RLTK::Parsers module contains the parsers that are included as part
-	# of the RLKT project.
+	# of the RLTK project.
 	module Parsers
 
 		# A parser for a simple infix calculator.

@@ -2,7 +2,7 @@
 
 When it comes to implementing a language, the first thing needed is the ability to process a text file and recognize what it says.  The traditional way to do this is to use a *lexer* (aka *scanner*) to break the input up into *tokens*.  Each token returned by the lexer includes a token code and potentially some metadata (e.g. the numeric value of a number).
 
-It is pretty simple to create a lexer using RLKT:
+It is pretty simple to create a lexer using RLTK:
 
 ```Ruby
 class Lexer < RLTK::Lexer; end

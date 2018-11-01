@@ -17,7 +17,7 @@ require 'rltk/lexer'
 module RLTK
 
 	# The RLTK::Lexers module contains the lexers that are included as part of
-	# the RLKT project.
+	# the RLTK project.
 	module Lexers
 
 		# The Calculator lexer is a simple lexer for use with several of the

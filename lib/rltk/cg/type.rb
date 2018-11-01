@@ -172,7 +172,7 @@ module RLTK::CG
 		#
 		# @raise [RuntimeError] This function has no meaning in this class.
 		def value_class
-			raise 'The RLKT::CG::IntType class has no value class.'
+			raise 'The RLTK::CG::IntType class has no value class.'
 		end
 	end
 
