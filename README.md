@@ -28,7 +28,7 @@ Here are some reasons to use RLTK to build your lexers, parsers, and abstract sy
 
 * **Parser Serialization** - RLTK parsers can be serialized and saved after they are generated for faster loading the next time they are required.
 
-* **Error Productions** - RLKT parsers can use error productions to recover from, and report on, errors.
+* **Error Productions** - RLTK parsers can use error productions to recover from, and report on, errors.
 
 * **Fast Prototyping** - If you need to change your lexer/parser you don't have to re-run the lexer and parser generation tools, simply make the changes and be on your way.
 
